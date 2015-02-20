@@ -1,5 +1,8 @@
 """Events module."""
-from weakref import WeakValueDictionary
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class Event:
@@ -20,8 +23,8 @@ class EventManager:
         """
         Register a listener for an event type.
 
-        :param event_type: A string identifier for an event type in the "__module__"
-                        + "__name__" format or an event class.
+        :param event_type: A string identifier for an event type in the
+                        "__module__" + "__name__" format or an event class.
         :param listener: An event listener which can accept an event.
 
         """
@@ -29,9 +32,10 @@ class EventManager:
             event_type = event_type.type()
 
         if event_type not in self.listeners:
-            self.listeners[event_type] = WeakValueDictionary()
+            self.listeners[event_type] = []
 
         self.listeners[event_type].append(listener)
+        logger.debug('Registered a listener for event type "%s"', event_type)
 
     def handle(self, event):
         """
@@ -40,9 +44,16 @@ class EventManager:
         :param event: Event to handle.
 
         """
-        for listener in self.listeners[type(event).type()]:
+        event_type = type(event).type()
+
+        if event_type not in self.listeners:
+            logger.warning('No listeners defined for event "%s"', event_type)
+            return
+
+        for listener in self.listeners[event_type]:
             listener(event)
 
     def __init__(self):
         """Constructor."""
-        self.listeners = WeakValueDictionary()
+        logger.debug('Initializing EventManager')
+        self.listeners = {}

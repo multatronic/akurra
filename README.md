@@ -19,6 +19,7 @@ $ sudo pip3 install -U git+https://github.com/multatronic/akurra.git
 
 * python3
 * pygame
+* colorlog
 * injector
 
 ##License

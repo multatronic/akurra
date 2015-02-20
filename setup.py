@@ -34,6 +34,7 @@ setup(
 
     install_requires=[
         'pygame',
+        'colorlog',
         'injector'
     ],
     dependency_links=[
