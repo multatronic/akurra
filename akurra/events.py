@@ -6,32 +6,32 @@ class Event:
 
     """Base event class."""
 
-    @property
-    def type(self):
+    @classmethod
+    def type(cls):
         """Return type."""
-        return self.__class__.__module__ + '.' + self.__class__.__name__
+        return cls.__module__ + '.' + cls.__name__
 
 
 class EventManager:
 
     """Event manager."""
 
-    def register(self, type, listener):
+    def register(self, event_type, listener):
         """
         Register a listener for an event type.
 
-        :param type: An string identifier for an event type in the "__module__"
+        :param event_type: A string identifier for an event type in the "__module__"
                         + "__name__" format or an event class.
         :param listener: An event listener which can accept an event.
 
         """
-        if not isinstance(type, str):
-            type = type.type
+        if not isinstance(event_type, str):
+            event_type = event_type.type()
 
-        if type not in self.listeners:
-            self.listeners[type] = WeakValueDictionary()
+        if event_type not in self.listeners:
+            self.listeners[event_type] = WeakValueDictionary()
 
-        self.listeners[type].append(listener)
+        self.listeners[event_type].append(listener)
 
     def handle(self, event):
         """
@@ -40,8 +40,8 @@ class EventManager:
         :param event: Event to handle.
 
         """
-        for listener in self.listeners[type.type]:
-            listener(type)
+        for listener in self.listeners[type(event).type()]:
+            listener(event)
 
     def __init__(self):
         """Constructor."""
