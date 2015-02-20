@@ -1,0 +1,16 @@
+#!/bin/bash
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+# Install dependencies
+sudo apt-get build-dep pygame
+sudo apt-get install -y mercurial libavformat-dev libswscale-dev
+
+mkdir -p $DIR/../tmp && cd $DIR/../tmp
+
+# Grab source
+hg clone --cwd $DIR/../tmp https://bitbucket.org/pygame/pygame
+
+# Finally build and install
+cd pygame
+python3 setup.py build
+sudo python3 setup.py install
