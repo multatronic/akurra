@@ -12,7 +12,9 @@ from akurra.events import EventManager
 from akurra.modules import ModuleManager
 from akurra.logging import configure_logging
 
-from akurra.ticks import TicksManager
+from akurra.display import DisplayManager, DisplayModule
+from akurra.ticks import TicksManager, TicksModule
+from akurra.fps import FPSManager, FPSModule
 
 
 pygame.init()
@@ -47,12 +49,12 @@ class Akurra:
         logger.debug('Received signal "%s"', signum)
         self.stop()
 
-    @inject(modules=ModuleManager, ticks=TicksManager, shutdown=ShutdownFlag)
-    def __init__(self, modules, ticks, shutdown):
+    @inject(modules=ModuleManager, events=EventManager, ticks=TicksManager,
+            display=DisplayManager, fps=FPSManager, shutdown=ShutdownFlag)
+    def __init__(self, modules, shutdown, **kwargs):
         """Constructor."""
         logger.debug('Initializing..')
         self.modules = modules
-        self.ticks = ticks
         self.shutdown = shutdown
 
         # Handle shutdown signals properly
@@ -68,9 +70,14 @@ def build_container(binder):
 
     binder.bind(EntryPointGroup, to='akurra.modules')
     binder.bind(ShutdownFlag, to=Event())
-    binder.bind(PygameClock, to=pygame.time.Clock)
+    binder.bind(Clock, to=pygame.time.Clock)
 
-    binder.bind(TicksManager, scope=singleton)
+    binder.bind(DisplayResolution, to=[0, 0])
+    binder.bind(DisplayFlags, to=pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.RESIZABLE)
+
+    binder.install(TicksModule)
+    binder.install(DisplayModule)
+    binder.install(FPSModule)
 
 
 def main():

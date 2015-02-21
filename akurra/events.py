@@ -37,21 +37,21 @@ class EventManager:
         self.listeners[event_type].append(listener)
         logger.debug('Registered a listener for event type "%s"', event_type)
 
-    def handle(self, event):
+    def dispatch(self, event):
         """
-        Handle an event by having it broadcast to its listeners.
+        Dispatch an event by having it broadcast to its listeners.
 
         :param event: Event to handle.
 
         """
         event_type = type(event).type()
 
-        if event_type not in self.listeners:
+        try:
+            for listener in self.listeners[event_type]:
+                listener(event)
+        except KeyError:
             logger.warning('No listeners defined for event "%s"', event_type)
-            return
-
-        for listener in self.listeners[event_type]:
-            listener(event)
+            pass
 
     def __init__(self):
         """Constructor."""

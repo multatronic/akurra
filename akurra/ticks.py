@@ -2,12 +2,22 @@
 import pygame
 import logging
 from threading import Thread
-from injector import inject
-from akurra.locals import ShutdownFlag, PygameClock
+from injector import inject, singleton, Module
+from akurra.locals import ShutdownFlag
 from akurra.events import Event, EventManager
+from akurra.display import FrameRenderEvent
 
 
 logger = logging.getLogger(__name__)
+
+
+class TicksModule(Module):
+
+    """Ticks module."""
+
+    def configure(self, binder):
+        """Configure a dependency injector."""
+        binder.bind(TicksManager, scope=singleton)
 
 
 class TickEvent(Event):
@@ -21,28 +31,22 @@ class TicksManager:
 
     def on_tick(self, event):
         """Handle a tick event."""
-        pygame.display.set_caption('FPS: %s' % self.clock.get_fps())
-        pygame.display.flip()
-        self.clock.tick(200)
+        # Try to render a frame on every tick
+        self.events.dispatch(FrameRenderEvent())
 
     def generate_ticks(self):
         """Generate ticks until shutdown."""
         while not self.shutdown.is_set():
-            self.events.handle(TickEvent())
+            self.events.dispatch(TickEvent())
             pygame.time.wait(5)
 
-    @inject(events=EventManager, shutdown=ShutdownFlag, clock=PygameClock)
-    def __init__(self, events, shutdown, clock):
+    @inject(events=EventManager, shutdown=ShutdownFlag)
+    def __init__(self, events, shutdown):
         """Constructor."""
         self.events = events
-        self.shutdown = shutdown
-        self.clock = clock
-
-        # Create a resizable, HW-accelerated window
-        # @TODO Determine whether we want to use opengl and lose out .update() calls
-        self.screen = pygame.display.set_mode([0, 0], pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.RESIZABLE)
-
         self.events.register(TickEvent, self.on_tick)
+
+        self.shutdown = shutdown
 
         self.thread = Thread(target=self.generate_ticks, daemon=False)
         self.thread.start()

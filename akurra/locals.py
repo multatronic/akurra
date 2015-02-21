@@ -3,4 +3,8 @@ from injector import Key
 
 EntryPointGroup = Key('EntryPointGroup')
 ShutdownFlag = Key('ShutdownFlag')
-PygameClock = Key('PygameClock')
+Clock = Key('Clock')
+
+Display = Key('Display')
+DisplayResolution = Key('DisplayResolution')
+DisplayFlags = Key('DisplayFlags')
