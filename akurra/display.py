@@ -60,5 +60,7 @@ class DisplayManager:
     @inject(events=EventManager)
     def __init__(self, events):
         """Constructor."""
+        logger.debug('Initializing DisplayManager')
+
         self.events = events
         self.events.register(FrameRenderEvent, self.on_frame_render)

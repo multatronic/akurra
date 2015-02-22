@@ -99,5 +99,6 @@ class ModuleManager:
 
         """
         logger.debug('Initializing ModuleManager [group=%s]', group)
+
         self.group = group
         self.modules = {}

@@ -43,6 +43,8 @@ class TicksManager:
     @inject(events=EventManager, shutdown=ShutdownFlag)
     def __init__(self, events, shutdown):
         """Constructor."""
+        logger.debug('Initializing TicksManager')
+
         self.events = events
         self.events.register(TickEvent, self.on_tick)
 

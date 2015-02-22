@@ -21,7 +21,7 @@ class FPSManager:
 
     def on_frame_render_completed(self, event):
         """Handle a frame render completion."""
-        pygame.display.set_caption('Akurra, FPS: %s' % self.clock.get_fps())
+        pygame.display.set_caption('Akurra, FPS: %d' % self.clock.get_fps())
         self.clock.tick(200)
 
     @inject(events=EventManager, clock=Clock)
