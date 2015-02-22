@@ -3,8 +3,6 @@ import logging
 import pygame
 import queue
 from multiprocessing import Queue
-from injector import inject
-from akurra.locals import ShutdownFlag
 from akurra.utils import hr_event_type
 
 
@@ -96,11 +94,9 @@ class EventManager:
         if event.type != pygame.NOEVENT:
             self.handle(event)
 
-    @inject(shutdown=ShutdownFlag)
-    def __init__(self, shutdown):
+    def __init__(self):
         """Constructor."""
         logger.debug('Initializing EventManager')
 
-        self.shutdown = shutdown
         self.listeners = {}
         self.queue = Queue()

@@ -3,7 +3,7 @@ import sys
 import logging
 from pkg_resources import iter_entry_points
 from injector import inject
-from akurra.locals import EntryPointGroup
+from akurra.locals import *  # noqa
 
 
 logger = logging.getLogger(__name__)
@@ -90,8 +90,8 @@ class ModuleManager:
         logger.debug('Stopping all modules')
         [self.stop_single(x) for x in self.modules.keys()]
 
-    @inject(group=EntryPointGroup)
-    def __init__(self, group):
+    @inject(group=ModuleEntryPointGroup)
+    def __init__(self, group='akurra.modules'):
         """
         Constructor.
 

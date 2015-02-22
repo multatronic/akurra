@@ -1,12 +1,18 @@
 """Locals module."""
 from injector import Key
 
-EntryPointGroup = Key('EntryPointGroup')
+# General
 ShutdownFlag = Key('ShutdownFlag')
-Clock = Key('Clock')
 
+# Modules
+ModuleEntryPointGroup = Key('ModuleEntryPointGroup')
+
+# Display
 Display = Key('Display')
+DisplayClock = Key('DisplayClock')
 DisplayResolution = Key('DisplayResolution')
 DisplayFlags = Key('DisplayFlags')
+DisplayMaxFPS = Key('DisplayMaxFPS')
 
+# Events
 EventPollTimeout = Key('EventPollTimeout')

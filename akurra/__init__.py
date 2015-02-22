@@ -74,22 +74,33 @@ class Akurra:
 def build_container(binder):
     """Build a service container by binding dependencies to an injector."""
     binder.bind(Akurra, scope=singleton)
+
+    # General
+    binder.bind(ShutdownFlag, to=Event, scope=singleton)
+
+    # Modules
     binder.bind(ModuleManager, scope=singleton)
+    binder.bind(ModuleEntryPointGroup, to='akurra.modules')
 
-    binder.bind(EntryPointGroup, to='akurra.modules')
-    binder.bind(ShutdownFlag, to=Event())
-    binder.bind(Clock, to=pygame.time.Clock)
-
+    # Display
+    binder.install(DisplayModule)
     binder.bind(DisplayResolution, to=[0, 0])
     binder.bind(DisplayFlags, to=pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.RESIZABLE)
+    binder.bind(DisplayMaxFPS, to=60)
+    binder.bind(DisplayClock, to=pygame.time.Clock, scope=singleton)
 
+    # Events
     binder.bind(EventManager, scope=singleton)
     binder.bind(EventPollTimeout, to=0.1)
 
+    # Ticks
     binder.install(TicksModule)
-    binder.install(DisplayModule)
+
+    # FPS
+    # @TODO Replace FPS module with 'Debug' module
     binder.install(FPSModule)
 
+    # Keyboard
     binder.bind(KeyboardManager, scope=singleton)
 
 

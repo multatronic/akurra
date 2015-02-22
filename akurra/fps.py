@@ -3,7 +3,7 @@ import pygame
 from injector import Module, inject, singleton
 from akurra.display import FrameRenderCompletedEvent
 from akurra.events import EventManager
-from akurra.locals import Clock
+from akurra.locals import *  # noqa
 
 
 class FPSModule(Module):
@@ -22,9 +22,8 @@ class FPSManager:
     def on_frame_render_completed(self, event):
         """Handle a frame render completion."""
         pygame.display.set_caption('Akurra, FPS: %d' % self.clock.get_fps())
-        self.clock.tick(200)
 
-    @inject(events=EventManager, clock=Clock)
+    @inject(events=EventManager, clock=DisplayClock)
     def __init__(self, events, clock):
         """Constructor."""
         self.events = events

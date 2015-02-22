@@ -2,7 +2,7 @@
 import logging
 import pygame
 from injector import inject, singleton, Module
-from akurra.locals import Display, DisplayResolution, DisplayFlags
+from akurra.locals import *  # noqa
 from akurra.events import Event, EventManager
 
 
@@ -43,8 +43,7 @@ class DisplayManager:
 
     """Display controller."""
 
-    @inject(display=Display)
-    def on_frame_render(self, event, display):
+    def on_frame_render(self, event):
         """
         Perform a frame render, updating the contents of the entire display.
 
@@ -55,12 +54,18 @@ class DisplayManager:
 
         """
         pygame.display.flip()
+        self.clock.tick(self.max_fps)
+
         self.events.dispatch(FrameRenderCompletedEvent())
 
-    @inject(events=EventManager)
-    def __init__(self, events):
+    @inject(events=EventManager, display=Display, clock=DisplayClock, max_fps=DisplayMaxFPS)
+    def __init__(self, events, display, clock, max_fps=250):
         """Constructor."""
         logger.debug('Initializing DisplayManager')
 
         self.events = events
         self.events.register(FrameRenderEvent, self.on_frame_render)
+
+        self.display = display
+        self.clock = clock
+        self.max_fps = max_fps
