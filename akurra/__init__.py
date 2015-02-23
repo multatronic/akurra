@@ -1,5 +1,6 @@
 """Main module."""
 import os
+import sys
 import pygame
 import signal
 
@@ -20,9 +21,9 @@ from akurra.debug import DebugManager
 from akurra.keyboard import KeyboardManager
 
 
+DEBUG = 'debug' in sys.argv
 pygame.init()
 logger = getLogger(__name__)
-configure_logging(debug=False)
 
 
 class Akurra:
@@ -54,11 +55,14 @@ class Akurra:
         self.stop()
 
     @inject(modules=ModuleManager, events=EventManager, ticks=TicksManager,
-            display=DisplayManager, debug=DebugManager, keyboard=KeyboardManager,
-            shutdown=ShutdownFlag)
-    def __init__(self, modules, events, ticks, display, debug, keyboard, shutdown):
+            display=DisplayManager, debugger=DebugManager, keyboard=KeyboardManager,
+            shutdown=ShutdownFlag, debug=DebugFlag)
+    def __init__(self, modules, events, ticks, display, debugger, keyboard, shutdown, debug):
         """Constructor."""
+        configure_logging(debug=debug.value)
         logger.info('Initializing..')
+
+        self.debug = debug
         self.shutdown = shutdown
 
         self.modules = modules
@@ -77,7 +81,7 @@ def build_container(binder):
     binder.bind(Akurra, scope=singleton)
 
     # General
-    binder.bind(DebugFlag, to=Value('B', False))
+    binder.bind(DebugFlag, to=Value('B', DEBUG))
     binder.bind(ShutdownFlag, to=Event())
 
     # Modules
