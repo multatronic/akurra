@@ -16,17 +16,18 @@ class DisplayModule(Module):
     def configure(self, binder):
         """Configure a dependency injector."""
         binder.bind(DisplayManager, scope=singleton)
-        binder.bind(Display, create_display)
+        binder.bind(DisplayScreen, create_screen)
 
 
 @singleton
-@inject(resolution=DisplayResolution, flags=DisplayFlags)
-def create_display(resolution=[0, 0], flags=0):
-    """Create and return a display with a few options."""
-    display = pygame.display.set_mode(resolution, flags)
+@inject(resolution=DisplayResolution, flags=DisplayFlags, caption=DisplayCaption)
+def create_screen(resolution=[0, 0], flags=0, caption='akurra'):
+    """Create and return a screen with a few options."""
+    screen = pygame.display.set_mode(resolution, flags)
+    pygame.display.set_caption(caption)
     logger.debug('Display created [resolution=%s, flags=%s]', resolution, flags)
 
-    return display
+    return screen
 
 
 class FrameRenderEvent(Event):
@@ -58,14 +59,14 @@ class DisplayManager:
 
         self.events.dispatch(FrameRenderCompletedEvent())
 
-    @inject(events=EventManager, display=Display, clock=DisplayClock, max_fps=DisplayMaxFPS)
-    def __init__(self, events, display, clock, max_fps=250):
+    @inject(events=EventManager, screen=DisplayScreen, clock=DisplayClock, max_fps=DisplayMaxFPS)
+    def __init__(self, events, screen, clock, max_fps=250):
         """Constructor."""
         logger.debug('Initializing DisplayManager')
 
         self.events = events
         self.events.register(FrameRenderEvent, self.on_frame_render)
 
-        self.display = display
+        self.screen = screen
         self.clock = clock
         self.max_fps = max_fps

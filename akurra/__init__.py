@@ -4,6 +4,7 @@ import pygame
 import signal
 
 from threading import Event
+from multiprocessing import Value
 from logging import getLogger
 from injector import Injector, inject, singleton
 
@@ -15,13 +16,13 @@ from akurra.logging import configure_logging
 
 from akurra.display import DisplayManager, DisplayModule
 from akurra.ticks import TicksManager, TicksModule
-from akurra.fps import FPSManager, FPSModule
+from akurra.debug import DebugManager
 from akurra.keyboard import KeyboardManager
 
 
 pygame.init()
 logger = getLogger(__name__)
-configure_logging(debug=True)
+configure_logging(debug=False)
 
 
 class Akurra:
@@ -53,9 +54,9 @@ class Akurra:
         self.stop()
 
     @inject(modules=ModuleManager, events=EventManager, ticks=TicksManager,
-            display=DisplayManager, fps=FPSManager, keyboard=KeyboardManager,
+            display=DisplayManager, debug=DebugManager, keyboard=KeyboardManager,
             shutdown=ShutdownFlag)
-    def __init__(self, modules, events, ticks, display, fps, keyboard, shutdown):
+    def __init__(self, modules, events, ticks, display, debug, keyboard, shutdown):
         """Constructor."""
         logger.info('Initializing..')
         self.shutdown = shutdown
@@ -76,7 +77,8 @@ def build_container(binder):
     binder.bind(Akurra, scope=singleton)
 
     # General
-    binder.bind(ShutdownFlag, to=Event, scope=singleton)
+    binder.bind(DebugFlag, to=Value('B', False))
+    binder.bind(ShutdownFlag, to=Event())
 
     # Modules
     binder.bind(ModuleManager, scope=singleton)
@@ -87,6 +89,7 @@ def build_container(binder):
     binder.bind(DisplayResolution, to=[0, 0])
     binder.bind(DisplayFlags, to=pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.RESIZABLE)
     binder.bind(DisplayMaxFPS, to=60)
+    binder.bind(DisplayCaption, to='Akurra DEV')
     binder.bind(DisplayClock, to=pygame.time.Clock, scope=singleton)
 
     # Events
@@ -96,9 +99,8 @@ def build_container(binder):
     # Ticks
     binder.install(TicksModule)
 
-    # FPS
-    # @TODO Replace FPS module with 'Debug' module
-    binder.install(FPSModule)
+    # Debug
+    binder.bind(DebugManager, scope=singleton)
 
     # Keyboard
     binder.bind(KeyboardManager, scope=singleton)
