@@ -2,22 +2,13 @@
 import pygame
 import logging
 from threading import Thread
-from injector import inject, singleton, Module
+from injector import inject
 from akurra.locals import ShutdownFlag
 from akurra.events import Event, EventManager
 from akurra.display import FrameRenderEvent
 
 
 logger = logging.getLogger(__name__)
-
-
-class TicksModule(Module):
-
-    """Ticks module."""
-
-    def configure(self, binder):
-        """Configure a dependency injector."""
-        binder.bind(TicksManager, scope=singleton)
 
 
 class TickEvent(Event):

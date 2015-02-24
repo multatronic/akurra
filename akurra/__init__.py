@@ -15,8 +15,8 @@ from akurra.events import EventManager
 from akurra.modules import ModuleManager
 from akurra.logging import configure_logging
 
-from akurra.display import DisplayManager, DisplayModule
-from akurra.ticks import TicksManager, TicksModule
+from akurra.display import DisplayManager, create_screen
+from akurra.ticks import TicksManager
 from akurra.debug import DebugManager
 from akurra.keyboard import KeyboardManager
 
@@ -89,19 +89,20 @@ def build_container(binder):
     binder.bind(ModuleEntryPointGroup, to='akurra.modules')
 
     # Display
-    binder.install(DisplayModule)
+    binder.bind(DisplayManager, scope=singleton)
     binder.bind(DisplayResolution, to=[0, 0])
     binder.bind(DisplayFlags, to=pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.RESIZABLE)
     binder.bind(DisplayMaxFPS, to=60)
     binder.bind(DisplayCaption, to='Akurra DEV')
     binder.bind(DisplayClock, to=pygame.time.Clock, scope=singleton)
+    binder.bind(DisplayScreen, to=create_screen, scope=singleton)
 
     # Events
     binder.bind(EventManager, scope=singleton)
     binder.bind(EventPollTimeout, to=0.1)
 
     # Ticks
-    binder.install(TicksModule)
+    binder.bind(TicksManager, scope=singleton)
 
     # Debug
     binder.bind(DebugManager, scope=singleton)

@@ -4,7 +4,7 @@ import pygame
 from injector import inject
 from akurra.logging import configure_logging
 from akurra.events import EventManager
-from akurra.display import FrameRenderCompletedEvent
+from akurra.display import FrameRenderCompletedEvent, DisplayManager, DisplayObject
 from akurra.keyboard import KeyboardManager
 from akurra.locals import *  # noqa
 
@@ -18,8 +18,31 @@ class DebugManager:
 
     def on_frame_render_completed(self, event):
         """Handle a frame render completion."""
-        if self.debug.value:
-            pygame.display.set_caption('%s (FPS: %d)' % (self.display_caption, self.clock.get_fps()))
+        self.overlay.surface.fill([0, 0, 0, 0])
+
+        info = pygame.display.Info()
+
+        text = [
+            "Akurra DEV",
+            "FPS: %d" % self.clock.get_fps(),
+            "Driver: %s" % pygame.display.get_driver(),
+            "HW accel: %s" % info.hw,
+            "Windowed support: %s" % info.wm,
+            "Video mem: %s mb" % info.video_mem,
+            "HW surface blit accel: %s" % info.blit_hw,
+            "HW surface colorkey blit accel: %s" % info.blit_hw_CC,
+            "HW surface pixel alpha blit accel: %s" % info.blit_hw_A,
+            "SW surface blit accel: %s" % info.blit_sw,
+            "SW surface colorkey blit accel: %s" % info.blit_sw_CC,
+            "SW surface pixel alpha blit accel: %s" % info.blit_sw_A
+        ]
+
+        offset_y = 0
+        line_height = 14
+
+        for t in text:
+            self.overlay.surface.blit(self.font.render(t, 1, (255, 255, 0)), [0, offset_y])
+            offset_y += line_height
 
     def on_toggle(self, event):
         """Handle a debug toggle."""
@@ -32,6 +55,7 @@ class DebugManager:
         configure_logging(debug=self.debug.value)
 
         self.events.register(FrameRenderCompletedEvent, self.on_frame_render_completed)
+        self.display.add(self.overlay)
 
     def disable(self):
         """Disable debugging."""
@@ -39,11 +63,10 @@ class DebugManager:
         configure_logging(debug=self.debug.value)
 
         self.events.unregister(self.on_frame_render_completed)
-        pygame.display.set_caption(self.display_caption)
+        self.display.remove(self.overlay)
 
-    @inject(keyboard=KeyboardManager, events=EventManager, screen=DisplayScreen, display_caption=DisplayCaption,
-            clock=DisplayClock, debug=DebugFlag)
-    def __init__(self, keyboard, events, screen, display_caption, clock, debug):
+    @inject(keyboard=KeyboardManager, events=EventManager, display=DisplayManager, clock=DisplayClock, debug=DebugFlag)
+    def __init__(self, keyboard, events, display, clock, debug):
         """Constructor."""
         logger.debug('Initializing DebugManager')
 
@@ -51,10 +74,13 @@ class DebugManager:
         self.keyboard.register(pygame.K_F11, self.on_toggle, mods=pygame.KMOD_LCTRL)
 
         self.debug = debug
-        self.display_caption = display_caption
         self.events = events
         self.clock = clock
-        self.screen = screen
+
+        self.display = display
+        self.font = pygame.font.SysFont('monospace', 14)
+        self.overlay = DisplayObject(surface=pygame.Surface([400, 200]), position=[20, 20])
+        self.overlay.surface.set_colorkey([0, 0, 0])
 
         if self.debug.value:
             self.enable()
