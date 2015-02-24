@@ -19,7 +19,7 @@ from akurra.display import DisplayManager, create_screen
 from akurra.ticks import TicksManager
 from akurra.debug import DebugManager
 from akurra.keyboard import KeyboardManager
-
+from akurra.gamestate import GameStateManager
 
 DEBUG = 'debug' in sys.argv
 pygame.init()
