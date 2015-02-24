@@ -33,8 +33,42 @@ class DisplayObject:
 
     """Display object."""
 
+    @property
+    def display(self):
+        """Return display."""
+        return self._display
+
+    @display.setter
+    def display(self, value):
+        """Set display."""
+        self._display = value
+
+    @property
+    def z_index(self):
+        """Return zIndex."""
+        return self._z_index
+
+    @z_index.setter
+    def z_index(self, value):
+        """Set zIndex."""
+        # If we're attached to the displaymanager, unbind from the old layer and bind to the new one
+        display = self.display if self.display else None
+
+        if display:
+            display.remove(self)
+
+        self._z_index = value
+
+        if display:
+            display.add(self)
+
+        self._z_index = value
+
     def __init__(self, **kwargs):
         """Constructor."""
+        self._z_index = 1000
+        self._display = None
+
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
@@ -45,11 +79,30 @@ class DisplayManager:
 
     def add(self, object):
         """Add an object to the display."""
-        self.objects[id(object)] = object
+        if object.z_index not in self.objects:
+            self.objects[object.z_index] = {}
+            self.object_keys = sorted(self.objects.keys(), key=int)
+
+        self.objects[object.z_index][id(object)] = object
+
+        # Set display within object
+        object.display = self
 
     def remove(self, object):
         """Remove an object from the display."""
-        self.objects.pop(id(object), None)
+        to_remove = None
+
+        # If we're able to remov an object and there are no other objects for this z_index,
+        # queue the layer for removal
+        if self.objects[object.z_index].pop(id(object), None) and not self.objects[object.z_index]:
+            to_remove = object.z_index
+
+        if to_remove:
+            self.objects.pop(to_remove, None)
+            self.object_keys.remove(to_remove)
+
+        # Remove display from object
+        object.display = None
 
     def on_frame_render(self, event):
         """
@@ -62,11 +115,11 @@ class DisplayManager:
 
         """
         # @TODO Load background from map
-        # @TODO Z-index support for all objects
         self.screen.fill([25, 25, 25])
 
-        for o_id in self.objects:
-            self.screen.blit(self.objects[o_id].surface, self.objects[o_id].position)
+        for z_index in self.object_keys:
+            for o_id in self.objects[z_index]:
+                self.screen.blit(self.objects[z_index][o_id].surface, self.objects[z_index][o_id].position)
 
         pygame.display.update()
         self.clock.tick(self.max_fps)
@@ -84,4 +137,6 @@ class DisplayManager:
         self.screen = screen
         self.clock = clock
         self.max_fps = max_fps
+
         self.objects = {}
+        self.object_keys = []
