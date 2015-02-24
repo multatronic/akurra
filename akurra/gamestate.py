@@ -36,11 +36,11 @@ class GameStateManager:
         name = name.upper()
         self.handlers[name] = handler
 
-    def set_startState(self, name):
-        """Set the initial state of the FSM"""
+    def set_currentState(self, name):
+        """Set the (initial) state of the FSM"""
         logger.debug('Setting initial state as %s', name)
 
-        self.startState = name.upper()
+        self.currentState = name.upper()
 
     def run(self):
         """Run the FSM, starting from initial state"""
@@ -54,6 +54,6 @@ class GameStateManager:
                 handler = self.handlers[self.currentState]
                 handler()
             except:
-                raise InitializationError("Could not retrieve a valid state handler! Did you forget to call set_startState?")
+                raise InitializationError("Could not retrieve a valid state handler! Did you forget to call set the initial state with set_currentState?")
                 logger.debug
 
