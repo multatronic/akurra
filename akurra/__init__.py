@@ -56,17 +56,18 @@ class Akurra:
 
     @inject(modules=ModuleManager, events=EventManager, ticks=TicksManager,
             display=DisplayManager, debugger=DebugManager, keyboard=KeyboardManager,
-            shutdown=ShutdownFlag, debug=DebugFlag)
-    def __init__(self, modules, events, ticks, display, debugger, keyboard, shutdown, debug):
+            statemanager=GameStateManager, shutdown=ShutdownFlag, debug=DebugFlag)
+    def __init__(self, modules, events, ticks, display, debugger, keyboard, statemanager, shutdown, debug):
         """Constructor."""
         configure_logging(debug=debug.value)
         logger.info('Initializing..')
 
-        self.debug = debug
-        self.shutdown = shutdown
+        self.debug          = debug
+        self.shutdown       = shutdown
 
-        self.modules = modules
-        self.events = events
+        self.modules        = modules
+        self.events         = events
+        self.statemanager   = statemanager
 
         # Handle shutdown signals properly
         signal.signal(signal.SIGINT, self.handle_signal)
@@ -97,7 +98,7 @@ def build_container(binder):
     binder.bind(DisplayClock, to=pygame.time.Clock, scope=singleton)
     binder.bind(DisplayScreen, to=create_screen, scope=singleton)
 
-    # Events
+    # Event manager
     binder.bind(EventManager, scope=singleton)
     binder.bind(EventPollTimeout, to=0.1)
 
@@ -109,6 +110,9 @@ def build_container(binder):
 
     # Keyboard
     binder.bind(KeyboardManager, scope=singleton)
+
+    # State manager
+    binder.bind(GameStateManager, scope=singleton)
 
 
 def main():

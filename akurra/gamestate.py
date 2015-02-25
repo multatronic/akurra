@@ -11,7 +11,6 @@ from akurra.locals import *  # noqa
 
 logger = logging.getLogger(__name__)
 
-
 class GameStateManager:
 
     """Manager class for handling state transitions (e.g. to go from main menu to playing game)."""
@@ -37,8 +36,8 @@ class GameStateManager:
         self.handlers[name] = handler
 
     def set_currentState(self, name):
-        """Set the (initial) state of the FSM"""
-        logger.debug('Setting initial state as %s', name)
+        """Set the state of the FSM"""
+        logger.debug('Setting current state as %s', name)
 
         self.currentState = name.upper()
 
@@ -47,13 +46,28 @@ class GameStateManager:
         logger.debug('Running finite state machine')
 
         # call the handler for the current state while the game is running
-        # which will return the new value for current state
+        # which will set the new value for current state if necessary
         while True:
             # TODO break out this loop somehow, preferably by listening to some quit event
             try:
-                handler = self.handlers[self.currentState]
-                handler()
+                self.currentState.handle()
             except:
-                raise InitializationError("Could not retrieve a valid state handler! Did you forget to call set the initial state with set_currentState?")
-                logger.debug
+                raise InitializationError("Could not retrieve a valid state handler! Did you forget to set the initial state with set_currentState?")
 
+
+class GameState:
+
+    """A baseclass for gamestates."""
+
+    @inject(statemanager=GameStateManager, keyboard=KeyboardManager, events=EventManager, display=DisplayManager, clock=DisplayClock, debug=DebugFlag)
+    def __init__(self, keyboard, events, display, clock, debug, statemanager):
+        """Constructor."""
+        self.keyboard     = keyboard
+        self.debug        = debug
+        self.events       = events
+        self.clock        = clock
+        self.display      = display
+        self.statemanager = statemanager
+
+    def handle():
+        logger.debug('state handle function called');
