@@ -79,7 +79,7 @@ class DebugManager:
 
         self.display = display
         self.font = pygame.font.SysFont('monospace', 14)
-        self.overlay = DisplayObject(surface=pygame.Surface([400, 200]), position=[20, 20])
+        self.overlay = DisplayObject(surface=pygame.Surface([400, 200]), position=[20, 20], z_index=9999)
         self.overlay.surface.set_colorkey([0, 0, 0])
 
         if self.debug.value:
