@@ -30,6 +30,8 @@ $ sudo pip3 install -U git+https://github.com/multatronic/akurra.git
 * pygame
 * colorlog
 * injector
+* pytmx
+* pyscroll
 
 ##License
 
