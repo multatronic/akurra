@@ -1,10 +1,13 @@
 """Demo module."""
 import pygame
+import logging
 from injector import inject
 from akurra.assets import AssetManager
 from akurra.display import DisplayManager, ScrollingMapDisplayLayer
 from akurra.keyboard import KeyboardManager
 from akurra.entities import GameEntity
+
+logger = logging.getLogger(__name__)
 
 
 class DemoManager:

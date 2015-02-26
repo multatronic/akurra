@@ -19,14 +19,9 @@ from akurra.display import DisplayManager, create_screen
 from akurra.ticks import TicksManager
 from akurra.debug import DebugManager
 from akurra.keyboard import KeyboardManager
-<<<<<<< HEAD
-from akurra.gamestate import GameStateManager
-=======
+from akurra.gamestate import GameStateManager, DemoIntroScreen
 from akurra.assets import AssetManager
-
 from akurra.demo import DemoManager
-
->>>>>>> 25b3d43ab08d5de07f8affd6bc82683d5ea69197
 
 DEBUG = 'debug' in sys.argv
 os.chdir(os.path.dirname(os.path.dirname(__file__)))
@@ -44,6 +39,9 @@ class Akurra:
         self.modules.load()
         self.modules.start()
 
+        # TODO move to demo
+        self.statemanager.set_current_state("introscreen")
+
         while not self.shutdown.is_set():
             # self.shutdown.wait()
             self.events.poll()
@@ -55,6 +53,7 @@ class Akurra:
 
         self.modules.stop()
         self.modules.unload()
+        self.statemanager.stop()
 
     def handle_signal(self, signum, frame):
         """Handle a signal."""
@@ -63,19 +62,23 @@ class Akurra:
 
     @inject(modules=ModuleManager, events=EventManager, ticks=TicksManager,
             display=DisplayManager, debugger=DebugManager, keyboard=KeyboardManager,
-            demo=DemoManager, statemanager = GameStateManager,
+            demo=DemoManager, statemanager=GameStateManager,
             shutdown=ShutdownFlag, debug=DebugFlag)
     def __init__(self, modules, events, ticks, display, debugger, keyboard, demo, statemanager, shutdown, debug):
         """Constructor."""
         configure_logging(debug=debug.value)
         logger.info('Initializing..')
 
-        self.debug          = debug
-        self.shutdown       = shutdown
+        self.debug = debug
+        self.shutdown = shutdown
 
-        self.modules        = modules
-        self.events         = events
-        self.statemanager   = statemanager
+        self.modules = modules
+        self.events = events
+        self.statemanager = statemanager
+
+        # gamestate tester code
+        # TODO move gamestate stuff to demo (logging and stuff not working in there for some reason?)
+        statemanager.add_state(DemoIntroScreen(statemanager, display, keyboard, events))
 
         # Handle shutdown signals properly
         signal.signal(signal.SIGINT, self.handle_signal)
@@ -116,10 +119,9 @@ def build_container(binder):
     # Keyboard
     binder.bind(KeyboardManager, scope=singleton)
 
-<<<<<<< HEAD
     # State manager
     binder.bind(GameStateManager, scope=singleton)
-=======
+
     # Assets
     binder.bind(AssetManager, scope=singleton)
     binder.bind(AssetBasePath, to='assets')
@@ -127,7 +129,6 @@ def build_container(binder):
     # Demo
     # @TODO Remove
     binder.bind(DemoManager, scope=singleton)
->>>>>>> 25b3d43ab08d5de07f8affd6bc82683d5ea69197
 
 
 def main():

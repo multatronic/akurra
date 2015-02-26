@@ -104,7 +104,7 @@ class SurfaceDisplayLayer(DisplayLayer):
         """Constructor."""
         super(type(self), self).__init__(z_index=z_index, display=display)
 
-        if display and not size:
+        if display and size is None:
             size = display.screen.get_size()
 
         self.surface = pygame.Surface(size, flags=flags)
