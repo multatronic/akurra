@@ -35,12 +35,12 @@ class DemoIntroScreen(GameState):
 
     def transition_to_game(self, event):
         """Transition to play game state."""
-        logger.info("This is normally when the state transition would take place")
+        logger.debug("Introscreen transitioning to gamescreen")
         self.statemanager.set_current_state("gamescreen")
 
     def stop(self):
         """Stop the gamestate."""
-        logger.info("State %s is stopping", self.name)
+        logger.debug("State %s is stopping", self.name)
 
         self.events.unregister(self.on_frame_render_completed)
         self.display.remove_layer(self.layer)

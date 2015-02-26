@@ -83,7 +83,6 @@ class Akurra:
         statemanager.add_state(DemoIntroScreen(statemanager, display, keyboard, events))
         statemanager.add_state(demo)
 
-
         # Handle shutdown signals properly
         signal.signal(signal.SIGINT, self.handle_signal)
         signal.signal(signal.SIGTERM, self.handle_signal)
