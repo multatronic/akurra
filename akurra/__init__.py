@@ -19,9 +19,11 @@ from akurra.display import DisplayManager, create_screen
 from akurra.ticks import TicksManager
 from akurra.debug import DebugManager
 from akurra.keyboard import KeyboardManager
-from akurra.gamestate import GameStateManager, DemoIntroScreen
+from akurra.gamestate import GameStateManager
 from akurra.assets import AssetManager
-from akurra.demo import DemoManager
+
+from akurra.demo_introstate import DemoIntroScreen
+from akurra.demo_gamestate import DemoManager
 
 DEBUG = 'debug' in sys.argv
 os.chdir(os.path.dirname(os.path.dirname(__file__)))
@@ -77,8 +79,10 @@ class Akurra:
         self.statemanager = statemanager
 
         # gamestate tester code
-        # TODO move gamestate stuff to demo (logging and stuff not working in there for some reason?)
+        # TODO move gamestate stuff to separate demo instead of here
         statemanager.add_state(DemoIntroScreen(statemanager, display, keyboard, events))
+        statemanager.add_state(demo)
+
 
         # Handle shutdown signals properly
         signal.signal(signal.SIGINT, self.handle_signal)
