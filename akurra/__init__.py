@@ -3,27 +3,34 @@ import os
 import sys
 import pygame
 import signal
+import logging
 
 from threading import Event
 from multiprocessing import Value
-from logging import getLogger
 from injector import Injector, inject, singleton
 
 from akurra.locals import *  # noqa
 
 from akurra.events import EventManager
 from akurra.modules import ModuleManager
-from akurra.logging import configure_logging
+from akurra.logger import configure_logging
 
 from akurra.display import DisplayManager, create_screen
 from akurra.ticks import TicksManager
 from akurra.debug import DebugManager
 from akurra.keyboard import KeyboardManager
+<<<<<<< HEAD
 from akurra.gamestate import GameStateManager
+=======
+from akurra.assets import AssetManager
+
+from akurra.demo import DemoManager
+
+>>>>>>> 25b3d43ab08d5de07f8affd6bc82683d5ea69197
 
 DEBUG = 'debug' in sys.argv
-pygame.init()
-logger = getLogger(__name__)
+os.chdir(os.path.dirname(os.path.dirname(__file__)))
+logger = logging.getLogger(__name__)
 
 
 class Akurra:
@@ -56,8 +63,9 @@ class Akurra:
 
     @inject(modules=ModuleManager, events=EventManager, ticks=TicksManager,
             display=DisplayManager, debugger=DebugManager, keyboard=KeyboardManager,
-            statemanager=GameStateManager, shutdown=ShutdownFlag, debug=DebugFlag)
-    def __init__(self, modules, events, ticks, display, debugger, keyboard, statemanager, shutdown, debug):
+            demo=DemoManager, statemanager = GameStateManager,
+            shutdown=ShutdownFlag, debug=DebugFlag)
+    def __init__(self, modules, events, ticks, display, debugger, keyboard, demo, statemanager, shutdown, debug):
         """Constructor."""
         configure_logging(debug=debug.value)
         logger.info('Initializing..')
@@ -72,9 +80,6 @@ class Akurra:
         # Handle shutdown signals properly
         signal.signal(signal.SIGINT, self.handle_signal)
         signal.signal(signal.SIGTERM, self.handle_signal)
-
-        # Set correct working directory
-        os.chdir(os.path.dirname(os.path.dirname(__file__)))
 
 
 def build_container(binder):
@@ -111,11 +116,23 @@ def build_container(binder):
     # Keyboard
     binder.bind(KeyboardManager, scope=singleton)
 
+<<<<<<< HEAD
     # State manager
     binder.bind(GameStateManager, scope=singleton)
+=======
+    # Assets
+    binder.bind(AssetManager, scope=singleton)
+    binder.bind(AssetBasePath, to='assets')
+
+    # Demo
+    # @TODO Remove
+    binder.bind(DemoManager, scope=singleton)
+>>>>>>> 25b3d43ab08d5de07f8affd6bc82683d5ea69197
 
 
 def main():
     """Main entry point."""
+    pygame.init()
+
     container = Injector(build_container)
     container.get(Akurra).start()

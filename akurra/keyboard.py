@@ -62,7 +62,7 @@ class KeyboardManager:
 
         try:
             for mods in self.listeners[event.type][event.key]:
-                if mods & event.mod:
+                if not mods or mods & event.mod:
                     for key in self.listeners[event.type][event.key][mods]:
                         self.listeners[event.type][event.key][mods][key](event)
         except KeyError:
@@ -76,7 +76,7 @@ class KeyboardManager:
 
         try:
             for mods in self.listeners[event.type][event.key]:
-                if mods & event.mod:
+                if not mods or mods & event.mod:
                     for key in self.listeners[event.type][event.key][mods]:
                         self.listeners[event.type][event.key][mods][key](event)
         except KeyError:

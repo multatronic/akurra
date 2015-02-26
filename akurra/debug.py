@@ -2,9 +2,9 @@
 import logging
 import pygame
 from injector import inject
-from akurra.logging import configure_logging
+from akurra.logger import configure_logging
 from akurra.events import EventManager
-from akurra.display import FrameRenderCompletedEvent, DisplayManager, DisplayObject
+from akurra.display import FrameRenderCompletedEvent, DisplayManager, SurfaceDisplayLayer
 from akurra.keyboard import KeyboardManager
 from akurra.locals import *  # noqa
 
@@ -18,7 +18,7 @@ class DebugManager:
 
     def on_frame_render_completed(self, event):
         """Handle a frame render completion."""
-        self.overlay.surface.fill([0, 0, 0, 0])
+        self.layer.surface.fill([10, 10, 10, 200])
 
         info = pygame.display.Info()
 
@@ -37,11 +37,12 @@ class DebugManager:
             "SW surface pixel alpha blit accel: %s" % info.blit_sw_A
         ]
 
-        offset_y = 0
-        line_height = 14
+        offset_x = 5
+        offset_y = 5
+        line_height = 15
 
         for t in text:
-            self.overlay.surface.blit(self.font.render(t, 1, (255, 255, 0)), [0, offset_y])
+            self.layer.surface.blit(self.font.render(t, 1, (255, 255, 0)), [offset_x, offset_y])
             offset_y += line_height
 
     def on_toggle(self, event):
@@ -55,7 +56,7 @@ class DebugManager:
         configure_logging(debug=self.debug.value)
 
         self.events.register(FrameRenderCompletedEvent, self.on_frame_render_completed)
-        self.display.add(self.overlay)
+        self.display.add_layer(self.layer)
 
     def disable(self):
         """Disable debugging."""
@@ -63,7 +64,7 @@ class DebugManager:
         configure_logging(debug=self.debug.value)
 
         self.events.unregister(self.on_frame_render_completed)
-        self.display.remove(self.overlay)
+        self.display.remove_layer(self.layer)
 
     @inject(keyboard=KeyboardManager, events=EventManager, display=DisplayManager, clock=DisplayClock, debug=DebugFlag)
     def __init__(self, keyboard, events, display, clock, debug):
@@ -79,8 +80,8 @@ class DebugManager:
 
         self.display = display
         self.font = pygame.font.SysFont('monospace', 14)
-        self.overlay = DisplayObject(surface=pygame.Surface([400, 200]), position=[20, 20], z_index=9999)
-        self.overlay.surface.set_colorkey([0, 0, 0])
+
+        self.layer = SurfaceDisplayLayer(size=[300, 190], position=[5, 5], flags=pygame.SRCALPHA, z_index=9999)
 
         if self.debug.value:
             self.enable()

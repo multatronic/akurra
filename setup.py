@@ -35,7 +35,9 @@ setup(
     install_requires=[
         'pygame',
         'colorlog',
-        'injector'
+        'injector',
+        'pytmx',
+        'pyscroll'
     ],
     dependency_links=[
     ],

@@ -18,3 +18,6 @@ DisplayCaption = Key('DisplayCaption')
 
 # Events
 EventPollTimeout = Key('EventPollTimeout')
+
+# Assets
+AssetBasePath = Key('AssetBasePath')
