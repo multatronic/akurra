@@ -35,10 +35,9 @@ class KeyboardManager:
         if mods not in self.listeners[event_type][key_id]:
             self.listeners[event_type][key_id][mods] = {}
 
-        l_id = id(listener)
-        self.listeners[event_type][key_id][mods][l_id] = listener
-        logger.debug('Registered listener for key "%s" [id=%s, mods=%s, event=%s]',
-                     hr_key_id(key_id), l_id, mods, hr_event_type(event_type))
+        self.listeners[event_type][key_id][mods][listener] = 1
+        logger.debug('Registered listener for key "%s" [mods=%s, event=%s]',
+                     hr_key_id(key_id), mods, hr_event_type(event_type))
 
     def unregister(self, listener):
         """
@@ -47,14 +46,12 @@ class KeyboardManager:
         :param listener: A listener to unregister.
 
         """
-        l_id = id(listener)
-
         for event_type in self.listeners:
             for key_id in self.listeners[event_type]:
                 for mods in self.listeners[event_type][key_id]:
-                    if self.listeners[event_type][key_id][mods].pop(l_id, None):
-                        logger.debug('Unregistered listener for key "%s" [id=%s, mods=%s, event=%s]',
-                                     hr_key_id(key_id), l_id, mods, hr_event_type(event_type))
+                    if self.listeners[event_type][key_id][mods].pop(listener, None):
+                        logger.debug('Unregistered listener for key "%s" [mods=%s, event=%s]',
+                                     hr_key_id(key_id), mods, hr_event_type(event_type))
 
     def on_key_down(self, event):
         """Handle a key press."""
@@ -63,8 +60,8 @@ class KeyboardManager:
         try:
             for mods in self.listeners[event.type][event.key]:
                 if not mods or mods & event.mod:
-                    for key in self.listeners[event.type][event.key][mods]:
-                        self.listeners[event.type][event.key][mods][key](event)
+                    for listener in self.listeners[event.type][event.key][mods].copy():
+                        listener(event)
         except KeyError:
             logger.debug('No listeners defined for key "%s" [mods=%s, event=%s]',
                          hr_key_id(event.key), event.mod, hr_event_type(event.type))
@@ -77,8 +74,8 @@ class KeyboardManager:
         try:
             for mods in self.listeners[event.type][event.key]:
                 if not mods or mods & event.mod:
-                    for key in self.listeners[event.type][event.key][mods]:
-                        self.listeners[event.type][event.key][mods][key](event)
+                    for listener in self.listeners[event.type][event.key][mods].copy():
+                        listener(event)
         except KeyError:
             logger.debug('No listeners defined for key "%s" [mods=%s, event=%s]',
                          hr_key_id(event.key), event.mod, hr_event_type(event.type))

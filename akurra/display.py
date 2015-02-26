@@ -5,7 +5,7 @@ from injector import inject
 import pyscroll
 from pyscroll.util import PyscrollGroup
 from akurra.locals import *  # noqa
-from akurra.events import Event, EventManager
+from akurra.events import Event, TickEvent, EventManager
 
 
 logger = logging.getLogger(__name__)
@@ -19,11 +19,6 @@ def create_screen(resolution=[0, 0], flags=0, caption='akurra'):
     logger.debug('Display created [resolution=%s, flags=%s]', resolution, flags)
 
     return screen
-
-
-class FrameRenderEvent(Event):
-
-    """Frame render event."""
 
 
 class FrameRenderCompletedEvent(Event):
@@ -102,7 +97,7 @@ class SurfaceDisplayLayer(DisplayLayer):
 
     def __init__(self, size=None, position=[0, 0], flags=0, z_index=None, display=None):
         """Constructor."""
-        super(type(self), self).__init__(z_index=z_index, display=display)
+        super().__init__(z_index=z_index, display=display)
 
         if display and not size:
             size = display.screen.get_size()
@@ -112,7 +107,7 @@ class SurfaceDisplayLayer(DisplayLayer):
 
     def draw(self):
         """Draw the layer onto the display."""
-        super(type(self), self).draw()
+        super().draw()
 
         self.display.screen.blit(self.surface, self.position)
 
@@ -128,7 +123,7 @@ class ObjectsSurfaceDisplayLayer(SurfaceDisplayLayer):
 
     def __init__(self, size=None, position=[0, 0], flags=0, z_index=None, display=None):
         """Constructor."""
-        super(type(self), self).__init__(flags=flags, z_index=z_index, display=display)
+        super().__init__(flags=flags, z_index=z_index, display=display)
 
         self.objects = {}
         self.object_z_indexes = []
@@ -139,18 +134,18 @@ class ObjectsSurfaceDisplayLayer(SurfaceDisplayLayer):
             self.objects[object.z_index] = {}
             self.object_z_indexes = sorted(self.objects.keys(), key=int)
 
-        self.objects[object.z_index][id(object)] = object
+        self.objects[object.z_index][object] = 1
 
         # Set layer within object
         object.layer = self
 
-    def remove_layer(self, object):
+    def remove_object(self, object):
         """Remove an object from the layer."""
         to_remove = None
 
         # If we're able to remov an object and there are no other objects for this z_index,
         # queue the key for removal
-        if self.objects[object.z_index].pop(id(object), None) and not self.objects[object.z_index]:
+        if self.objects[object.z_index].pop(object, None) and not self.objects[object.z_index]:
             to_remove = object.z_index
 
         if to_remove:
@@ -162,19 +157,19 @@ class ObjectsSurfaceDisplayLayer(SurfaceDisplayLayer):
 
     def update(self, delta_time):
         """Compute an update to the layer's state."""
-        super(type(self), self).update(delta_time)
+        super().update(delta_time)
 
         for z_index in self.object_z_indexes:
-            for o_id in self.objects[z_index]:
-                self.objects[z_index][o_id].update(delta_time)
+            for object in self.objects[z_index]:
+                object.update(delta_time)
 
     def draw(self):
         """Draw the layer onto the display."""
         for z_index in self.object_z_indexes:
-            for o_id in self.objects[z_index]:
-                self.surface.blit(self.objects[z_index][o_id].surface, self.objects[z_index][o_id].position)
+            for object in self.objects[z_index]:
+                self.surface.blit(object.surface, object.position)
 
-        super(type(self), self).draw()
+        super().draw()
 
 
 class ScrollingMapDisplayLayer(DisplayLayer):
@@ -188,7 +183,7 @@ class ScrollingMapDisplayLayer(DisplayLayer):
 
     def __init__(self, tmx_data, default_layer=0, size=None, z_index=None, display=None):
         """Constructor."""
-        super(type(self), self).__init__(z_index=z_index, display=display)
+        super().__init__(z_index=z_index, display=display)
 
         if display and not size:
             size = display.screen.get_size()
@@ -196,7 +191,7 @@ class ScrollingMapDisplayLayer(DisplayLayer):
         # Create data source
         self.map_data = pyscroll.data.TiledMapData(tmx_data)
         # Auto-generate collision map
-        self.walls = [pygame.Rect(x.x, x.y, x.width, x.height) for x in tmx_data.objects]
+        self.collision_map = [pygame.Rect(x.x, x.y, x.width, x.height) for x in tmx_data.objects]
 
         self.map_layer = pyscroll.BufferedRenderer(self.map_data, size, clamp_camera=True)
         self.group = PyscrollGroup(map_layer=self.map_layer, default_layer=default_layer)
@@ -207,12 +202,12 @@ class ScrollingMapDisplayLayer(DisplayLayer):
         """Compute an update to the layer's state."""
         self.group.update(delta_time)
 
-        # Check if sprite bases are colliding with walls
-        # sprites must have a rect called base, and a revert_move method,
+        # Check if entity bases are colliding with the collision map
+        # Entities must have a rect called base, and a revert_move method,
         # otherwise this will fail
-        for sprite in self.group.sprites():
-            if sprite.base.collidelist(self.walls) > -1:
-                sprite.revert_move()
+        for entity in self.group.sprites():
+            if entity.base.collidelist(self.collision_map) > -1:
+                entity.revert_move()
 
     def draw(self):
         """Draw the layer onto the display."""
@@ -234,7 +229,7 @@ class DisplayManager:
             self.layers[layer.z_index] = {}
             self.layer_z_indexes = sorted(self.layers.keys(), key=int)
 
-        self.layers[layer.z_index][id(layer)] = layer
+        self.layers[layer.z_index][layer] = 1
 
         # Set display within layer
         layer.display = self
@@ -245,7 +240,7 @@ class DisplayManager:
 
         # If we're able to remove a layer and there are no other layers for this z_index,
         # queue the key for removal
-        if self.layers[layer.z_index].pop(id(layer), None) and not self.layers[layer.z_index]:
+        if self.layers[layer.z_index].pop(layer, None) and not self.layers[layer.z_index]:
             to_remove = layer.z_index
 
         if to_remove:
@@ -255,22 +250,20 @@ class DisplayManager:
         # Remove display from layer
         layer.display = None
 
-    def on_frame_render(self, event):
+    def on_tick(self, event):
         """
         Perform a frame render, updating the contents of the entire display.
 
         Internally, this will render all layers and perform a screen update.
         See also http://www.pygame.org/docs/ref/display.html#pygame.display.flip
 
-        :param event: FrameRenderEvent
+        :param event: TickEvent
 
         """
-        delta_time = self.clock.tick(self.max_fps) / 1000
-
         for z_index in self.layer_z_indexes:
-            for l_id in self.layers[z_index]:
-                self.layers[z_index][l_id].update(delta_time)
-                self.layers[z_index][l_id].draw()
+            for layer in self.layers[z_index]:
+                layer.update(event.delta_time)
+                layer.draw()
 
         pygame.display.update()
         self.events.dispatch(FrameRenderCompletedEvent())
@@ -281,11 +274,9 @@ class DisplayManager:
         logger.debug('Initializing DisplayManager')
 
         self.events = events
-        self.events.register(FrameRenderEvent, self.on_frame_render)
+        self.events.register(TickEvent, self.on_tick)
 
         self.screen = screen
-        self.clock = clock
-        self.max_fps = max_fps
 
         self.layers = {}
         self.layer_z_indexes = []

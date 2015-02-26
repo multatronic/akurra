@@ -16,3 +16,8 @@ def hr_key_id(key_id):
         key_id = pygame.key.name(key_id)
 
     return key_id
+
+
+def fqcn(cls):
+    """Return the fully qualified class name of a class."""
+    return '%s.%s' % (cls.__module__, cls.__name__)

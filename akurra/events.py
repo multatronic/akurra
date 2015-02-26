@@ -3,7 +3,7 @@ import logging
 import pygame
 import queue
 from multiprocessing import Queue
-from akurra.utils import hr_event_type
+from akurra.utils import hr_event_type, fqcn
 
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,17 @@ class Event:
 
     def __init__(self):
         """Constructor."""
-        self.type = self.__class__.__module__ + '.' + self.__class__.__name__
+        self.type = fqcn(self.__class__)
+
+
+class TickEvent(Event):
+
+    """Tick event."""
+
+    def __init__(self, delta_time=0):
+        """Constructor."""
+        super().__init__()
+        self.delta_time = delta_time
 
 
 class EventManager:
@@ -31,14 +41,13 @@ class EventManager:
 
         """
         if type(event_type) not in [int, str]:
-            event_type = event_type.__module__ + '.' + event_type.__name__
+            event_type = fqcn(event_type)
 
         if event_type not in self.listeners:
             self.listeners[event_type] = {}
 
-        l_id = id(listener)
-        self.listeners[event_type][l_id] = listener
-        logger.debug('Registered listener for event type "%s" [id=%s]', hr_event_type(event_type), l_id)
+        self.listeners[event_type][listener] = 1
+        logger.debug('Registered listener for event type "%s"', hr_event_type(event_type))
 
     def unregister(self, listener):
         """
@@ -47,11 +56,9 @@ class EventManager:
         :param listener: A listener to unregister.
 
         """
-        l_id = id(listener)
-
         for event_type in self.listeners:
-            if self.listeners[event_type].pop(l_id, None):
-                logger.debug('Unregistered listener for event type "%s" [id=%s]', hr_event_type(event_type), l_id)
+            if self.listeners[event_type].pop(listener, None):
+                logger.debug('Unregistered listener for event type "%s"', hr_event_type(event_type))
 
     def dispatch(self, event):
         """
@@ -70,8 +77,8 @@ class EventManager:
 
         """
         try:
-            for key in self.listeners[event.type]:
-                self.listeners[event.type][key](event)
+            for listener in self.listeners[event.type]:
+                listener(event)
         except KeyError:
             logger.debug('No listeners defined for event "%s"', hr_event_type(event.type))
             pass
