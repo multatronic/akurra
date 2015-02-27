@@ -11,7 +11,7 @@ from injector import Injector, inject, singleton
 
 from akurra.locals import *  # noqa
 
-from akurra.events import EventManager, TickEvent
+from akurra.events import EventManager, TickEvent, ShutdownEvent
 from akurra.modules import ModuleManager
 from akurra.logger import configure_logging
 
@@ -83,6 +83,7 @@ class Akurra:
         self.modules.load()
         self.modules.start()
 
+        # create states, set introscreen as initial state
         game_realm = self.container.get(DemoGameState)
         intro_screen = self.container.get(DemoIntroScreen)
 
@@ -108,8 +109,13 @@ class Akurra:
 
         self.states.close()
 
+    def on_shutdown(self, event):
+        """Handle a shutdown event."""
+        logger.debug('Received shutdown event, shutting down')
+        self.stop()
+
     def handle_signal(self, signum, frame):
-        """Handle a signal."""
+        """Handle a shutdown signal."""
         logger.debug('Received signal, shutting down [signal=%s]', signum)
         self.stop()
 
@@ -135,6 +141,7 @@ class Akurra:
         # Handle shutdown signals properly
         signal.signal(signal.SIGINT, self.handle_signal)
         signal.signal(signal.SIGTERM, self.handle_signal)
+        self.events.register(ShutdownEvent, self.on_shutdown)
 
 
 def main():

@@ -4,7 +4,7 @@ import logging
 from injector import inject
 from akurra.assets import AssetManager
 from akurra.display import DisplayManager, ScrollingMapDisplayLayer, FrameRenderCompletedEvent, SurfaceDisplayLayer
-from akurra.events import EventManager
+from akurra.events import EventManager, ShutdownEvent
 from akurra.keyboard import KeyboardManager
 from akurra.entities import GameEntity
 from akurra.states import GameState, StateManager
@@ -30,7 +30,7 @@ class DemoIntroScreen(GameState):
 
     def enable(self):
         """Set up the gamestate."""
-        # listen for any key press
+        # listen for certain key presses
         self.keyboard.register(pygame.K_SPACE, self.on_key_down)
 
         # draw stuff on screen when frame render is completed
@@ -70,19 +70,25 @@ class DemoGameState(GameState):
 
     """Temporary demo middleware."""
 
-    @inject(assets=AssetManager, display=DisplayManager, keyboard=KeyboardManager)
-    def __init__(self, assets, display, keyboard):
+    @inject(assets=AssetManager, display=DisplayManager, keyboard=KeyboardManager, events=EventManager)
+    def __init__(self, assets, display, keyboard, events):
         """Constructor."""
         super().__init__()
 
+        self.events = events
         self.display = display
         self.assets = assets
         self.keyboard = keyboard
 
     def on_key_down(self, event):
         """Handle a key press."""
-        key_velocity = self.key_velocities[event.key]
-        self.player.velocity[key_velocity[0]] = key_velocity[1]
+        # exit the game if escape is pressed, otherwise move the player
+        if event.key is pygame.K_ESCAPE:
+            logger.debug("Escape pressed during demo! Dispatching shutdown event...")
+            self.events.dispatch(ShutdownEvent())
+        else:
+            key_velocity = self.key_velocities[event.key]
+            self.player.velocity[key_velocity[0]] = key_velocity[1]
 
     def on_key_up(self, event):
         """Handle a key release."""
@@ -112,8 +118,11 @@ class DemoGameState(GameState):
         }
 
         pygame.key.set_repeat(100, 100)
+
+        # register for all relevant keys
         [self.keyboard.register(x, self.on_key_down, event_type=pygame.KEYDOWN) for x in self.key_velocities.keys()]
         [self.keyboard.register(x, self.on_key_up, event_type=pygame.KEYUP) for x in self.key_velocities.keys()]
+        self.keyboard.register(pygame.K_ESCAPE, self.on_key_down)
 
     def disable(self):
         """Stop the gamestate."""
