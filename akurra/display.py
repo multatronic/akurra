@@ -265,7 +265,7 @@ class DisplayManager:
                 layer.update(event.delta_time)
                 layer.draw()
 
-        pygame.display.update()
+        pygame.display.flip()
         self.events.dispatch(FrameRenderCompletedEvent())
 
     @inject(events=EventManager, screen=DisplayScreen, clock=DisplayClock, max_fps=DisplayMaxFPS)
