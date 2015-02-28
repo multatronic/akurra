@@ -4,10 +4,11 @@ import logging
 from injector import inject
 from akurra.assets import AssetManager
 from akurra.display import DisplayManager, ScrollingMapDisplayLayer, FrameRenderCompletedEvent, SurfaceDisplayLayer
-from akurra.events import EventManager, ShutdownEvent
+from akurra.events import EventManager
 from akurra.keyboard import KeyboardManager
 from akurra.entities import GameEntity
 from akurra.states import GameState, StateManager
+from akurra.locals import *  # noqa
 
 
 logger = logging.getLogger(__name__)
@@ -70,8 +71,9 @@ class DemoGameState(GameState):
 
     """Temporary demo middleware."""
 
-    @inject(assets=AssetManager, display=DisplayManager, keyboard=KeyboardManager, events=EventManager)
-    def __init__(self, assets, display, keyboard, events):
+    @inject(assets=AssetManager, display=DisplayManager, keyboard=KeyboardManager, events=EventManager,
+            shutdown=ShutdownFlag)
+    def __init__(self, assets, display, keyboard, events, shutdown):
         """Constructor."""
         super().__init__()
 
@@ -79,21 +81,22 @@ class DemoGameState(GameState):
         self.display = display
         self.assets = assets
         self.keyboard = keyboard
+        self.shutdown = shutdown
 
-    def on_key_down(self, event):
-        """Handle a key press."""
-        # exit the game if escape is pressed, otherwise move the player
-        if event.key is pygame.K_ESCAPE:
-            logger.debug("Escape pressed during demo! Dispatching shutdown event...")
-            self.events.dispatch(ShutdownEvent())
-        else:
-            key_velocity = self.key_velocities[event.key]
-            self.player.velocity[key_velocity[0]] = key_velocity[1]
+    def on_move_start(self, event):
+        """Handle the starting of movement."""
+        key_velocity = self.key_velocities[event.key]
+        self.player.velocity[key_velocity[0]] = key_velocity[1]
 
-    def on_key_up(self, event):
-        """Handle a key release."""
+    def on_move_stop(self, event):
+        """Handle the stopping of movement."""
         key_velocity = self.key_velocities[event.key]
         self.player.velocity[key_velocity[0]] = 0
+
+    def on_quit(self, event):
+        """Handle quitting."""
+        logger.debug("Escape pressed during demo! Setting shutdown flag...")
+        self.shutdown.set()
 
     def enable(self):
         """Initialize the gamestate."""
@@ -120,11 +123,12 @@ class DemoGameState(GameState):
         pygame.key.set_repeat(100, 100)
 
         # register for all relevant keys
-        [self.keyboard.register(x, self.on_key_down, event_type=pygame.KEYDOWN) for x in self.key_velocities.keys()]
-        [self.keyboard.register(x, self.on_key_up, event_type=pygame.KEYUP) for x in self.key_velocities.keys()]
-        self.keyboard.register(pygame.K_ESCAPE, self.on_key_down)
+        [self.keyboard.register(x, self.on_move_start, event_type=pygame.KEYDOWN) for x in self.key_velocities.keys()]
+        [self.keyboard.register(x, self.on_move_stop, event_type=pygame.KEYUP) for x in self.key_velocities.keys()]
+        self.keyboard.register(pygame.K_ESCAPE, self.on_quit)
 
     def disable(self):
         """Stop the gamestate."""
-        self.keyboard.unregister(self.on_key_down)
-        self.keyboard.unregister(self.on_key_up)
+        self.keyboard.unregister(self.on_move_start)
+        self.keyboard.unregister(self.on_move_stop)
+        self.keyboard.unregister(self.on_quit)

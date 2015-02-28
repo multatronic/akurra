@@ -11,7 +11,7 @@ from injector import Injector, inject, singleton
 
 from akurra.locals import *  # noqa
 
-from akurra.events import EventManager, TickEvent, ShutdownEvent
+from akurra.events import EventManager, TickEvent
 from akurra.modules import ModuleManager
 from akurra.logger import configure_logging
 
@@ -99,6 +99,8 @@ class Akurra:
 
             pygame.time.wait(3)
 
+        self.stop()
+
     def stop(self):
         """Stop."""
         logger.info('Stopping..')
@@ -109,15 +111,10 @@ class Akurra:
 
         self.states.close()
 
-    def on_shutdown(self, event):
-        """Handle a shutdown event."""
-        logger.debug('Received shutdown event, shutting down')
-        self.stop()
-
     def handle_signal(self, signum, frame):
         """Handle a shutdown signal."""
-        logger.debug('Received signal, shutting down [signal=%s]', signum)
-        self.stop()
+        logger.debug('Received signal, setting shutdown flag [signal=%s]', signum)
+        self.shutdown.set()
 
     @inject(modules=ModuleManager, events=EventManager, display=DisplayManager,
             debugger=DebugManager, keyboard=KeyboardManager, states=StateManager,
@@ -141,7 +138,6 @@ class Akurra:
         # Handle shutdown signals properly
         signal.signal(signal.SIGINT, self.handle_signal)
         signal.signal(signal.SIGTERM, self.handle_signal)
-        self.events.register(ShutdownEvent, self.on_shutdown)
 
 
 def main():
