@@ -3,7 +3,7 @@ import logging
 import pygame
 from injector import inject
 from akurra.events import EventManager
-from akurra.utils import hr_key_id, hr_event_type
+from akurra.utils import hr_key_id, hr_event_type, fqcn
 
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,13 @@ logger = logging.getLogger(__name__)
 
 class KeyboardManager:
 
-    """Keyboard manager."""
+    """
+    Keyboard manager.
+
+    The keyboard manager is in charge of managing key bindings and acting upon
+    key presses or releases.
+
+    """
 
     def register(self, key_id, listener, mods=0, event_type=pygame.KEYDOWN):
         """
@@ -24,7 +30,7 @@ class KeyboardManager:
 
         """
         if type(event_type) not in [int, str]:
-            event_type = event_type.__module__ + '.' + event_type.__name__
+            event_type = fqcn(event_type)
 
         if event_type not in self.listeners:
             self.listeners[event_type] = {}
