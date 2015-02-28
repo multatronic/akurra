@@ -104,7 +104,7 @@ class DemoGameState(GameState):
         self.layer = ScrollingMapDisplayLayer(self.tmx_data, default_layer=2, display=self.display)
         self.display.add_layer(self.layer)
 
-        self.image = self.assets.get_image('pyscroll_demo/hero.png')
+        self.image = self.assets.get_image('pyscroll_demo/hero.png', colorkey=[0, 0, 0])
         self.player = GameEntity(self.image)
         self.player.position = self.layer.map_layer.rect.center
 

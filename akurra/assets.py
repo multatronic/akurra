@@ -24,7 +24,7 @@ class AssetManager:
         """
         return os.path.join(self.base_path, asset_path)
 
-    def get_image(self, asset_path):
+    def get_image(self, asset_path, colorkey=None, alpha=False):
         """
         Return an image by processing an asset.
 
@@ -32,7 +32,11 @@ class AssetManager:
 
         """
         path = self.get_path(asset_path)
-        image = pygame.image.load(path).convert_alpha()
+        image = pygame.image.load(path)
+        image = image.convert_alpha() if alpha else image.convert()
+
+        if colorkey:
+            image.set_colorkey(colorkey)
 
         return image
 
