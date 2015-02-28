@@ -96,10 +96,7 @@ class EventManager:
         except queue.Empty:
             pass
 
-        event = pygame.event.poll()
-
-        if event.type != pygame.NOEVENT:
-            self.handle(event)
+        [self.handle(x) for x in pygame.event.get()]
 
     def __init__(self):
         """Constructor."""
