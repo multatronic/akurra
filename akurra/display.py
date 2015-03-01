@@ -30,13 +30,18 @@ class DisplayLayer:
 
     """Display layer."""
 
-    def __init__(self, z_index=None, display=None):
+    def __init__(self, size=None, position=[0, 0], z_index=None, display=None):
         """Constructor."""
         if not z_index:
             z_index = 100
 
+        if display and not size:
+            size = display.screen.get_size()
+
         self._z_index = z_index
         self._display = display
+        self.size = size
+        self.position = position
 
     @property
     def display(self):
@@ -85,6 +90,15 @@ class DisplayLayer:
         """Draw the layer onto the display."""
         # Do stuff here
 
+    def resize(self, size):
+        """
+        Resize the layer.
+
+        :param list size: New layer size, in pixels.
+
+        """
+        self.size = size
+
 
 class SurfaceDisplayLayer(DisplayLayer):
 
@@ -97,19 +111,21 @@ class SurfaceDisplayLayer(DisplayLayer):
 
     def __init__(self, size=None, position=[0, 0], flags=0, z_index=None, display=None):
         """Constructor."""
-        super().__init__(z_index=z_index, display=display)
+        super().__init__(size=size, position=position, z_index=z_index, display=display)
 
-        if display and not size:
-            size = display.screen.get_size()
-
-        self.surface = pygame.Surface(size, flags=flags)
-        self.position = position
+        self.surface = pygame.Surface(self.size, flags=flags)
 
     def draw(self):
         """Draw the layer onto the display."""
         super().draw()
 
         self.display.screen.blit(self.surface, self.position)
+
+    def resize(self, size):
+        """Resize the layer."""
+        self.surface = pygame.transform.scale(self.surface, size)
+
+        super().resize(size)
 
 
 class ObjectsSurfaceDisplayLayer(SurfaceDisplayLayer):
@@ -123,7 +139,7 @@ class ObjectsSurfaceDisplayLayer(SurfaceDisplayLayer):
 
     def __init__(self, size=None, position=[0, 0], flags=0, z_index=None, display=None):
         """Constructor."""
-        super().__init__(flags=flags, z_index=z_index, display=display)
+        super().__init__(size=size, position=position, flags=flags, z_index=z_index, display=display)
 
         self.objects = {}
         self.object_z_indexes = []
@@ -183,17 +199,15 @@ class ScrollingMapDisplayLayer(DisplayLayer):
 
     def __init__(self, tmx_data, default_layer=0, size=None, z_index=None, display=None):
         """Constructor."""
-        super().__init__(z_index=z_index, display=display)
-
-        if display and not size:
-            size = display.screen.get_size()
+        super().__init__(size=size, z_index=z_index, display=display)
 
         # Create data source
         self.map_data = pyscroll.data.TiledMapData(tmx_data)
         # Auto-generate collision map
         self.collision_map = [pygame.Rect(x.x, x.y, x.width, x.height) for x in tmx_data.objects]
 
-        self.map_layer = pyscroll.BufferedRenderer(self.map_data, size, clamp_camera=True)
+        self.map_layer = pyscroll.BufferedRenderer(self.map_data, self.size, clamp_camera=True)
+        self.surface = self.map_layer.buffer
         self.group = PyscrollGroup(map_layer=self.map_layer, default_layer=default_layer)
 
         self.center = None
@@ -217,6 +231,13 @@ class ScrollingMapDisplayLayer(DisplayLayer):
 
         # Draw the map and all sprites
         self.group.draw(self.display.screen)
+
+    def resize(self, size):
+        """Handle a resize."""
+        self.map_layer.set_size(size)
+        self.surface = self.map_layer.buffer
+
+        super().resize(size)
 
 
 class DisplayManager:
@@ -268,6 +289,16 @@ class DisplayManager:
         pygame.display.flip()
         self.events.dispatch(FrameRenderCompletedEvent())
 
+    def on_video_resize(self, event):
+        """Handle resizing of the display."""
+        old_size = pygame.display.get_surface().get_size()
+        create_screen(event.size)
+
+        for z_index in self.layers:
+            for layer in self.layers[z_index]:
+                if layer.size == old_size:
+                    layer.resize(event.size)
+
     @inject(events=EventManager, screen=DisplayScreen, clock=DisplayClock, max_fps=DisplayMaxFPS)
     def __init__(self, events, screen, clock, max_fps=240):
         """Constructor."""
@@ -275,6 +306,7 @@ class DisplayManager:
 
         self.events = events
         self.events.register(TickEvent, self.on_tick)
+        self.events.register(pygame.VIDEORESIZE, self.on_video_resize)
 
         self.screen = screen
 

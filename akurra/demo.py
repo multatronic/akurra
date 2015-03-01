@@ -58,8 +58,10 @@ class DemoIntroScreen(GameState):
             "--press the space bar--",
         ]
 
-        offset_x = 800
-        offset_y = 500
+        size = self.layer.surface.get_rect().center
+
+        offset_x = size[0] - 90
+        offset_y = size[1] - 15
         line_height = 15
 
         for t in text:
