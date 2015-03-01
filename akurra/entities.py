@@ -2,7 +2,7 @@
 import pygame
 
 
-class GameEntity(pygame.sprite.Sprite):
+class Entity(pygame.sprite.Sprite):
 
     """
     Generic game entity.
@@ -16,7 +16,7 @@ class GameEntity(pygame.sprite.Sprite):
     positioning sprites; because the values they get are 'rounded down' to
     as integers, the sprite would move faster moving left or up.
 
-    Base is 1/2 as wide as the normal rect, and 10 pixels tall.  This size
+    Core is half as wide as the normal rect, and half as tall.  This size
     allows the top of the sprite to overlap walls.
 
     There is also an old_rect that can used to reposition the sprite if it
@@ -24,44 +24,54 @@ class GameEntity(pygame.sprite.Sprite):
 
     """
 
-    def __init__(self, image, velocity=[0, 0], position=[0, 0]):
+    def __init__(self, image, position=[0, 0]):
         """Constructor."""
-        pygame.sprite.Sprite.__init__(self)
+        super().__init__()
 
-        self.velocity = velocity
-        self._position = position
-        self._old_position = self.position
+        self.position = position
+        self.position_old = list(self.position)
 
         self.image = image
         self.rect = self.image.get_rect()
-        self.base = pygame.Rect(position[0], position[1], self.rect.width * 0.5, 10)
+        self.core = pygame.Rect(position[0], position[1], self.rect.width * 0.5, 5)
 
     @property
     def position(self):
-        """Return position."""
-        return list(self._position)
+        """Set position."""
+        return self._position
 
     @position.setter
     def position(self, value):
-        """Set position."""
+        """Return position."""
         self._position = list(value)
+
+
+class Actor(Entity):
+
+    """Generic game actor."""
+
+    def __init__(self, image, velocity=[0, 0], position=[0, 0]):
+        """Constructor."""
+        super().__init__(image, position)
+
+        self.velocity = velocity
 
     def update(self, delta_time):
         """
-        Compute an update to the entity's state.
+        Compute an update to the actor's state.
 
         :param delta_time: Time delta to compute the state update for, in s.
 
         """
-        self._old_position = self._position[:]
-        self._position[0] += self.velocity[0] * delta_time
-        self._position[1] += self.velocity[1] * delta_time
+        self.position_old = list(self.position)
+        self.position[0] += self.velocity[0] * delta_time
+        self.position[1] += self.velocity[1] * delta_time
 
-        self.rect.topleft = self._position
-        self.base.midbottom = self.rect.midbottom
+        self.rect.topleft = list(self.position)
+        self.core.midbottom = self.rect.midbottom
 
     def revert_move(self):
         """Revert movement of an entity."""
-        self._position = self._old_position
-        self.rect.topleft = self._position
-        self.base.midbottom = self.rect.midbottom
+        self.position = self.position_old
+        self.rect.topleft = list(self.position)
+        self.core.midbottom = self.rect.midbottom

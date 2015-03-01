@@ -217,10 +217,10 @@ class ScrollingMapDisplayLayer(DisplayLayer):
         self.group.update(delta_time)
 
         # Check if entity bases are colliding with the collision map
-        # Entities must have a rect called base, and a revert_move method,
+        # Entities must have a rect called core, and a revert_move method,
         # otherwise this will fail
         for entity in self.group.sprites():
-            if entity.base.collidelist(self.collision_map) > -1:
+            if entity.core.collidelist(self.collision_map) > -1:
                 entity.revert_move()
 
     def draw(self):
