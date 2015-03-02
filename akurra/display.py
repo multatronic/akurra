@@ -11,16 +11,6 @@ from akurra.events import Event, TickEvent, EventManager
 logger = logging.getLogger(__name__)
 
 
-@inject(resolution=DisplayResolution, flags=DisplayFlags, caption=DisplayCaption)
-def create_screen(resolution=[0, 0], flags=0, caption='akurra'):
-    """Create and return a screen with a few options."""
-    screen = pygame.display.set_mode(resolution, flags)
-    pygame.display.set_caption(caption)
-    logger.debug('Display created [resolution=%s, flags=%s]', resolution, flags)
-
-    return screen
-
-
 class FrameRenderCompletedEvent(Event):
 
     """Frame render completion event."""
@@ -30,28 +20,23 @@ class DisplayLayer:
 
     """Display layer."""
 
-    def __init__(self, size=None, position=[0, 0], z_index=None, display=None):
+    def __init__(self, size=None, flags=0, position=[0, 0], z_index=None):
         """Constructor."""
         if not z_index:
             z_index = 100
 
-        if display and not size:
-            size = display.screen.get_size()
+        if not size:
+            info = pygame.display.Info()
+            size = info.current_w, info.current_h
 
         self._z_index = z_index
-        self._display = display
+        self.display = None
+
         self.size = size
         self.position = position
+        self.flags = flags
 
-    @property
-    def display(self):
-        """Return display."""
-        return self._display
-
-    @display.setter
-    def display(self, value):
-        """Set display."""
-        self._display = value
+        self.surface = pygame.Surface(self.size, flags=self.flags)
 
     @property
     def z_index(self):
@@ -73,8 +58,6 @@ class DisplayLayer:
         if display:
             display.add(self)
 
-        self._z_index = value
-
     def update(self, delta_time):
         """
         Compute an update to the layer's state.
@@ -84,11 +67,11 @@ class DisplayLayer:
         :param delta_time: Time delta to compute the state update for, in s.
 
         """
-        # Do stuff here
+        pass
 
-    def draw(self):
-        """Draw the layer onto the display."""
-        # Do stuff here
+    def draw(self, surface):
+        """Draw the layer onto a surface."""
+        surface.blit(self.surface, self.position)
 
     def resize(self, size):
         """
@@ -98,48 +81,21 @@ class DisplayLayer:
 
         """
         self.size = size
+        self.surface = pygame.transform.scale(self.surface, self.size)
 
 
-class SurfaceDisplayLayer(DisplayLayer):
-
-    """
-    Surface display layer.
-
-    A display layer for rendering a surface.
+class ObjectsDisplayLayer(DisplayLayer):
 
     """
-
-    def __init__(self, size=None, position=[0, 0], flags=0, z_index=None, display=None):
-        """Constructor."""
-        super().__init__(size=size, position=position, z_index=z_index, display=display)
-
-        self.surface = pygame.Surface(self.size, flags=flags)
-
-    def draw(self):
-        """Draw the layer onto the display."""
-        super().draw()
-
-        self.display.screen.blit(self.surface, self.position)
-
-    def resize(self, size):
-        """Resize the layer."""
-        self.surface = pygame.transform.scale(self.surface, size)
-
-        super().resize(size)
-
-
-class ObjectsSurfaceDisplayLayer(SurfaceDisplayLayer):
-
-    """
-    Objects surface display layer.
+    Objects display layer.
 
     A display layer for rendering display objects with surfaces onto a root surface.
 
     """
 
-    def __init__(self, size=None, position=[0, 0], flags=0, z_index=None, display=None):
+    def __init__(self, **kwargs):
         """Constructor."""
-        super().__init__(size=size, position=position, flags=flags, z_index=z_index, display=display)
+        super().__init__(kwargs)
 
         self.objects = {}
         self.object_z_indexes = []
@@ -179,13 +135,13 @@ class ObjectsSurfaceDisplayLayer(SurfaceDisplayLayer):
             for object in self.objects[z_index]:
                 object.update(delta_time)
 
-    def draw(self):
-        """Draw the layer onto the display."""
+    def draw(self, surface):
+        """Draw the layer onto a surface."""
         for z_index in self.object_z_indexes:
             for object in self.objects[z_index]:
-                self.surface.blit(object.surface, object.position)
+                object.draw(self.surface)
 
-        super().draw()
+        super().draw(surface)
 
 
 class ScrollingMapDisplayLayer(DisplayLayer):
@@ -197,9 +153,9 @@ class ScrollingMapDisplayLayer(DisplayLayer):
 
     """
 
-    def __init__(self, tmx_data, default_layer=0, size=None, z_index=None, display=None):
+    def __init__(self, tmx_data, default_layer=0, **kwargs):
         """Constructor."""
-        super().__init__(size=size, z_index=z_index, display=display)
+        super().__init__(kwargs)
 
         # Create data source
         self.map_data = pyscroll.data.TiledMapData(tmx_data)
@@ -214,6 +170,8 @@ class ScrollingMapDisplayLayer(DisplayLayer):
 
     def update(self, delta_time):
         """Compute an update to the layer's state."""
+        super().update(delta_time)
+
         self.group.update(delta_time)
 
         # Check if entity bases are colliding with the collision map
@@ -223,14 +181,16 @@ class ScrollingMapDisplayLayer(DisplayLayer):
             if entity.core.collidelist(self.collision_map) > -1:
                 entity.revert_move()
 
-    def draw(self):
-        """Draw the layer onto the display."""
+    def draw(self, surface):
+        """Draw the layer onto a surface."""
+        super().draw(surface)
+
         # Center the map/screen if needed
         if self.center:
             self.group.center(self.center.rect.center)
 
         # Draw the map and all sprites
-        self.group.draw(self.display.screen)
+        self.group.draw(surface)
 
     def resize(self, size):
         """Handle a resize."""
@@ -284,23 +244,32 @@ class DisplayManager:
         for z_index in self.layer_z_indexes:
             for layer in self.layers[z_index]:
                 layer.update(event.delta_time)
-                layer.draw()
+                layer.draw(self.screen)
 
         pygame.display.flip()
         self.events.dispatch(FrameRenderCompletedEvent())
 
     def on_video_resize(self, event):
         """Handle resizing of the display."""
-        old_size = pygame.display.get_surface().get_size()
-        create_screen(event.size)
+        old_size = self.screen.get_size()
+        self.resolution = event.size
+        self.screen = self.create_screen()
 
         for z_index in self.layers:
             for layer in self.layers[z_index]:
                 if layer.size == old_size:
                     layer.resize(event.size)
 
-    @inject(events=EventManager, screen=DisplayScreen, clock=DisplayClock, max_fps=DisplayMaxFPS)
-    def __init__(self, events, screen, clock, max_fps=240):
+    def create_screen(self):
+        """Create and return a screen with a few options."""
+        screen = pygame.display.set_mode(self.resolution, self.flags)
+        pygame.display.set_caption(self.caption)
+        logger.debug('Display created [resolution=%s, flags=%s]', self.resolution, self.flags)
+
+        return screen
+
+    @inject(events=EventManager, resolution=DisplayResolution, flags=DisplayFlags, caption=DisplayCaption)
+    def __init__(self, events, resolution=[0, 0], flags=0, caption='akurra'):
         """Constructor."""
         logger.debug('Initializing DisplayManager')
 
@@ -308,7 +277,10 @@ class DisplayManager:
         self.events.register(TickEvent, self.on_tick)
         self.events.register(pygame.VIDEORESIZE, self.on_video_resize)
 
-        self.screen = screen
+        self.resolution = resolution
+        self.flags = flags
+        self.caption = caption
+        self.screen = self.create_screen()
 
         self.layers = {}
         self.layer_z_indexes = []

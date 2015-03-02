@@ -3,7 +3,7 @@ import pygame
 import logging
 from injector import inject
 from akurra.assets import AssetManager
-from akurra.display import DisplayManager, ScrollingMapDisplayLayer, FrameRenderCompletedEvent, SurfaceDisplayLayer
+from akurra.display import DisplayManager, ScrollingMapDisplayLayer, FrameRenderCompletedEvent, DisplayLayer
 from akurra.events import EventManager
 from akurra.keyboard import KeyboardManager
 from akurra.entities import Actor
@@ -36,7 +36,7 @@ class DemoIntroScreen(GameState):
 
         # draw stuff on screen when frame render is completed
         self.events.register(FrameRenderCompletedEvent, self.on_frame_render_completed)
-        self.layer = SurfaceDisplayLayer(display=self.display)
+        self.layer = DisplayLayer()
         self.display.add_layer(self.layer)
 
     def disable(self):
@@ -103,7 +103,7 @@ class DemoGameState(GameState):
     def enable(self):
         """Initialize the gamestate."""
         self.tmx_data = self.assets.get_tmx_data('pyscroll_demo/grasslands.tmx')
-        self.layer = ScrollingMapDisplayLayer(self.tmx_data, default_layer=2, display=self.display)
+        self.layer = ScrollingMapDisplayLayer(self.tmx_data, default_layer=2)
         self.display.add_layer(self.layer)
 
         self.image = self.assets.get_image('pyscroll_demo/hero.png', colorkey=[0, 0, 0])

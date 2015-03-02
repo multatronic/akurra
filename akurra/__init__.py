@@ -15,7 +15,7 @@ from akurra.events import EventManager, TickEvent
 from akurra.modules import ModuleManager
 from akurra.logger import configure_logging
 
-from akurra.display import DisplayManager, create_screen
+from akurra.display import DisplayManager
 from akurra.debug import DebugManager
 from akurra.keyboard import KeyboardManager
 from akurra.states import StateManager
@@ -49,7 +49,6 @@ def build_container(binder):
     binder.bind(DisplayMaxFPS, to=60)
     binder.bind(DisplayCaption, to='Akurra DEV')
     binder.bind(DisplayClock, to=pygame.time.Clock, scope=singleton)
-    binder.bind(DisplayScreen, to=create_screen, scope=singleton)
 
     # Events
     binder.bind(EventManager, scope=singleton)

@@ -4,7 +4,7 @@ import pygame
 from injector import inject
 from akurra.logger import configure_logging
 from akurra.events import EventManager
-from akurra.display import FrameRenderCompletedEvent, DisplayManager, SurfaceDisplayLayer
+from akurra.display import FrameRenderCompletedEvent, DisplayManager, DisplayLayer
 from akurra.keyboard import KeyboardManager
 from akurra.locals import *  # noqa
 
@@ -81,7 +81,7 @@ class DebugManager:
         self.display = display
         self.font = pygame.font.SysFont('monospace', 14)
 
-        self.layer = SurfaceDisplayLayer(size=[300, 190], position=[5, 5], flags=pygame.SRCALPHA, z_index=9999)
+        self.layer = DisplayLayer(size=[300, 190], position=[5, 5], flags=pygame.SRCALPHA, z_index=9999)
 
         if self.debug.value:
             self.enable()
