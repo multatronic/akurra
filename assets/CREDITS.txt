@@ -1,0 +1,12 @@
+### assets/entities/{hero,heroine}/*
+
+* _Author:_ Clint Bellanger
+* _Source_: http://opengameart.org/content/isometric-hero-and-heroine
+* _License:_ CC-BY 3.0
+* _Additional credits:_
+
+    Distressed Leather (used in Leather Armor) by D. Sharon Pruitt (CC-BY)
+    http://www.flickr.com/photos/pinksherbet/3005071597/
+
+    A few weapons loosely inspired by Naraphim (CC-BY-SA)
+    http://naraphim.deviantart.com/art/Weapon-Set-Complete-2007-73660253

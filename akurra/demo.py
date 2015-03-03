@@ -6,7 +6,7 @@ from akurra.assets import AssetManager
 from akurra.display import DisplayManager, ScrollingMapDisplayLayer, FrameRenderCompletedEvent, DisplayLayer
 from akurra.events import EventManager
 from akurra.keyboard import KeyboardManager
-from akurra.entities import Actor
+from akurra.entities import Player
 from akurra.states import GameState, StateManager
 from akurra.locals import *  # noqa
 
@@ -106,9 +106,7 @@ class DemoGameState(GameState):
         self.layer = ScrollingMapDisplayLayer(self.tmx_data, default_layer=2)
         self.display.add_layer(self.layer)
 
-        self.image = self.assets.get_image('pyscroll_demo/hero.png', colorkey=[0, 0, 0])
-        self.player = Actor(self.image)
-        self.player.position = self.layer.map_layer.rect.center
+        self.player = Player(position=self.layer.map_layer.rect.center)
 
         self.layer.group.add(self.player)
         self.layer.center = self.player
