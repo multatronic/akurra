@@ -183,8 +183,6 @@ class ScrollingMapDisplayLayer(DisplayLayer):
 
     def draw(self, surface):
         """Draw the layer onto a surface."""
-        super().draw(surface)
-
         # Center the map/screen if needed
         if self.center:
             self.group.center(self.center.rect.center)
