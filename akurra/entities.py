@@ -44,7 +44,7 @@ class Entity(pygame.sprite.Sprite):
 
     """
 
-    def __init__(self, image, position=[0, 0], animations={}):
+    def __init__(self, image, position=[0, 0], core=None, animations={}):
         """Constructor."""
         super().__init__()
 
@@ -53,7 +53,11 @@ class Entity(pygame.sprite.Sprite):
 
         self.image = image
         self.rect = self.image.get_rect()
-        self.core = pygame.Rect(position[0], position[1], self.rect.width * 0.75, 10)
+
+        if not core:
+            core = pygame.Rect(position[0], position[1], self.rect.width * 0.25, self.rect.height * 0.25)
+
+        self.core = core
 
         self.animations = animations
 
@@ -107,7 +111,10 @@ class Player(Actor):
 
     def __init__(self, **kwargs):
         """Constructor."""
-        super().__init__(image=pygame.Surface(self.sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA), **kwargs)
+        image = pygame.Surface(self.sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
+        core = pygame.Rect(0, 0, self.sprite_size[0] / 4, self.sprite_size[1] / 8)
+
+        super().__init__(image=image, core=core, **kwargs)
 
         from . import container
 
@@ -164,3 +171,6 @@ class Player(Actor):
 
         self.image.fill([0, 0, 0, 0])
         self.image.blit(animation.get_frame(), [0, 0])
+
+        self.core.center = self.rect.center
+        self.core.centery += (self.rect.height / 4) - (self.core.height / 2)
