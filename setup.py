@@ -37,8 +37,7 @@ setup(
         'colorlog',
         'injector',
         'pytmx',
-        'pyscroll',
-        'pyganim'
+        'pyscroll'
     ],
     dependency_links=[
     ],
