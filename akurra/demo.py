@@ -8,6 +8,7 @@ from akurra.events import EventManager
 from akurra.keyboard import KeyboardManager
 from akurra.entities import Actor
 from akurra.states import GameState, StateManager
+from akurra.audio import AudioManager
 from akurra.locals import *  # noqa
 
 
@@ -74,13 +75,14 @@ class DemoGameState(GameState):
     """Temporary demo middleware."""
 
     @inject(assets=AssetManager, display=DisplayManager, keyboard=KeyboardManager, events=EventManager,
-            shutdown=ShutdownFlag)
-    def __init__(self, assets, display, keyboard, events, shutdown):
+            shutdown=ShutdownFlag, audio=AudioManager)
+    def __init__(self, assets, display, keyboard, events, shutdown, audio):
         """Constructor."""
         super().__init__()
 
         self.events = events
         self.display = display
+        self.audio = audio
         self.assets = assets
         self.keyboard = keyboard
         self.shutdown = shutdown
@@ -113,6 +115,9 @@ class DemoGameState(GameState):
         self.layer.group.add(self.player)
         self.layer.center = self.player
 
+        # Load audio files
+        self.audio.add_music(self.assets.get_path("pyscroll_demo/audio/music/drums_of_the_deep.mp3"), "world01")
+
         player_speed = 400
 
         self.key_velocities = {
@@ -128,6 +133,8 @@ class DemoGameState(GameState):
         [self.keyboard.register(x, self.on_move_start, event_type=pygame.KEYDOWN) for x in self.key_velocities.keys()]
         [self.keyboard.register(x, self.on_move_stop, event_type=pygame.KEYUP) for x in self.key_velocities.keys()]
         self.keyboard.register(pygame.K_ESCAPE, self.on_quit)
+
+        self.audio.play_music("world01")
 
     def disable(self):
         """Stop the gamestate."""
