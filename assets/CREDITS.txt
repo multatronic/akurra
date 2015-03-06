@@ -11,7 +11,7 @@
     A few weapons loosely inspired by Naraphim (CC-BY-SA)
     http://naraphim.deviantart.com/art/Weapon-Set-Complete-2007-73660253
 
-### assets/sprites/lxc_medieval_fantasy_character_sprites/*
+### assets/sprites/lpc_medieval_fantasy_character_sprites/*
 
 * _Author:_ wulax
 * _Source_: http://opengameart.org/content/lpc-medieval-fantasy-character-sprites
