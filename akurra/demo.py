@@ -87,6 +87,11 @@ class DemoGameState(GameState):
         self.keyboard = keyboard
         self.shutdown = shutdown
 
+    def play_sound_effect(self, event):
+        """Place a sound."""
+        logger.info("Attempting to play sound effect.")
+        self.audio.play_sound("sfx")
+
     def on_move_start(self, event):
         """Handle the starting of movement."""
         key_velocity = self.key_velocities[event.key]
@@ -116,7 +121,11 @@ class DemoGameState(GameState):
         self.layer.center = self.player
 
         # Load audio files
-        self.audio.add_music(self.assets.get_path("pyscroll_demo/audio/music/drums_of_the_deep.mp3"), "world01")
+        # music
+        self.audio.add_music("pyscroll_demo/audio/music/drums_of_the_deep.mp3", "world01")
+
+        # sound effects
+        self.audio.add_sound("pyscroll_demo/audio/sfx/test.ogg", "sfx")
 
         player_speed = 400
 
@@ -133,7 +142,9 @@ class DemoGameState(GameState):
         [self.keyboard.register(x, self.on_move_start, event_type=pygame.KEYDOWN) for x in self.key_velocities.keys()]
         [self.keyboard.register(x, self.on_move_stop, event_type=pygame.KEYUP) for x in self.key_velocities.keys()]
         self.keyboard.register(pygame.K_ESCAPE, self.on_quit)
+        self.keyboard.register(pygame.K_SPACE, self.play_sound_effect)
 
+        # start playing the background music
         self.audio.play_music("world01")
 
     def disable(self):

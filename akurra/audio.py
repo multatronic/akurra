@@ -2,7 +2,7 @@
 import logging
 import pygame
 from injector import inject
-from akurra.events import EventManager
+from akurra.assets import AssetManager
 
 
 logger = logging.getLogger(__name__)
@@ -13,31 +13,36 @@ class AudioManager:
     """
     Audio manager.
 
-    The audio manager is in charge of playing music and sounds.
+    The audio manager is in charge of playing music and sound.
 
     """
 
-    @inject(events=EventManager)
-    def __init__(self, events):
+    @inject(assets=AssetManager)
+    def __init__(self, assets):
         """Constructor."""
         logger.debug('Initializing AudioManager')
 
-        self.sounds = {}
+        self.assets = assets
+        self.sound = {}
         self.music = {}
 
-    def add_sound(self, sound, name):
+    def add_sound(self, relative_path, name):
         """Add a sound."""
-        self.sounds[name] = sound
+        # TODO add checks for invalid path
+        relative_path = "pyscroll_demo/audio/sfx/test.ogg"
+        sound = self.assets.get_sound(relative_path)
+        self.sound[name] = sound
         logger.debug('Added sound "%s"', name)
 
     def remove_sound(self, name):
         """Remove a state."""
-        self.sounds.pop(name, None)
+        self.sound.pop(name, None)
         logger.debug('Removed sound "%s"', name)
 
-    def add_music(self, file_path, name):
+    def add_music(self, relative_path, name):
         """Add a music path and name."""
-        self.music[name] = file_path
+        absolute_path = self.assets.get_path(relative_path)
+        self.music[name] = absolute_path
         logger.debug('Added music "%s"', name)
 
     def remove_music(self, name):
@@ -58,12 +63,21 @@ class AudioManager:
 
     def stop_music():
         """Stop playing background music."""
+        logger.debug("Stopping background music.")
         pygame.mixer.music.stop()
 
     def play_sound(self, name):
         """Play sound effect."""
-        if name in self.music:
+        if name in self.sound:
             logger.debug('Playing sound "%s"', name)
-            self.music[name].play()
+            self.sound[name].play()
         else:
-            logger.debug("Attempted to play non-extant sound file!")
+            logger.debug("Attempted to play non-extant sound file !")
+
+    def stop_sound(self, name):
+        """Stop sound effect."""
+        if name in self.music:
+            logger.debug('Stopping sound "%s"', name)
+            self.music[name].stop()
+        else:
+            logger.debug("Attempted to stop non-extant sound file!")
