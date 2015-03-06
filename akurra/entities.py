@@ -118,10 +118,11 @@ class Player(Actor):
 
         from . import container
 
-        armor = container.get(AssetManager).get_image('entities/hero/steel_armor.png', alpha=True)
-        head = container.get(AssetManager).get_image('entities/hero/male_head2.png', alpha=True)
-        shield = container.get(AssetManager).get_image('entities/hero/shield.png', alpha=True)
-        sword = container.get(AssetManager).get_image('entities/hero/longsword.png', alpha=True)
+        base_path = 'sprites/isometric_hero_and_heroine/hero'
+        armor = container.get(AssetManager).get_image(base_path + '/steel_armor.png', alpha=True)
+        head = container.get(AssetManager).get_image(base_path + '/male_head2.png', alpha=True)
+        shield = container.get(AssetManager).get_image(base_path + '/shield.png', alpha=True)
+        sword = container.get(AssetManager).get_image(base_path + '/longsword.png', alpha=True)
 
         sheet = armor
         sheet.blit(head, [0, 0])

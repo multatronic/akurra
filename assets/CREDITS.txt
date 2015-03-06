@@ -1,4 +1,4 @@
-### assets/entities/{hero,heroine}/*
+### assets/sprites/isometric_hero_and_heroine/*
 
 * _Author:_ Clint Bellanger
 * _Source_: http://opengameart.org/content/isometric-hero-and-heroine
@@ -10,3 +10,9 @@
 
     A few weapons loosely inspired by Naraphim (CC-BY-SA)
     http://naraphim.deviantart.com/art/Weapon-Set-Complete-2007-73660253
+
+### assets/sprites/lxc_medieval_fantasy_character_sprites/*
+
+* _Author:_ wulax
+* _Source_: http://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+* _License:_ CC-BY SA 3.0, GPL 3.0
