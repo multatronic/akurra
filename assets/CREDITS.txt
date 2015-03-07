@@ -16,3 +16,9 @@
 * _Author:_ wulax
 * _Source_: http://opengameart.org/content/lpc-medieval-fantasy-character-sprites
 * _License:_ CC-BY SA 3.0, GPL 3.0
+
+### assets/tiles/mage_city_arcanos/*
+
+* _Author:_ Hyptosis
+* _Soruce_: http://opengameart.org/content/mage-city-arcanos
+* _License:_ CC0

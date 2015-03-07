@@ -95,7 +95,7 @@ class ObjectsDisplayLayer(DisplayLayer):
 
     def __init__(self, **kwargs):
         """Constructor."""
-        super().__init__(kwargs)
+        super().__init__(**kwargs)
 
         self.objects = {}
         self.object_z_indexes = []
@@ -155,7 +155,7 @@ class ScrollingMapDisplayLayer(DisplayLayer):
 
     def __init__(self, tmx_data, default_layer=0, **kwargs):
         """Constructor."""
-        super().__init__(kwargs)
+        super().__init__(**kwargs)
 
         # Create data source
         self.map_data = pyscroll.data.TiledMapData(tmx_data)

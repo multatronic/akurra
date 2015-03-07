@@ -1,148 +1,54 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="isometric" renderorder="right-down" width="25" height="25" tilewidth="64" tileheight="32">
- <properties>
-  <property name="music" value="music/overworld_theme.ogg"/>
-  <property name="tileset" value="tilesetdefs/tileset_grassland.txt"/>
-  <property name="title" value="Urdarbrunn"/>
- </properties>
- <tileset firstgid="1" name="collision" tilewidth="64" tileheight="32">
-  <image source="../../tilesets/grassland/tiled_collision.png" width="960" height="32"/>
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="32" tileheight="32">
+ <tileset firstgid="1" name="magecity" tilewidth="32" tileheight="32">
+  <image source="../../tiles/mage_city_arcanos/magecity.png" width="256" height="1450"/>
  </tileset>
- <tileset firstgid="16" name="grassland" tilewidth="64" tileheight="128">
-  <image source="../../tilesets/grassland/grassland.png" width="1024" height="1024"/>
- </tileset>
- <tileset firstgid="144" name="water" tilewidth="64" tileheight="64">
-  <tileoffset x="0" y="32"/>
-  <image source="../../tilesets/grassland/grassland_water.png" width="1024" height="256"/>
- </tileset>
- <tileset firstgid="208" name="tall structures" tilewidth="64" tileheight="256">
-  <image source="../../tilesets/grassland/grassland_structures.png" width="1024" height="512"/>
- </tileset>
- <tileset firstgid="240" name="trees" tilewidth="128" tileheight="256">
-  <tileoffset x="-32" y="0"/>
-  <image source="../../tilesets/grassland/grassland_trees.png" width="1024" height="512"/>
- </tileset>
- <tileset firstgid="256" name="set_rules" tilewidth="64" tileheight="32">
-  <image source="../../tilesets/grassland/set_rules.png" width="128" height="128"/>
- </tileset>
- <tileset firstgid="264" name="tiled_grassland_2x2" tilewidth="128" tileheight="64">
-  <tileoffset x="0" y="16"/>
-  <image source="../../tilesets/grassland/tiled_grassland_2x2.png" width="512" height="512"/>
- </tileset>
- <layer name="background" width="25" height="25">
-  <data encoding="csv">
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
-16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16
-</data>
+ <layer name="terrain" width="32" height="32">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAA42Xy3LUMBBFLXYMsOC54bGx5H8BVsAK8tuznE8gk3wCMqWuHB+3IVW5GVsjqfvefkhTyzQtHbVjHojndbzhs//9RR1j8xhbND/mzZgX+yyyVwdiDdc1rA07dby38uBHlY0YD1/JwXy456y9PIecW9n6smA89rH9iv3J17wI8qfNjHfMp32O17KNKf2rZcuRdqiX42FNyZNryJNxc75Qd8etaT75V6zhXpFLtGcfOU5erIml7GNKf61n+MLvyCnzl7nhcfvKsZasDTvUgXzMl8+uA9cQc8D1QruxJ/dxL6hlrz85WitzyuolbD7reN7xItHSeZ3VGPVwHLjGfGPf1x1vOt52vNM+zFnGjv2wya5tEeRdRq697/8+dHzs+KRYMA+oI2uV/Fbc9ed76Oj6Z/9Y9Ex9yLtqLX1jrFfbp45r0neoaawNv4OztafezP/1/fe0xWr7pjzYDn3dU9zjXUPsI/SB+bvaenKAe+WKtZ0FnknsaeTAWj4PO6d/+HCZ9tqyJlzP2XnjdfFM7p87vgx8lQbmz/xhDWa2yJvjd+L9reP7wI8DDXwnCK19L8p6qfvlLfY/PcK+89D3D35H39hbnEv04WfHr4Eb+HUV93rgh88b5mOZtrkSPpyn47wjd/ZDn/+LntkjrInPonXsVvZcCxF730OedpwUU+rOnsUcdG22sveB2rtvhP2XHa+Qb+6/7K+xJrsXHMXhOm1jRZ+znpL1fcZi1jrG5Azd4/MC7s4pc83upfQ1s0+/M/6XaW+XeUZ+9KVpPv3yvMCRfcaV+c/1WT92b/DvI/axx/KfS15n4RvvFKEv7z08f3kHqf+Jv+8IvrcQPI+pVWjhGlhg/4h/TZDloXsf7wS067MrfD2y7/7hu6x9YO9jTsT7H3ozHvsAEAAA
+  </data>
  </layer>
- <layer name="object" width="25" height="25">
-  <data encoding="csv">
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,249,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,249,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,249,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,249,0,0,249,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,249,0,249,249,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,249,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,249,0,0,0,0,249,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,249,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,249,0,0,0,0,265,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,249,0,249,0,249,0,249,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-249,0,249,249,0,0,0,0,249,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,249,0,0,0,249,0,0,0,249,0,0,0,0,0,0,0,0,0,0,
-0,249,0,0,0,0,0,0,249,0,0,0,0,249,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,249,0,249,0,249,0,249,0,0,249,0,0,249,0,0,0,0,0,0,0,0,0
-</data>
+ <layer name="walls_below" width="32" height="32">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAA+3LTQqAIBRF4beVMot+dP9rcFVdoYGEOgsHnQ8OPi6YzCwNbFH+Vaxsua2x94qd/6ua1Kyu582F4v5yd2pXx6BOAwAAAAD8xQ18ir9kABAAAA==
+  </data>
  </layer>
- <layer name="collision" width="25" height="25">
-  <data encoding="csv">
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-</data>
+ <layer name="objects_below" width="32" height="32">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAA+3NuQ0AIAzAwIxPw9PwjIu3CEI+ybUjJEmS3lMSnpUadRoJ/0mLNp2EvyTpbxea9QbxABAAAA==
+  </data>
  </layer>
- <layer name="automap" width="25" height="25">
-  <data encoding="csv">
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-</data>
+ <layer name="walls_side" width="32" height="32">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAA+3NsQ0AMAjAsP7/FSr8BV8w4EiZXW+vnP+iH3w+n8/n8/l8Pp9/yNftGhiQ5xUAEAAA
+  </data>
  </layer>
+ <layer name="objects_above" width="32" height="32">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAA+3Nuw3AIBDA0Fs6hIZPE7I23uIQ8pNcO0KSJJ3ioUIv1YR/o06DZsL/o0V/wluSpNttw4VchwAQAAA=
+  </data>
+ </layer>
+ <layer name="walls_above" width="32" height="32">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAA+3NWQqAMAxF0W6lWucBt6+uQN2UrxChhHyIBb/ehYPQpsY5xhhjjDHGGGN/tMKm7C/ncsU9B5zKZey35nLFPQEaqGCWb23sD3KXaoyz9D+W9E3c42GCQoxQGvu93D1z+s2X8xY66JXB2G/N5VrgBngd+nIAEAAA
+  </data>
+ </layer>
+ <layer name="trees_above_1" width="32" height="32">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAA+2XCwqEMAxEU1e9/1XdVcEvO0ECUitUUQasDwYkhAQxTlqRLbkTKaAOzz00BHJ8HPIz6OP2c0ZoguaIerE1j2DvVV5U7wl8oR+xf+x83cWV8/USTyXL7LEwb2Nh3pYyNbm/7iOm9+k+Ynqfwva+BmqJ/Y+cR+4g5fNIRe7fkfu7RL+7ot6v/z7Lf+0uwvJfu4uw/Td11rvHZtLfR348lHc2tt49e/djPx7KOxv7A4XqaBUAEAAA
+  </data>
+ </layer>
+ <layer name="trees_above_2" width="32" height="32">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAA+3OsQ0AIAgAQfffVq3URgbAxsbE3CXfQaAUAAAA+F+NWtQf7Y9oRuvyVrafzZ3+3COmH80AEAAA
+  </data>
+ </layer>
+ <objectgroup name="collision" visible="0">
+  <object x="4" y="34" width="1015" height="89"/>
+  <object x="3" y="965" width="187" height="56"/>
+  <object x="324" y="965" width="696" height="55"/>
+  <object x="995" y="122" width="26" height="851"/>
+  <object x="3" y="117.5" width="26" height="851"/>
+  <object x="226" y="575" width="64" height="60"/>
+ </objectgroup>
 </map>

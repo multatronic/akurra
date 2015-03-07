@@ -102,7 +102,8 @@ class DemoGameState(GameState):
 
     def enable(self):
         """Initialize the gamestate."""
-        self.tmx_data = self.assets.get_tmx_data('pyscroll_demo/grasslands.tmx')
+        # self.tmx_data = self.assets.get_tmx_data('pyscroll_demo/grasslands.tmx')
+        self.tmx_data = self.assets.get_tmx_data('maps/urdarbrunn/map.tmx')
         self.layer = ScrollingMapDisplayLayer(self.tmx_data, default_layer=2)
         self.display.add_layer(self.layer)
 

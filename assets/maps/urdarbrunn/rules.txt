@@ -1,3 +1,0 @@
-../../tilesets/grassland/rules/grassland_ruleset0.tmx
-../../tilesets/grassland/rules/grassland_ruleset1.tmx
-../../tilesets/grassland/rules/grassland_ruleset2.tmx

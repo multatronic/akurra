@@ -38,7 +38,5 @@ setup(
         'injector',
         'pytmx',
         'pyscroll'
-    ],
-    dependency_links=[
-    ],
+    ]
 )
