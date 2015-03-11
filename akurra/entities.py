@@ -4,9 +4,9 @@ from enum import Enum
 from .assets import AssetManager, SpriteAnimation
 
 
-class Direction(Enum):
+class EntityDirection(Enum):
 
-    """Direction enum."""
+    """EntityDirection enum."""
 
     NORTH = 1
     EAST = 2
@@ -17,6 +17,14 @@ class Direction(Enum):
     SOUTH_EAST = SOUTH | EAST
     NORTH_WEST = NORTH | WEST
     SOUTH_WEST = SOUTH | WEST
+
+
+class EntityState(Enum):
+
+    """Entity state enum."""
+
+    STATIONARY = 0
+    MOVING = 1
 
 
 class Entity(pygame.sprite.Sprite):
@@ -44,13 +52,14 @@ class Entity(pygame.sprite.Sprite):
 
     """
 
-    def __init__(self, image, position=[0, 0], core=None, animations={}):
+    def __init__(self, image, position=[0, 0], core=None, state=EntityState.STATIONARY, animations={}):
         """Constructor."""
         super().__init__()
 
         self.position = position
         self.position_old = list(self.position)
 
+        self.default = image.copy()
         self.image = image
         self.rect = self.image.get_rect()
 
@@ -60,6 +69,7 @@ class Entity(pygame.sprite.Sprite):
         self.core = core
 
         self.animations = animations
+        self.state = state
 
     @property
     def position(self):
@@ -71,16 +81,26 @@ class Entity(pygame.sprite.Sprite):
         """Return position."""
         self._position = list(value)
 
+    def update(self, delta_time):
+        """Compute an update to the entity's state."""
+        try:
+            frame = self.animations[self.state].get_frame()
+            self.image.fill([0, 0, 0, 0])
+            self.image.blit(frame, [0, 0])
+        except KeyError:
+            self.image.blit(self.default, [0, 0])
+
 
 class Actor(Entity):
 
     """Generic game actor."""
 
-    def __init__(self, velocity=[0, 0], **kwargs):
+    def __init__(self, velocity=[0, 0], direction=EntityDirection.NORTH, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
 
         self.velocity = velocity
+        self.direction = direction
 
     def update(self, delta_time):
         """
@@ -95,6 +115,21 @@ class Actor(Entity):
 
         self.rect.topleft = list(self.position)
         self.core.midbottom = self.rect.midbottom
+
+        direction = EntityDirection.NORTH.value if self.velocity[1] < 0 \
+            else EntityDirection.SOUTH.value if self.velocity[1] else 0
+        direction |= EntityDirection.EAST.value if self.velocity[0] > 0 \
+            else EntityDirection.WEST.value if self.velocity[0] else 0
+
+        self.state = EntityState.MOVING if direction else EntityState.STATIONARY
+
+        if direction:
+            self.direction = EntityDirection(direction)
+
+            for key in self.animations:
+                self.animations[key].direction = self.direction
+
+        super().update(delta_time)
 
     def revert_move(self):
         """Revert movement of an entity."""
@@ -130,27 +165,29 @@ class Player(Actor):
         sheet.blit(sword, [0, 0])
 
         self.animations = {
-            'running': SpriteAnimation(
+            EntityState.MOVING: SpriteAnimation(
                 sheet=sheet,
                 frame_size=self.sprite_size,
-                directions=[Direction.WEST, Direction.NORTH_WEST, Direction.NORTH, Direction.NORTH_EAST,
-                            Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST],
+                directions=[EntityDirection.WEST, EntityDirection.NORTH_WEST,
+                            EntityDirection.NORTH, EntityDirection.NORTH_EAST,
+                            EntityDirection.EAST, EntityDirection.SOUTH_EAST,
+                            EntityDirection.SOUTH, EntityDirection.SOUTH_WEST],
                 frames=8,
                 frame_offset=4,
                 loop=True
             ),
-            'stance': SpriteAnimation(
+            EntityState.STATIONARY: SpriteAnimation(
                 sheet=sheet,
                 frame_size=self.sprite_size,
-                directions=[Direction.WEST, Direction.NORTH_WEST, Direction.NORTH, Direction.NORTH_EAST,
-                            Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST],
+                directions=[EntityDirection.WEST, EntityDirection.NORTH_WEST,
+                            EntityDirection.NORTH, EntityDirection.NORTH_EAST,
+                            EntityDirection.EAST, EntityDirection.SOUTH_EAST,
+                            EntityDirection.SOUTH, EntityDirection.SOUTH_WEST],
                 frames=4,
                 frame_interval=300,
                 loop=True
             )
         }
-
-        self.direction = Direction.NORTH
 
     def update(self, delta_time):
         """
@@ -160,18 +197,6 @@ class Player(Actor):
 
         """
         super().update(delta_time)
-
-        direction = Direction.NORTH.value if self.velocity[1] < 0 else Direction.SOUTH.value if self.velocity[1] else 0
-        direction |= Direction.EAST.value if self.velocity[0] > 0 else Direction.WEST.value if self.velocity[0] else 0
-
-        if direction:
-            self.direction = Direction(direction)
-
-        animation = self.animations['running'] if direction else self.animations['stance']
-        animation.direction = self.direction
-
-        self.image.fill([0, 0, 0, 0])
-        self.image.blit(animation.get_frame(), [0, 0])
 
         self.core.center = self.rect.center
         self.core.centery += (self.rect.height / 4) - (self.core.height / 2)
