@@ -82,3 +82,62 @@ class AssetManager:
         logger.debug('Initializing AssetManager')
 
         self.base_path = base_path
+
+
+class SpriteAnimation:
+
+    """Base animation."""
+
+    @property
+    def frame(self):
+        """Return frame."""
+        return self._frame
+
+    @frame.setter
+    def frame(self, value):
+        """Set frame."""
+        if value > self.frames and self.loop:
+            value = 1
+
+        self._frame = value
+
+    def __init__(self, sheet, frames=1, directions=[1], frame_size=None, frame_offset=0,
+                 frame_interval=60, loop=False):
+        """Constructor."""
+        self.sheet = sheet
+        self.loop = loop
+
+        self.directions = directions
+        self.direction = directions[0]
+
+        self.frames = frames
+
+        self.frame = 0
+        self.frame_offset = frame_offset
+        self.frame_interval = frame_interval
+
+        if not frame_size:
+            frame_size = (int(self.sheet.get_width() / self.frames), int(self.sheet.get_height() / self.directions))
+
+        self.frame_size = frame_size
+        self.image = pygame.Surface(self.frame_size, flags=pygame.SRCALPHA)
+
+        self.last_tick = 0
+
+    def get_frame(self):
+        """Return a frame of the animation."""
+        current_tick = pygame.time.get_ticks()
+
+        if (current_tick - self.last_tick) > self.frame_interval:
+            self.frame += 1
+            self.last_tick = current_tick
+
+        self.image.fill([0, 0, 0, 0])
+        self.image.blit(self.sheet, [0, 0], [
+            (self.frame + self.frame_offset - 1) * self.frame_size[0],
+            (self.directions.index(self.direction)) * self.frame_size[1],
+            self.frame_size[0],
+            self.frame_size[1]
+        ])
+
+        return self.image

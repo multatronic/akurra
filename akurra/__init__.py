@@ -27,6 +27,7 @@ from akurra.demo import DemoIntroScreen, DemoGameState
 DEBUG = 'debug' in sys.argv
 os.chdir(os.path.dirname(os.path.dirname(__file__)))
 logger = logging.getLogger(__name__)
+container = None
 
 
 def build_container(binder):
@@ -145,6 +146,7 @@ def main():
     pygame.mixer.pre_init(44100, 16, 2, 4096)
     pygame.init()
 
+    global container
     container = Injector(build_container)
 
     akurra = container.get(Akurra)
