@@ -29,7 +29,6 @@ class AudioManager:
     def add_sound(self, relative_path, name):
         """Add a sound."""
         # TODO add checks for invalid path
-        relative_path = "pyscroll_demo/audio/sfx/test.ogg"
         sound = self.assets.get_sound(relative_path)
         self.sound[name] = sound
         logger.debug('Added sound "%s"', name)

@@ -90,7 +90,7 @@ class DemoGameState(GameState):
     def play_sound_effect(self, event):
         """Place a sound."""
         logger.info("Attempting to play sound effect.")
-        self.audio.play_sound("sfx")
+        self.audio.play_sound("step_grass")
 
     def on_move_start(self, event):
         """Handle the starting of movement."""
@@ -121,10 +121,11 @@ class DemoGameState(GameState):
 
         # Load audio files
         # music
-        self.audio.add_music("pyscroll_demo/audio/music/drums_of_the_deep.mp3", "world01")
+        self.audio.add_music("audio/music/drums_of_the_deep.mp3", "world01")
 
         # sound effects
-        self.audio.add_sound("pyscroll_demo/audio/sfx/test.ogg", "sfx")
+        self.audio.add_sound("audio/sfx/sfx_step_grass.ogg", "step_grass")
+        self.audio.add_sound("audio/sfx/sfx_step_rock.ogg", "step_stone")
 
         player_speed = 400
 

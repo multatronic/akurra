@@ -1,7 +1,87 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="32" tileheight="32">
+<map version="1.0" orientation="orthogonal" width="32" height="32" tilewidth="32" tileheight="32">
  <tileset firstgid="1" name="magecity" tilewidth="32" tileheight="32">
   <image source="../../tiles/mage_city_arcanos/magecity.png" width="256" height="1450"/>
+  <tile id="0">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="72">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="73">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="74">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="75">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="76">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="80">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="81">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="82">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="83">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="84">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="88">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="89">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="90">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="330">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="332">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
  </tileset>
  <layer name="terrain" width="32" height="32">
   <data encoding="base64" compression="gzip">
@@ -43,12 +123,12 @@
    H4sIAAAAAAAAA+3OsQ0AIAgAQfffVq3URgbAxsbE3CXfQaAUAAAA+F+NWtQf7Y9oRuvyVrafzZ3+3COmH80AEAAA
   </data>
  </layer>
- <objectgroup name="collision" visible="0">
+ <objectgroup name="collision" width="0" height="0" visible="0">
   <object x="4" y="34" width="1015" height="89"/>
   <object x="3" y="965" width="187" height="56"/>
   <object x="324" y="965" width="696" height="55"/>
   <object x="995" y="122" width="26" height="851"/>
-  <object x="3" y="117.5" width="26" height="851"/>
+  <object x="3" y="0" width="26" height="851"/>
   <object x="226" y="575" width="64" height="60"/>
  </objectgroup>
 </map>
