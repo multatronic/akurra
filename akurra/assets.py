@@ -105,7 +105,7 @@ class SpriteAnimation:
         self.frame_interval = frame_interval
 
         if not frame_size:
-            frame_size = (int(self.sheet.get_width() / self.frames), int(self.sheet.get_height() / self.directions))
+            frame_size = (int(self.sheet.get_width() / self.frames), int(self.sheet.get_height() / len(self.directions)))
 
         self.frame_size = frame_size
         self.image = pygame.Surface(self.frame_size, flags=pygame.SRCALPHA)
@@ -114,11 +114,12 @@ class SpriteAnimation:
 
     def get_frame(self):
         """Return a frame of the animation."""
-        current_tick = pygame.time.get_ticks()
+        if self.frame < self.frames or self.loop:
+            current_tick = pygame.time.get_ticks()
 
-        if (current_tick - self.last_tick) > self.frame_interval:
-            self.frame += 1
-            self.last_tick = current_tick
+            if (current_tick - self.last_tick) > self.frame_interval:
+                self.frame += 1
+                self.last_tick = current_tick
 
         self.image.fill([0, 0, 0, 0])
         self.image.blit(self.sheet, [0, 0], [

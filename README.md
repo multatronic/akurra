@@ -32,7 +32,6 @@ $ sudo pip3 install -U git+https://github.com/multatronic/akurra.git
 * injector
 * pytmx
 * pyscroll
-* pyganim
 
 ##License
 

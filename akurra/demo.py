@@ -87,13 +87,18 @@ class DemoGameState(GameState):
 
     def on_move_start(self, event):
         """Handle the starting of movement."""
-        key_velocity = self.key_velocities[event.key]
-        self.player.velocity[key_velocity[0]] = key_velocity[1]
+        self.player.velocity = self.key_velocities[event.key]
 
     def on_move_stop(self, event):
         """Handle the stopping of movement."""
-        key_velocity = self.key_velocities[event.key]
-        self.player.velocity[key_velocity[0]] = 0
+        self.player.velocity = [0, 0]
+
+        # If another directional key is pressed, trigger a new move start event with said key
+        pressed = pygame.key.get_pressed()
+        keys = [x for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT] if pressed[x]]
+
+        if keys:
+            self.on_move_start(pygame.event.Event(pygame.KEYDOWN, key=keys[0]))
 
     def on_quit(self, event):
         """Handle quitting."""
@@ -115,10 +120,10 @@ class DemoGameState(GameState):
         player_speed = 400
 
         self.key_velocities = {
-            pygame.K_UP: [1, -player_speed],
-            pygame.K_DOWN: [1, player_speed],
-            pygame.K_LEFT: [0, -player_speed],
-            pygame.K_RIGHT: [0, player_speed]
+            pygame.K_UP: [0, -player_speed],
+            pygame.K_DOWN: [0, player_speed],
+            pygame.K_LEFT: [-player_speed, 0],
+            pygame.K_RIGHT: [player_speed, 0]
         }
 
         pygame.key.set_repeat(100, 100)

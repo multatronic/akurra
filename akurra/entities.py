@@ -114,7 +114,9 @@ class Actor(Entity):
         self.position[1] += self.velocity[1] * delta_time
 
         self.rect.topleft = list(self.position)
-        self.core.midbottom = self.rect.midbottom
+
+        self.core.center = self.rect.center
+        self.core.centery += (self.rect.height / 4)
 
         direction = EntityDirection.NORTH.value if self.velocity[1] < 0 \
             else EntityDirection.SOUTH.value if self.velocity[1] else 0
@@ -138,54 +140,84 @@ class Actor(Entity):
         self.core.midbottom = self.rect.midbottom
 
 
-class Player(Actor):
+class Hero(Actor):
 
-    """Player actor."""
+    """Hero actor."""
 
-    sprite_size = (128, 128)
+    sprite_size = (64, 64)
 
     def __init__(self, **kwargs):
         """Constructor."""
         image = pygame.Surface(self.sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
-        core = pygame.Rect(0, 0, self.sprite_size[0] / 4, self.sprite_size[1] / 8)
+        core = pygame.Rect(0, 0, self.sprite_size[0] / 3, self.sprite_size[1] / 4)
 
         super().__init__(image=image, core=core, **kwargs)
 
+        # from . import container
+
+        # base_path = 'sprites/isometric_hero_and_heroine/hero'
+        # armor = container.get(AssetManager).get_image(base_path + '/steel_armor.png', alpha=True)
+        # head = container.get(AssetManager).get_image(base_path + '/male_head2.png', alpha=True)
+        # shield = container.get(AssetManager).get_image(base_path + '/shield.png', alpha=True)
+        # sword = container.get(AssetManager).get_image(base_path + '/longsword.png', alpha=True)
+
+        # sheet = armor
+        # sheet.blit(head, [0, 0])
+        # sheet.blit(shield, [0, 0])
+        # sheet.blit(sword, [0, 0])
+
+        # self.animations = {
+        #     EntityState.MOVING: SpriteAnimation(
+        #         sheet=sheet,
+        #         frame_size=self.sprite_size,
+        #         directions=[EntityDirection.WEST, EntityDirection.NORTH_WEST,
+        #                     EntityDirection.NORTH, EntityDirection.NORTH_EAST,
+        #                     EntityDirection.EAST, EntityDirection.SOUTH_EAST,
+        #                     EntityDirection.SOUTH, EntityDirection.SOUTH_WEST],
+        #         frames=8,
+        #         frame_offset=4,
+        #         loop=True
+        #     ),
+        #     EntityState.STATIONARY: SpriteAnimation(
+        #         sheet=sheet,
+        #         frame_size=self.sprite_size,
+        #         directions=[EntityDirection.WEST, EntityDirection.NORTH_WEST,
+        #                     EntityDirection.NORTH, EntityDirection.NORTH_EAST,
+        #                     EntityDirection.EAST, EntityDirection.SOUTH_EAST,
+        #                     EntityDirection.SOUTH, EntityDirection.SOUTH_WEST],
+        #         frames=4,
+        #         frame_interval=300,
+        #         loop=True
+        #     )
+        # }
+
+        self.load_animations()
+
+    def load_animations(self):
+        """Load animations."""
         from . import container
 
-        base_path = 'sprites/isometric_hero_and_heroine/hero'
-        armor = container.get(AssetManager).get_image(base_path + '/steel_armor.png', alpha=True)
-        head = container.get(AssetManager).get_image(base_path + '/male_head2.png', alpha=True)
-        shield = container.get(AssetManager).get_image(base_path + '/shield.png', alpha=True)
-        sword = container.get(AssetManager).get_image(base_path + '/longsword.png', alpha=True)
+        base = 'sprites/lpc_medieval_fantasy_character_sprites'
+        assets = container.get(AssetManager)
 
-        sheet = armor
-        sheet.blit(head, [0, 0])
-        sheet.blit(shield, [0, 0])
-        sheet.blit(sword, [0, 0])
+        walking = assets.get_image(base + '/walkcycle/BODY_male.png', alpha=True)
+
+        for x in ['LEGS_robe_skirt', 'HEAD_robe_hood']:
+            walking.blit(assets.get_image(base + ('/walkcycle/%s.png' % x), alpha=True), [0, 0])
 
         self.animations = {
             EntityState.MOVING: SpriteAnimation(
-                sheet=sheet,
-                frame_size=self.sprite_size,
-                directions=[EntityDirection.WEST, EntityDirection.NORTH_WEST,
-                            EntityDirection.NORTH, EntityDirection.NORTH_EAST,
-                            EntityDirection.EAST, EntityDirection.SOUTH_EAST,
-                            EntityDirection.SOUTH, EntityDirection.SOUTH_WEST],
-                frames=8,
-                frame_offset=4,
-                loop=True
+                sheet=walking,
+                directions=[EntityDirection.NORTH, EntityDirection.WEST, EntityDirection.SOUTH, EntityDirection.EAST],
+                frames=9,
+                frame_interval=20,
+                loop=True,
             ),
             EntityState.STATIONARY: SpriteAnimation(
-                sheet=sheet,
+                sheet=walking,
                 frame_size=self.sprite_size,
-                directions=[EntityDirection.WEST, EntityDirection.NORTH_WEST,
-                            EntityDirection.NORTH, EntityDirection.NORTH_EAST,
-                            EntityDirection.EAST, EntityDirection.SOUTH_EAST,
-                            EntityDirection.SOUTH, EntityDirection.SOUTH_WEST],
-                frames=4,
-                frame_interval=300,
-                loop=True
+                directions=[EntityDirection.NORTH, EntityDirection.WEST, EntityDirection.SOUTH, EntityDirection.EAST],
+                frames=1,
             )
         }
 
@@ -198,5 +230,11 @@ class Player(Actor):
         """
         super().update(delta_time)
 
-        self.core.center = self.rect.center
-        self.core.centery += (self.rect.height / 4) - (self.core.height / 2)
+
+class Player(Hero):
+
+    """Player actor."""
+
+    def __init__(self, **kwargs):
+        """Constructor."""
+        super().__init__(**kwargs)
