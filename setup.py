@@ -37,6 +37,10 @@ setup(
         'colorlog',
         'injector',
         'pytmx',
-        'pyscroll'
+        'pyscroll',
+        'BallerCFG'
+    ],
+    dependency_links=[
+        'git+https://github.com/kalmanolah/ballercfg.git'
     ]
 )

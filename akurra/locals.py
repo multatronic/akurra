@@ -5,6 +5,9 @@ from injector import Key
 DebugFlag = Key('DebugFlag')
 ShutdownFlag = Key('ShutdownFlag')
 
+# Configuration
+Configuration = Key('Configuration')
+
 # Modules
 ModuleEntryPointGroup = Key('ModuleEntryPointGroup')
 

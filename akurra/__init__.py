@@ -4,10 +4,13 @@ import sys
 import pygame
 import signal
 import logging
+import functools
 
 from threading import Event
 from multiprocessing import Value
 from injector import Injector, inject, singleton
+
+from ballercfg import ConfigurationManager
 
 from akurra.locals import *  # noqa
 
@@ -39,16 +42,32 @@ def build_container(binder):
     binder.bind(DebugFlag, to=Value('B', DEBUG))
     binder.bind(ShutdownFlag, to=Event())
 
+    # Configuration
+    CFG_FILE = os.path.expanduser('~/.config/akurra/config.yml')
+
+    # If the directories or files don't exist, create them
+    if not os.path.isfile(CFG_FILE):
+        os.makedirs(os.path.dirname(CFG_FILE))
+        with open(CFG_FILE, 'a+'):
+            pass
+
+    cfg = ConfigurationManager.load_single(CFG_FILE)
+    binder.bind(Configuration, to=cfg)
+
     # Modules
     binder.bind(ModuleManager, scope=singleton)
-    binder.bind(ModuleEntryPointGroup, to='akurra.modules')
+    binder.bind(ModuleEntryPointGroup, to=cfg.get('akurra.modules.entry_point_group', 'akurra.modules'))
 
     # Display
     binder.bind(DisplayManager, scope=singleton)
-    binder.bind(DisplayResolution, to=[0, 0])
-    binder.bind(DisplayFlags, to=pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.RESIZABLE)
-    binder.bind(DisplayMaxFPS, to=60)
-    binder.bind(DisplayCaption, to='Akurra DEV')
+    binder.bind(DisplayResolution, to=cfg.get('akurra.display.resolution', [0, 0]))
+    binder.bind(DisplayMaxFPS, to=cfg.get('akurra.display.max_fps', 60))
+    binder.bind(DisplayCaption, to=cfg.get('akurra.display.caption', 'Akurra DEV'))
+
+    flags = cfg.get('akurra.display.flags', ['DOUBLEBUF', 'HWSURFACE', 'RESIZABLE'])
+    flags = functools.reduce(lambda x, y: x | y, [getattr(pygame, x) for x in flags])
+
+    binder.bind(DisplayFlags, to=flags)
     binder.bind(DisplayClock, to=pygame.time.Clock, scope=singleton)
 
     # Events
@@ -65,7 +84,7 @@ def build_container(binder):
 
     # Assets
     binder.bind(AssetManager, scope=singleton)
-    binder.bind(AssetBasePath, to='assets')
+    binder.bind(AssetBasePath, to=cfg.get('akurra.assets.base_path', 'assets'))
 
     # Demo
     binder.bind(DemoIntroScreen)

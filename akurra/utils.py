@@ -1,5 +1,6 @@
 """Utils module."""
 import pygame
+import collections
 
 
 def hr_event_type(event_type):
@@ -21,3 +22,15 @@ def hr_key_id(key_id):
 def fqcn(cls):
     """Return the fully qualified class name of a class."""
     return '%s.%s' % (cls.__module__, cls.__name__)
+
+
+def flatten(d, parent_key='', sep='_'):
+    """Flatten a collection and return the result."""
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
