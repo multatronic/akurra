@@ -27,6 +27,52 @@ class EntityState(Enum):
     MOVING = 1
 
 
+class ItemState(Enum):
+
+    """Item state enum."""
+
+    DROPPED = 1
+    HELD = 2
+    EQUIPPED = 3
+
+
+class ItemFlags(Enum):
+
+    """Item flags enum."""
+
+    CONSUMABLE = 1
+    EQUIPPABLE = 2
+    SELLABLE = 3
+
+
+class EquipmentSlot(Enum):
+
+    """Equipment slot enum."""
+
+    HEAD = 0
+    SHOULDERS = 1
+    CHEST = 2
+    WAIST = 3
+    LEGS = 4
+    FEET = 5
+    ARMS = 6
+    LEFT_HAND = 7
+    RIGHT_HAND = 8
+    NECK = 9
+    CLOAK = 10
+    FINGER_1 = 11
+    FINGER_2 = 12
+    FINGER_3 = 13
+    FINGER_4 = 14
+    FINGER_5 = 15
+    FINGER_6 = 16
+    FINGER_7 = 17
+    FINGER_8 = 18
+    FINGER_9 = 19
+    FINGER_10 = 20
+    FINGER_11 = 21
+
+
 class Entity(pygame.sprite.Sprite):
 
     """
@@ -140,56 +186,22 @@ class Actor(Entity):
         self.core.midbottom = self.rect.midbottom
 
 
-class Hero(Actor):
+class Player(Actor):
 
-    """Hero actor."""
+    """Player actor."""
 
     sprite_size = (64, 64)
 
-    def __init__(self, **kwargs):
+    def __init__(self, inventory=[(False, 0) for x in range(32)], equipment={x: False for x in EquipmentSlot},
+                 **kwargs):
         """Constructor."""
         image = pygame.Surface(self.sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
         core = pygame.Rect(0, 0, self.sprite_size[0] / 3, self.sprite_size[1] / 4)
 
         super().__init__(image=image, core=core, **kwargs)
 
-        # from . import container
-
-        # base_path = 'sprites/isometric_hero_and_heroine/hero'
-        # armor = container.get(AssetManager).get_image(base_path + '/steel_armor.png', alpha=True)
-        # head = container.get(AssetManager).get_image(base_path + '/male_head2.png', alpha=True)
-        # shield = container.get(AssetManager).get_image(base_path + '/shield.png', alpha=True)
-        # sword = container.get(AssetManager).get_image(base_path + '/longsword.png', alpha=True)
-
-        # sheet = armor
-        # sheet.blit(head, [0, 0])
-        # sheet.blit(shield, [0, 0])
-        # sheet.blit(sword, [0, 0])
-
-        # self.animations = {
-        #     EntityState.MOVING: SpriteAnimation(
-        #         sheet=sheet,
-        #         frame_size=self.sprite_size,
-        #         directions=[EntityDirection.WEST, EntityDirection.NORTH_WEST,
-        #                     EntityDirection.NORTH, EntityDirection.NORTH_EAST,
-        #                     EntityDirection.EAST, EntityDirection.SOUTH_EAST,
-        #                     EntityDirection.SOUTH, EntityDirection.SOUTH_WEST],
-        #         frames=8,
-        #         frame_offset=4,
-        #         loop=True
-        #     ),
-        #     EntityState.STATIONARY: SpriteAnimation(
-        #         sheet=sheet,
-        #         frame_size=self.sprite_size,
-        #         directions=[EntityDirection.WEST, EntityDirection.NORTH_WEST,
-        #                     EntityDirection.NORTH, EntityDirection.NORTH_EAST,
-        #                     EntityDirection.EAST, EntityDirection.SOUTH_EAST,
-        #                     EntityDirection.SOUTH, EntityDirection.SOUTH_WEST],
-        #         frames=4,
-        #         frame_interval=300,
-        #         loop=True
-        #     )
-        # }
+        self.equipment = equipment
+        self.inventory = inventory
 
         self.load_animations()
 
@@ -202,8 +214,10 @@ class Hero(Actor):
 
         walking = assets.get_image(base + '/walkcycle/BODY_male.png', alpha=True)
 
-        for x in ['LEGS_robe_skirt', 'HEAD_robe_hood']:
-            walking.blit(assets.get_image(base + ('/walkcycle/%s.png' % x), alpha=True), [0, 0])
+        for slot, item in self.equipment.items():
+            if item:
+                sheet = item.images[ItemState.EQUIPPED][Player]
+                walking.blit(sheet, [0, 0])
 
         self.animations = {
             EntityState.MOVING: SpriteAnimation(
@@ -230,11 +244,28 @@ class Hero(Actor):
         """
         super().update(delta_time)
 
+    def on_equip(self, event):
+        """Handle equipment."""
+        self.equipment[event.slot] = event.item
+        self.load_animations()
 
-class Player(Hero):
+    def on_unequip(self, event):
+        """Handle unequipment."""
+        self.equipment.pop(event.slot, None)
+        self.load_animations()
 
-    """Player actor."""
 
-    def __init__(self, **kwargs):
+class Item:
+
+    """Base item."""
+
+    def __init__(self, state=ItemState.DROPPED, flags=0, stackable=1, images={}, **kwargs):
         """Constructor."""
-        super().__init__(**kwargs)
+        self.images = images
+
+        self.state = state
+        self.flags = flags
+        self.stackable = stackable
+
+        for k, v in kwargs.items():
+            setattr(self, k, v)
