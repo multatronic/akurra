@@ -105,7 +105,7 @@ class SpriteAnimation:
         self.frame_interval = frame_interval
 
         if not frame_size:
-            frame_size = (int(self.sheet.get_width() / self.frames), int(self.sheet.get_height() / len(self.directions)))
+            frame_size = int(self.sheet.get_width() / self.frames), int(self.sheet.get_height() / len(self.directions))
 
         self.frame_size = frame_size
         self.image = pygame.Surface(self.frame_size, flags=pygame.SRCALPHA)
