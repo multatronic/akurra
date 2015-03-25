@@ -52,9 +52,11 @@ class Entity(pygame.sprite.Sprite):
 
     """
 
-    def __init__(self, image, position=[0, 0], core=None, state=EntityState.STATIONARY, animations={}):
+    def __init__(self, image, position=[0, 0], core=None, layer=None, state=EntityState.STATIONARY, animations={}):
         """Constructor."""
         super().__init__()
+
+        self.layer = layer
 
         self.position = position
         self.position_old = list(self.position)
@@ -109,6 +111,11 @@ class Actor(Entity):
         :param delta_time: Time delta to compute the state update for, in s.
 
         """
+        # base tile coordinate location on center of collision rect (= core)
+        if self.layer:
+            self.location = (self.core.center[0] / self.layer.map_data.tilewidth,
+                             self.core.center[1] / self.layer.map_data.tileheight)
+
         self.position_old = list(self.position)
         self.position[0] += self.velocity[0] * delta_time
         self.position[1] += self.velocity[1] * delta_time

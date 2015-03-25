@@ -7,6 +7,16 @@
     <property name="terrain_type" value="grass"/>
    </properties>
   </tile>
+  <tile id="1">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="9">
+   <properties>
+    <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
   <tile id="72">
    <properties>
     <property name="terrain_type" value="stone"/>
@@ -72,6 +82,116 @@
     <property name="terrain_type" value="stone"/>
    </properties>
   </tile>
+  <tile id="211">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="219">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="227">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="235">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="264">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="265">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="267">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="268">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="272">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="273">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="274">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="277">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="282">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="283">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="284">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="285">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="286">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="290">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="291">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="292">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="293">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="329">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
   <tile id="330">
    <properties>
     <property name="terrain_type" value="stone"/>
@@ -80,6 +200,21 @@
   <tile id="332">
    <properties>
     <property name="terrain_type" value="stone"/>
+   </properties>
+  </tile>
+  <tile id="336">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="338">
+   <properties>
+    <property name="terrain_type" value="grass"/>
+   </properties>
+  </tile>
+  <tile id="345">
+   <properties>
+    <property name="terrain_type" value="grass"/>
    </properties>
   </tile>
  </tileset>

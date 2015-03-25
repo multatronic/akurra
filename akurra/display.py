@@ -181,6 +181,16 @@ class ScrollingMapDisplayLayer(DisplayLayer):
             if entity.core.collidelist(self.collision_map) > -1:
                 entity.revert_move()
 
+    def add_object(self, object):
+        """Add an object to the layer."""
+        # Set layer within object
+        object.layer = self
+        self.group.add(object)
+
+    def remove_object(self, object):
+        """Remove an object from the layer."""
+        self.group.remove(object)
+
     def draw(self, surface):
         """Draw the layer onto a surface."""
         # Center the map/screen if needed
