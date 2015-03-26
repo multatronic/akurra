@@ -24,6 +24,18 @@ class AssetManager:
         """
         return os.path.join(self.base_path, asset_path)
 
+    def get_sound(self, asset_path):
+        """
+        Return an sfx object (OGG only for now).
+
+        :param asset_path: Relative path of asset to process.
+
+        """
+        path = self.get_path(asset_path)
+        sound = pygame.mixer.Sound(path)
+
+        return sound
+
     def get_image(self, asset_path, colorkey=None, alpha=False):
         """
         Return an image by processing an asset.

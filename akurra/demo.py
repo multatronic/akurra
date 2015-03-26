@@ -8,6 +8,8 @@ from akurra.events import EventManager
 from akurra.keyboard import KeyboardManager
 from akurra.entities import Player
 from akurra.states import GameState, StateManager
+from akurra.audio import AudioManager
+from akurra.entities import EntityState
 from akurra.locals import *  # noqa
 
 
@@ -74,20 +76,47 @@ class DemoGameState(GameState):
     """Temporary demo middleware."""
 
     @inject(assets=AssetManager, display=DisplayManager, keyboard=KeyboardManager, events=EventManager,
-            shutdown=ShutdownFlag)
-    def __init__(self, assets, display, keyboard, events, shutdown):
+            shutdown=ShutdownFlag, audio=AudioManager)
+    def __init__(self, assets, display, keyboard, events, shutdown, audio):
         """Constructor."""
         super().__init__()
 
         self.events = events
         self.display = display
+        self.audio = audio
         self.assets = assets
         self.keyboard = keyboard
         self.shutdown = shutdown
 
+        # keep a list mapping terrain types to sfx names
+        # and the current terrain type
+        self.terrain_sfx = {}
+        self.current_terrain = None
+
+    def play_sound_effects(self, event):
+        """Place a sound effect."""
+        state = self.player.state
+        frame = self.player.animations[self.player.state].frame
+
+        if(state is EntityState.MOVING and frame % 2 is 0):
+            self.audio.play_sound(self.terrain_sfx[self.current_terrain])
+
     def on_move_start(self, event):
         """Handle the starting of movement."""
         self.player.velocity = self.key_velocities[event.key]
+
+        logger.debug("Player tile position: (%s - %s)", int(self.player.location[0]), int(self.player.location[1]))
+
+        for i in range(0, len(list(self.tmx_data.visible_layers))):
+            try:
+                tileProps = self.tmx_data.get_tile_properties(int(self.player.location[0]),
+                                                              int(self.player.location[1]), i)
+                if(tileProps is not None):
+                    logger.debug('Detected terrain type: %s', tileProps['terrain_type'])
+                    self.current_terrain = tileProps['terrain_type']
+            except KeyError:
+                pass
+        self.play_sound_effects(event)
 
     def on_move_stop(self, event):
         """Handle the stopping of movement."""
@@ -112,10 +141,22 @@ class DemoGameState(GameState):
         self.layer = ScrollingMapDisplayLayer(self.tmx_data, default_layer=2)
         self.display.add_layer(self.layer)
 
-        self.player = Player(position=self.layer.map_layer.rect.center)
+        self.player = Player(position=self.layer.map_layer.rect.center, layer=self.layer)
 
-        self.layer.group.add(self.player)
+        self.layer.add_object(self.player)
         self.layer.center = self.player
+
+        # Load audio files
+        # music
+        self.audio.add_music("audio/music/drums_of_the_deep.mp3", "world01")
+
+        # sound effects
+        self.audio.add_sound("audio/sfx/sfx_step_grass.ogg", "step_grass")
+        self.audio.add_sound("audio/sfx/sfx_step_rock.ogg", "step_stone")
+
+        # map terrain types to sound effect names
+        self.terrain_sfx["grass"] = "step_grass"
+        self.terrain_sfx["stone"] = "step_stone"
 
         player_speed = 400
 
@@ -132,6 +173,9 @@ class DemoGameState(GameState):
         [self.keyboard.register(x, self.on_move_start, event_type=pygame.KEYDOWN) for x in self.key_velocities.keys()]
         [self.keyboard.register(x, self.on_move_stop, event_type=pygame.KEYUP) for x in self.key_velocities.keys()]
         self.keyboard.register(pygame.K_ESCAPE, self.on_quit)
+
+        # start playing the background music
+        self.audio.play_music("world01")
 
     def disable(self):
         """Stop the gamestate."""

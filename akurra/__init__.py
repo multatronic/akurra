@@ -161,6 +161,8 @@ class Akurra:
 
 def main():
     """Main entry point."""
+    # frequency, size, channels, buffersize
+    pygame.mixer.pre_init(44100, 16, 2, 4096)
     pygame.init()
 
     global container
