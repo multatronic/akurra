@@ -41,6 +41,6 @@ setup(
         'BallerCFG'
     ],
     dependency_links=[
-        'git+https://github.com/kalmanolah/ballercfg.git'
+        'git+https://github.com/kalmanolah/ballercfg.git#egg=BallerCFG'
     ]
 )
