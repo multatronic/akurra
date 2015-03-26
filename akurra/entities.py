@@ -27,24 +27,6 @@ class EntityState(Enum):
     MOVING = 1
 
 
-class ItemState(Enum):
-
-    """Item state enum."""
-
-    DROPPED = 1
-    HELD = 2
-    EQUIPPED = 3
-
-
-class ItemFlags(Enum):
-
-    """Item flags enum."""
-
-    CONSUMABLE = 1
-    EQUIPPABLE = 2
-    SELLABLE = 3
-
-
 class EquipmentSlot(Enum):
 
     """Equipment slot enum."""
@@ -70,7 +52,6 @@ class EquipmentSlot(Enum):
     FINGER_8 = 18
     FINGER_9 = 19
     FINGER_10 = 20
-    FINGER_11 = 21
 
 
 class Entity(pygame.sprite.Sprite):
@@ -216,7 +197,7 @@ class Player(Actor):
 
         for slot, item in self.equipment.items():
             if item:
-                sheet = item.images[ItemState.EQUIPPED][Player]
+                sheet = item.images[Player]
                 walking.blit(sheet, [0, 0])
 
         self.animations = {
@@ -253,19 +234,3 @@ class Player(Actor):
         """Handle unequipment."""
         self.equipment.pop(event.slot, None)
         self.load_animations()
-
-
-class Item:
-
-    """Base item."""
-
-    def __init__(self, state=ItemState.DROPPED, flags=0, stackable=1, images={}, **kwargs):
-        """Constructor."""
-        self.images = images
-
-        self.state = state
-        self.flags = flags
-        self.stackable = stackable
-
-        for k, v in kwargs.items():
-            setattr(self, k, v)

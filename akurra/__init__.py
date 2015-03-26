@@ -23,6 +23,7 @@ from akurra.debug import DebugManager
 from akurra.keyboard import KeyboardManager
 from akurra.states import StateManager
 from akurra.assets import AssetManager
+from akurra.items import ItemManager
 
 from akurra.demo import DemoIntroScreen, DemoGameState
 
@@ -85,6 +86,9 @@ def build_container(binder):
     # Assets
     binder.bind(AssetManager, scope=singleton)
     binder.bind(AssetBasePath, to=cfg.get('akurra.assets.base_path', 'assets'))
+
+    # Items
+    binder.bind(ItemManager, scope=singleton)
 
     # Demo
     binder.bind(DemoIntroScreen)
