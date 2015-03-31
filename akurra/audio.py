@@ -23,8 +23,19 @@ class AudioManager:
         logger.debug('Initializing AudioManager')
 
         self.assets = assets
+        self.channels = {}
         self.sound = {}
         self.music = {}
+
+    def add_channel(self, name):
+        """Add a channel entry."""
+        if len(self.channels) <= 8:
+            self.channels[name] = len(self.channels) + 1
+
+    def get_channel(self, name):
+        """Retrieve a channel."""
+        if name in self.channels:
+            return pygame.mixer.Channel(self.channels[name])
 
     def add_sound(self, relative_path, name):
         """Add a sound."""
@@ -65,11 +76,18 @@ class AudioManager:
         logger.debug("Stopping background music.")
         pygame.mixer.music.stop()
 
-    def play_sound(self, name):
+    def play_sound(self, name, channel=None, queue=False):
         """Play sound effect."""
         if name in self.sound:
-            logger.debug('Playing sound "%s"', name)
-            self.sound[name].play()
+            logger.debug('Playing sound "%s" in channel "%s', name, channel)
+            if channel is not None and channel in self.channels:
+                chosenChannel = self.get_channel(channel)
+                if queue:
+                    chosenChannel.queue(self.sound[name])
+                elif not chosenChannel.get_busy():
+                    chosenChannel.play(self.sound[name])
+            else:
+                self.sound[name].play()
         else:
             logger.debug("Attempted to play non-extant sound file !")
 

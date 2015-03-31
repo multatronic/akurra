@@ -9,7 +9,6 @@ from akurra.keyboard import KeyboardManager
 from akurra.entities import Player
 from akurra.states import GameState, StateManager
 from akurra.audio import AudioManager
-from akurra.entities import EntityState
 from akurra.locals import *  # noqa
 
 
@@ -93,13 +92,26 @@ class DemoGameState(GameState):
         self.terrain_sfx = {}
         self.current_terrain = None
 
+        # we want some sound overlap for footsteps,
+        # but with a reasonable amount of spacing,
+        # so we keep track of the last time a sound effect was played
+        self.last_tick = 0
+        self.tick_counter = 0
+        self.footstep_interval = 400
+
     def play_sound_effects(self, event):
         """Place a sound effect."""
-        state = self.player.state
-        frame = self.player.animations[self.player.state].frame
+        sound = self.terrain_sfx[self.current_terrain]
 
-        if(state is EntityState.MOVING and frame % 2 is 0):
-            self.audio.play_sound(self.terrain_sfx[self.current_terrain])
+        # Adjust tick counters to determine if it's time to play another sound effect
+        currentTick = pygame.time.get_ticks()
+        tick_delta = currentTick - self.last_tick
+        self.last_tick = currentTick
+        self.tick_counter += tick_delta
+
+        if(self.tick_counter >= self.footstep_interval):
+            self.tick_counter = 0
+            self.audio.play_sound(sound)
 
     def on_move_start(self, event):
         """Handle the starting of movement."""
@@ -153,6 +165,9 @@ class DemoGameState(GameState):
         # sound effects
         self.audio.add_sound("audio/sfx/sfx_step_grass.ogg", "step_grass")
         self.audio.add_sound("audio/sfx/sfx_step_rock.ogg", "step_stone")
+
+        # create channels
+        self.audio.add_channel('footsteps')
 
         # map terrain types to sound effect names
         self.terrain_sfx["grass"] = "step_grass"
