@@ -11,7 +11,7 @@ akurra:
                     -
                         - physics
                         - core_offset: [0, 0.35]
-                          core_size: [24, 16]
+                          core_size: [24, 12]
                     -
                         - sprite
                         - sprite_size: [64, 64]
