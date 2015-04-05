@@ -29,6 +29,17 @@ class TickEvent(Event):
         self.delta_time = delta_time
 
 
+class EntityMoveEvent(Event):
+
+    """Entity move event."""
+
+    def __init__(self, entity_id):
+        """Constructor."""
+        super().__init__()
+
+        self.entity_id = entity_id
+
+
 class EventManager:
 
     """Event manager."""
@@ -92,8 +103,8 @@ class EventManager:
 
         """
         try:
-            event = self.queue.get(block=False)
-            self.handle(event)
+            while True:
+                self.handle(self.queue.get(block=False))
         except queue.Empty:
             pass
 

@@ -2,7 +2,7 @@
 import logging
 import pygame
 from injector import inject
-from akurra.assets import AssetManager
+from .assets import AssetManager
 
 
 logger = logging.getLogger(__name__)
@@ -23,30 +23,41 @@ class AudioManager:
         logger.debug('Initializing AudioManager')
 
         self.assets = assets
-        self.channels = {}
-        self.sound = {}
+        self.channels = [False for x in range(0, 8)]
+        self.sounds = {}
         self.music = {}
 
     def add_channel(self, name):
         """Add a channel entry."""
-        if len(self.channels) <= 8:
-            self.channels[name] = len(self.channels) + 1
+        for i in range(0, len(self.channels)):
+            if self.channels[i] is False:
+                self.channels[i] = name
+                logger.debug('Added audio channel "%s" [slot=%s]', name, i + 1)
 
     def get_channel(self, name):
         """Retrieve a channel."""
-        if name in self.channels:
-            return pygame.mixer.Channel(self.channels[name])
+        for i in range(0, len(self.channels)):
+            if name is self.channels[i]:
+                return pygame.mixer.Channel(i + 1)
+
+        return None
+
+    def remove_channel(self, name):
+        """Remove a channel entry."""
+        for i in range(0, len(self.channels)):
+            if self.channels[i] is name:
+                self.channels.remove(name)
+                logger.debug('Removed audio channel "%s" [slot=%s]', name, i + 1)
 
     def add_sound(self, relative_path, name):
         """Add a sound."""
-        # TODO add checks for invalid path
         sound = self.assets.get_sound(relative_path)
-        self.sound[name] = sound
+        self.sounds[name] = sound
         logger.debug('Added sound "%s"', name)
 
     def remove_sound(self, name):
         """Remove a state."""
-        self.sound.pop(name, None)
+        self.sounds.pop(name, None)
         logger.debug('Removed sound "%s"', name)
 
     def add_music(self, relative_path, name):
@@ -64,37 +75,31 @@ class AudioManager:
     # set loop counter to -1 to loop indefinitely
     def play_music(self, name, loop_counter=-1, starting_point=0.0):
         """Play background music."""
-        if name in self.music:
-            logger.debug('Playing music "%s"', name)
-            pygame.mixer.music.load(self.music[name])
-            pygame.mixer.music.play(loop_counter, starting_point)
-        else:
-            logger.debug("Attempted to play non-extant music file!")
+        logger.debug('Playing music "%s"', name)
+        pygame.mixer.music.load(self.music[name])
+        pygame.mixer.music.play(loop_counter, starting_point)
 
     def stop_music():
         """Stop playing background music."""
-        logger.debug("Stopping background music.")
+        logger.debug("Stopping background music")
         pygame.mixer.music.stop()
 
     def play_sound(self, name, channel=None, queue=False):
         """Play sound effect."""
-        if name in self.sound:
-            logger.debug('Playing sound "%s" in channel "%s', name, channel)
-            if channel is not None and channel in self.channels:
-                chosenChannel = self.get_channel(channel)
-                if queue:
-                    chosenChannel.queue(self.sound[name])
-                elif not chosenChannel.get_busy():
-                    chosenChannel.play(self.sound[name])
-            else:
-                self.sound[name].play()
+        sound = self.sounds[name]
+
+        if channel:
+            channel = self.get_channel(channel)
+
+            if queue:
+                channel.queue(sound)
+            elif not channel.get_busy():
+                channel.play(sound)
+
         else:
-            logger.debug("Attempted to play non-extant sound file !")
+            sound.play()
 
     def stop_sound(self, name):
         """Stop sound effect."""
-        if name in self.music:
-            logger.debug('Stopping sound "%s"', name)
-            self.music[name].stop()
-        else:
-            logger.debug("Attempted to stop non-extant sound file!")
+        logger.debug('Stopping sound "%s"', name)
+        self.sounds[name].stop()

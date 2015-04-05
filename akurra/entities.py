@@ -5,10 +5,12 @@ from uuid import uuid4
 from enum import Enum
 from pkg_resources import iter_entry_points
 from injector import inject
+
 from .locals import *  # noqa
 from .assets import SpriteAnimation
-from .events import TickEvent, EventManager
+from .events import TickEvent, EntityMoveEvent, EventManager
 from .keyboard import KeyboardManager
+from .audio import AudioManager
 from .utils import ContainerAware
 
 
@@ -74,6 +76,7 @@ class EntityInput(Enum):
 #     FINGER_9 = 19
 #     FINGER_10 = 20
 
+
 class Entity(pygame.sprite.Sprite):
 
     """
@@ -106,6 +109,8 @@ class EntityManager:
                  systems_entry_point_group='akurra.entities.systems',
                  entity_templates={}):
         """Constructor."""
+        logger.debug('Initializing EntityManager [components_group=%s, systems_group=%s]',
+                     components_entry_point_group, systems_entry_point_group)
         self.components_entry_point_group = components_entry_point_group
         self.systems_entry_point_group = systems_entry_point_group
 
@@ -279,7 +284,7 @@ class PositionComponent(Component):
         """Constructor."""
         super().__init__(**kwargs)
         self.position = position
-        self.old = position
+        self.old = None
 
 
 class VelocityComponent(Component):
@@ -370,10 +375,11 @@ class MapLayerComponent(Component):
 
     """Map layer component."""
 
-    def __init__(self, layer=None, **kwargs):
+    def __init__(self, layer=None, location=[0, 0], **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
         self.layer = layer
+        self.location = location
 
 
 class System(ContainerAware):
@@ -381,6 +387,7 @@ class System(ContainerAware):
     """Base system."""
 
     requirements = []
+    event_handlers = {}
 
     def __init__(self):
         """Constructor."""
@@ -389,13 +396,15 @@ class System(ContainerAware):
 
     def start(self):
         """Start the system."""
-        self.events.register(TickEvent, self.on_tick_event)
+        for event, handler in self.event_handlers.items():
+            self.events.register(event, getattr(self, handler))
 
     def stop(self):
         """Stop the system."""
-        self.events.unregister(self.on_tick_event)
+        for handler in self.event_handlers.values():
+            self.events.unregister(getattr(self, handler))
 
-    def on_tick_event(self, event):
+    def on_event(self, event):
         """Handle an event."""
         for entity in self.entities.find_entities_by_components(self.requirements):
             self.update(entity, event)
@@ -429,21 +438,16 @@ class PlayerInputSystem(System):
     def start(self):
         """Start the system."""
         for key in pygame.KEYDOWN, pygame.KEYUP:
-            [self.keyboard.register(x, self.on_key_press, event_type=key) for x in self.key_inputs.keys()]
+            [self.keyboard.register(x, self.on_event, event_type=key) for x in self.key_inputs.keys()]
 
     def stop(self):
         """Stop the system."""
-        self.events.unregister(self.on_key_press)
+        self.keyboard.unregister(self.on_event)
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         if event.key in self.key_inputs:
             entity.components['input'].input[self.key_inputs[event.key]] = event.type == pygame.KEYDOWN
-
-    def on_key_press(self, event):
-        """Handle a key press."""
-        for entity in self.entities.find_entities_by_components(self.requirements):
-            self.update(entity, event)
 
 
 class VelocitySystem(System):
@@ -460,6 +464,10 @@ class VelocitySystem(System):
         EntityInput.MOVE_DOWN: [0, 1],
         EntityInput.MOVE_LEFT: [-1, 0],
         EntityInput.MOVE_RIGHT: [1, 0]
+    }
+
+    event_handlers = {
+        TickEvent: 'on_event'
     }
 
     def update(self, entity, event=None):
@@ -493,8 +501,22 @@ class MovementSystem(System):
         'sprite'
     ]
 
+    event_handlers = {
+        TickEvent: 'on_event'
+    }
+
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
+        # If we have no old position, assume we have to initialize
+        if not entity.components['position'].old:
+            entity.components['position'].old = list(entity.components['position'].position)
+            entity.components['sprite'].rect.topleft = list(entity.components['position'].position)
+            return
+
+        # Do nothing if there is no velocity
+        if not entity.components['velocity'].velocity[0] and not entity.components['velocity'].velocity[1]:
+            return
+
         entity.components['position'].old = list(entity.components['position'].position)
 
         entity.components['position'].position[0] += entity.components['velocity'].velocity[0] * event.delta_time
@@ -507,6 +529,32 @@ class MovementSystem(System):
         for state in entity.components['sprite'].animations:
             entity.components['sprite'].animations[state].direction = entity.components['velocity'].direction.name
 
+        # Trigger a move event
+        self.events.dispatch(EntityMoveEvent(entity.id))
+
+
+class MapLocationSystem(System):
+
+    """Map location system."""
+
+    requirements = [
+        'map_layer',
+        'physics',
+        'velocity',
+        'position'
+    ]
+
+    event_handlers = {
+        EntityMoveEvent: 'on_event'
+    }
+
+    def update(self, entity, event=None):
+        """Have an entity updated by the system."""
+        entity.components['map_layer'].location[0] = entity.components['physics'].collision_core.center[0] / \
+            entity.components['map_layer'].layer.map_data.tilewidth
+        entity.components['map_layer'].location[1] = entity.components['physics'].collision_core.center[1] / \
+            entity.components['map_layer'].layer.map_data.tileheight
+
 
 class RenderingSystem(System):
 
@@ -515,6 +563,10 @@ class RenderingSystem(System):
     requirements = [
         'sprite'
     ]
+
+    event_handlers = {
+        TickEvent: 'on_event'
+    }
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
@@ -541,8 +593,16 @@ class CollisionSystem(System):
         'sprite'
     ]
 
+    event_handlers = {
+        EntityMoveEvent: 'on_event'
+    }
+
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
+        # We can't do much without a location history
+        if not entity.components['position'].old:
+            return
+
         entity.components['physics'].collision_core.center = entity.components['sprite'].rect.center
         entity.components['physics'].collision_core.centery += entity.components['sprite'].rect.height * \
             entity.components['physics'].collision_core_offset[1]
@@ -552,3 +612,37 @@ class CollisionSystem(System):
             entity.components['position'].position = entity.components['position'].old
             entity.components['sprite'].rect.topleft = list(entity.components['position'].position)
             entity.components['physics'].collision_core.center = entity.components['sprite'].rect.center
+
+
+class PlayerTerrainSoundSystem(System):
+
+    """System for triggering sound effects when the player walks over terrain."""
+
+    requirements = [
+        'player',
+        'map_layer'
+    ]
+
+    event_handlers = {
+        EntityMoveEvent: 'on_event'
+    }
+
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
+        self.audio = self.container.get(AudioManager)
+
+    def update(self, entity, event=None):
+        """Have an entity updated by the system."""
+        # Fetch the current tile the player is walking on, based on the current map location
+        coords = [int(x) for x in entity.components['map_layer'].location]
+
+        for l in range(0, len(list(entity.components['map_layer'].layer.map_data.tmx.visible_layers))):
+            try:
+                tile = entity.components['map_layer'].layer.map_data.tmx.get_tile_properties(coords[0], coords[1], l)
+
+                if tile and tile.get('terrain_type'):
+                    self.audio.play_sound('terrain_%s' % tile.get('terrain_type'), channel='terrain', queue=False)
+            except KeyError:
+                # If no tile was found on this layer, that's too bad but we can continue regardless
+                pass

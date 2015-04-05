@@ -88,49 +88,6 @@ class DemoGameState(GameState):
         self.keyboard = keyboard
         self.shutdown = shutdown
 
-        # keep a list mapping terrain types to sfx names
-        # and the current terrain type
-        self.terrain_sfx = {}
-        self.current_terrain = None
-
-        # we want some sound overlap for footsteps,
-        # but with a reasonable amount of spacing,
-        # so we keep track of the last time a sound effect was played
-        self.last_tick = 0
-        self.tick_counter = 0
-        self.footstep_interval = 400
-
-    def play_sound_effects(self, event):
-        """Place a sound effect."""
-        sound = self.terrain_sfx[self.current_terrain]
-
-        # Adjust tick counters to determine if it's time to play another sound effect
-        currentTick = pygame.time.get_ticks()
-        tick_delta = currentTick - self.last_tick
-        self.last_tick = currentTick
-        self.tick_counter += tick_delta
-
-        if(self.tick_counter >= self.footstep_interval):
-            self.tick_counter = 0
-            self.audio.play_sound(sound)
-
-    def on_move_start(self, event):
-        """Handle the starting of movement."""
-        self.player.velocity = self.key_velocities[event.key]
-
-        logger.debug("Player tile position: (%s - %s)", int(self.player.location[0]), int(self.player.location[1]))
-
-        for i in range(0, len(list(self.tmx_data.visible_layers))):
-            try:
-                tileProps = self.tmx_data.get_tile_properties(int(self.player.location[0]),
-                                                              int(self.player.location[1]), i)
-                if(tileProps is not None):
-                    logger.debug('Detected terrain type: %s', tileProps['terrain_type'])
-                    self.current_terrain = tileProps['terrain_type']
-            except KeyError:
-                pass
-        self.play_sound_effects(event)
-
     def on_quit(self, event):
         """Handle quitting."""
         logger.debug("Escape pressed during demo! Setting shutdown flag...")
@@ -159,15 +116,11 @@ class DemoGameState(GameState):
         self.audio.add_music("audio/music/drums_of_the_deep.mp3", "world01")
 
         # sound effects
-        self.audio.add_sound("audio/sfx/sfx_step_grass.ogg", "step_grass")
-        self.audio.add_sound("audio/sfx/sfx_step_rock.ogg", "step_stone")
+        self.audio.add_sound("audio/sfx/sfx_step_grass.ogg", "terrain_grass")
+        self.audio.add_sound("audio/sfx/sfx_step_rock.ogg", "terrain_stone")
 
         # create channels
-        self.audio.add_channel('footsteps')
-
-        # map terrain types to sound effect names
-        self.terrain_sfx["grass"] = "step_grass"
-        self.terrain_sfx["stone"] = "step_stone"
+        self.audio.add_channel('terrain')
 
         # start playing the background music
         self.audio.play_music("world01")

@@ -80,7 +80,7 @@ class AssetManager:
     @inject(base_path=AssetBasePath)
     def __init__(self, base_path='assets'):
         """Constructor."""
-        logger.debug('Initializing AssetManager')
+        logger.debug('Initializing AssetManager [base_path=%s]', base_path)
 
         self.base_path = base_path
 

@@ -25,6 +25,7 @@ from .states import StateManager
 from .assets import AssetManager
 from .entities import EntityManager
 from .items import ItemManager
+from .audio import AudioManager
 from .utils import get_data_path
 
 from .demo import DemoIntroScreen, DemoGameState
@@ -101,6 +102,9 @@ def build_container(binder):
                                                            'akurra.entities.components'))
     binder.bind(EntityTemplates, to=cfg.get('akurra.entities.templates', {}))
 
+    # Audio
+    binder.bind(AudioManager, scope=singleton)
+
     # Items
     binder.bind(ItemManager, scope=singleton)
 
@@ -136,7 +140,7 @@ class Akurra:
             delta_time = self.clock.tick(self.max_fps) / 1000
             self.events.dispatch(TickEvent(delta_time=delta_time))
 
-            pygame.time.wait(3)
+            pygame.time.wait(5)
 
         self.stop()
 
