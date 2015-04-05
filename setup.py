@@ -30,6 +30,26 @@ setup(
         'console_scripts': [
             'akurra = akurra:main',
         ],
+
+        'akurra.entities.components': [
+            'health = akurra.entities:HealthComponent',
+            'input = akurra.entities:InputComponent',
+            'position = akurra.entities:PositionComponent',
+            'velocity = akurra.entities:VelocityComponent',
+            'character = akurra.entities:CharacterComponent',
+            'player = akurra.entities:PlayerComponent',
+            'map_layer = akurra.entities:MapLayerComponent',
+            'sprite = akurra.entities:SpriteComponent',
+            'physics = akurra.entities:PhysicsComponent',
+        ],
+
+        'akurra.entities.systems': [
+            'player_input = akurra.entities:PlayerInputSystem',
+            'velocity = akurra.entities:VelocitySystem',
+            'movement = akurra.entities:MovementSystem',
+            'collision = akurra.entities:CollisionSystem',
+            'rendering = akurra.entities:RenderingSystem',
+        ]
     },
 
     install_requires=[

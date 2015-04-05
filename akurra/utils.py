@@ -1,4 +1,5 @@
 """Utils module."""
+import os
 import pygame
 import collections
 
@@ -34,3 +35,22 @@ def flatten(d, parent_key='', sep='_'):
         else:
             items.append((new_key, v))
     return dict(items)
+
+
+_ROOT = os.path.abspath(os.path.dirname(__file__))
+
+
+def get_data_path(path):
+    """Create and return a data path for a relative path."""
+    return os.path.join(_ROOT, 'data', path)
+
+
+class ContainerAware:
+
+    """Container-aware base class."""
+
+    @property
+    def container(self):
+        """Return container."""
+        from . import container
+        return container

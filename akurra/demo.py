@@ -5,8 +5,8 @@ from injector import inject
 from akurra.assets import AssetManager
 from akurra.display import DisplayManager, ScrollingMapDisplayLayer, FrameRenderCompletedEvent, DisplayLayer
 from akurra.events import EventManager
+from akurra.entities import EntityManager
 from akurra.keyboard import KeyboardManager
-from akurra.entities import Player
 from akurra.states import GameState, StateManager
 from akurra.locals import *  # noqa
 
@@ -73,32 +73,18 @@ class DemoGameState(GameState):
 
     """Temporary demo middleware."""
 
-    @inject(assets=AssetManager, display=DisplayManager, keyboard=KeyboardManager, events=EventManager,
-            shutdown=ShutdownFlag)
-    def __init__(self, assets, display, keyboard, events, shutdown):
+    @inject(assets=AssetManager, entities=EntityManager, display=DisplayManager, keyboard=KeyboardManager,
+            events=EventManager, shutdown=ShutdownFlag)
+    def __init__(self, assets, entities, display, keyboard, events, shutdown):
         """Constructor."""
         super().__init__()
 
         self.events = events
         self.display = display
         self.assets = assets
+        self.entities = entities
         self.keyboard = keyboard
         self.shutdown = shutdown
-
-    def on_move_start(self, event):
-        """Handle the starting of movement."""
-        self.player.velocity = self.key_velocities[event.key]
-
-    def on_move_stop(self, event):
-        """Handle the stopping of movement."""
-        self.player.velocity = [0, 0]
-
-        # If another directional key is pressed, trigger a new move start event with said key
-        pressed = pygame.key.get_pressed()
-        keys = [x for x in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT] if pressed[x]]
-
-        if keys:
-            self.on_move_start(pygame.event.Event(pygame.KEYDOWN, key=keys[0]))
 
     def on_quit(self, event):
         """Handle quitting."""
@@ -107,34 +93,22 @@ class DemoGameState(GameState):
 
     def enable(self):
         """Initialize the gamestate."""
+        # pygame.key.set_repeat(100, 100)
+        self.keyboard.register(pygame.K_ESCAPE, self.on_quit)
+
         # self.tmx_data = self.assets.get_tmx_data('pyscroll_demo/grasslands.tmx')
         self.tmx_data = self.assets.get_tmx_data('maps/urdarbrunn/map.tmx')
         self.layer = ScrollingMapDisplayLayer(self.tmx_data, default_layer=2)
         self.display.add_layer(self.layer)
 
-        self.player = Player(position=self.layer.map_layer.rect.center)
+        self.player = self.entities.create_entity_from_template('player')
+        self.player.components['position'].position = self.layer.map_layer.rect.center
+        self.player.components['map_layer'].layer = self.layer
+        self.entities.add_entity(self.player)
 
         self.layer.group.add(self.player)
         self.layer.center = self.player
 
-        player_speed = 400
-
-        self.key_velocities = {
-            pygame.K_UP: [0, -player_speed],
-            pygame.K_DOWN: [0, player_speed],
-            pygame.K_LEFT: [-player_speed, 0],
-            pygame.K_RIGHT: [player_speed, 0]
-        }
-
-        pygame.key.set_repeat(100, 100)
-
-        # register for all relevant keys
-        [self.keyboard.register(x, self.on_move_start, event_type=pygame.KEYDOWN) for x in self.key_velocities.keys()]
-        [self.keyboard.register(x, self.on_move_stop, event_type=pygame.KEYUP) for x in self.key_velocities.keys()]
-        self.keyboard.register(pygame.K_ESCAPE, self.on_quit)
-
     def disable(self):
         """Stop the gamestate."""
-        self.keyboard.unregister(self.on_move_start)
-        self.keyboard.unregister(self.on_move_stop)
         self.keyboard.unregister(self.on_quit)

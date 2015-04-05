@@ -5,7 +5,8 @@ import pygame
 import pyscroll
 import pytmx
 from injector import inject
-from akurra.locals import *  # noqa
+from .locals import *  # noqa
+from .utils import ContainerAware
 
 
 logger = logging.getLogger(__name__)
@@ -72,7 +73,7 @@ class AssetManager:
         self.base_path = base_path
 
 
-class SpriteAnimation:
+class SpriteAnimation(ContainerAware):
 
     """Base animation."""
 
@@ -89,10 +90,18 @@ class SpriteAnimation:
 
         self._frame = value
 
-    def __init__(self, sheet, frames=1, directions=[1], frame_size=None, frame_offset=0,
+    def __init__(self, sheet_path, frames=1, directions=[1], frame_size=None, frame_offset=0,
                  frame_interval=60, loop=False):
         """Constructor."""
-        self.sheet = sheet
+        # If a list of sheet paths is passed, blit them over each other
+        if type(sheet_path) is list:
+            self.sheet = self.container.get(AssetManager).get_image(sheet_path, alpha=True)
+
+            for path in sheet_path[1:]:
+                self.sheet.blit(self.container.get(AssetManager).get_image(path, alpha=True), [0, 0])
+        else:
+            self.sheet = self.container.get(AssetManager).get_image(sheet_path, alpha=True)
+
         self.loop = loop
 
         self.directions = directions
@@ -108,7 +117,7 @@ class SpriteAnimation:
             frame_size = int(self.sheet.get_width() / self.frames), int(self.sheet.get_height() / len(self.directions))
 
         self.frame_size = frame_size
-        self.image = pygame.Surface(self.frame_size, flags=pygame.SRCALPHA)
+        self.image = pygame.Surface(self.frame_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
 
         self.last_tick = 0
 

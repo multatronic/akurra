@@ -29,24 +29,6 @@ class TickEvent(Event):
         self.delta_time = delta_time
 
 
-class PlayerItemEquipEvent(Event):
-
-    """Player item equip event."""
-
-    def __init__(self, player, slot, item):
-        """Constructor."""
-        super().__init__()
-
-        self.player = player
-        self.slot = slot
-        self.item = item
-
-
-class PlayerItemUnequipEvent(PlayerItemEquipEvent):
-
-    """Player item unequip event."""
-
-
 class EventManager:
 
     """Event manager."""
