@@ -4,8 +4,10 @@ import pygame
 from injector import inject
 import pyscroll
 from pyscroll.util import PyscrollGroup
-from akurra.locals import *  # noqa
-from akurra.events import Event, TickEvent, EventManager
+
+from .locals import *  # noqa
+from .events import Event, TickEvent, EventManager
+from .entities import MapLayerComponent
 
 
 logger = logging.getLogger(__name__)
@@ -144,12 +146,37 @@ class ObjectsDisplayLayer(DisplayLayer):
         super().draw(surface)
 
 
-class ScrollingMapDisplayLayer(DisplayLayer):
+class EntityDisplayLayer(DisplayLayer):
+
+    """
+    Entity display layer.
+
+    A layer for rendering and displaying entities.
+
+    """
+
+    def __init__(self, **kwargs):
+        """Constructor."""
+        super().__init__(**kwargs)
+        self.entities = {}
+
+    def add_entity(self, entity):
+        """Add an entity to the layer."""
+        entity.add_component(MapLayerComponent(layer=self))
+        self.entities[entity.id] = entity
+
+    def remove_entity(self, entity):
+        """Remove an entity from the layer."""
+        entity.components.pop(MapLayerComponent, None)
+        self.entities.pop(entity.id, None)
+
+
+class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
 
     """
     Scrollable map display layer.
 
-    A display layer for rendering a scrollable map.
+    A display layer for rendering entities on a scrollable map.
 
     """
 
@@ -173,15 +200,15 @@ class ScrollingMapDisplayLayer(DisplayLayer):
         super().update(delta_time)
         self.group.update(delta_time)
 
-    def add_object(self, object):
-        """Add an object to the layer."""
-        # Set layer within object
-        object.layer = self
-        self.group.add(object)
+    def add_entity(self, entity):
+        """Add an entity to the layer."""
+        super().add_entity(entity)
+        self.group.add(entity)
 
-    def remove_object(self, object):
-        """Remove an object from the layer."""
-        self.group.remove(object)
+    def remove_entity(self, entity):
+        """Remove an entity from the layer."""
+        super().remove_entity(entity)
+        self.group.remove(entity)
 
     def draw(self, surface):
         """Draw the layer onto a surface."""

@@ -92,10 +92,20 @@ class Entity(pygame.sprite.Sprite):
         super().__init__()
 
         self.id = id
-        self.components = components
+        self.components = {}
 
-        for key in self.components:
-            self.components[key].entity = self
+        for key in components:
+            self.add_component(components[key])
+
+    def add_component(self, component):
+        """Add a component to the entity."""
+        self.components[component.type] = component
+        component.entity = self
+
+    def remove_component(self, component):
+        """Remove a component from the entity."""
+        self.components.pop(component.type, None)
+        component.entity = None
 
 
 class EntityManager:
@@ -242,6 +252,8 @@ class EntityManager:
 
             entity.components[component_name] = self.components[component_name](entity=entity, **component_args)
 
+        self.add_entity(entity)
+
         return entity
 
 
@@ -258,6 +270,8 @@ class HealthComponent(Component):
 
     """Health component."""
 
+    type = 'health'
+
     def __init__(self, min=0, max=100, hp=1, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
@@ -269,6 +283,8 @@ class HealthComponent(Component):
 class PositionComponent(Component):
 
     """Position component."""
+
+    type = 'position'
 
     @property
     def position(self):
@@ -291,6 +307,8 @@ class VelocityComponent(Component):
 
     """Velocity component."""
 
+    type = 'velocity'
+
     def __init__(self, velocity=[0, 0], max=300, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
@@ -303,6 +321,8 @@ class CharacterComponent(Component):
 
     """Character component."""
 
+    type = 'character'
+
     def __init__(self, name, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
@@ -312,6 +332,8 @@ class CharacterComponent(Component):
 class SpriteComponent(Component):
 
     """Sprite component."""
+
+    type = 'sprite'
 
     @property
     def entity(self):
@@ -344,6 +366,8 @@ class InputComponent(Component):
 
     """Input component."""
 
+    type = 'input'
+
     def __init__(self, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
@@ -359,6 +383,8 @@ class PhysicsComponent(Component):
 
     """Physics component."""
 
+    type = 'physics'
+
     def __init__(self, core_size=[0, 0], core_offset=[0, 0], **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
@@ -370,10 +396,14 @@ class PlayerComponent(Component):
 
     """Player component."""
 
+    type = 'player'
+
 
 class MapLayerComponent(Component):
 
     """Map layer component."""
+
+    type = 'map_layer'
 
     def __init__(self, layer=None, location=[0, 0], **kwargs):
         """Constructor."""

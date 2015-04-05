@@ -3,7 +3,7 @@ import pygame
 import logging
 from injector import inject
 from akurra.assets import AssetManager
-from akurra.display import DisplayManager, ScrollingMapDisplayLayer, FrameRenderCompletedEvent, DisplayLayer
+from akurra.display import DisplayManager, ScrollingMapEntityDisplayLayer, FrameRenderCompletedEvent, DisplayLayer
 from akurra.events import EventManager
 from akurra.entities import EntityManager
 from akurra.keyboard import KeyboardManager
@@ -100,15 +100,13 @@ class DemoGameState(GameState):
 
         # self.tmx_data = self.assets.get_tmx_data('pyscroll_demo/grasslands.tmx')
         self.tmx_data = self.assets.get_tmx_data('maps/urdarbrunn/map.tmx')
-        self.layer = ScrollingMapDisplayLayer(self.tmx_data, default_layer=2)
+        self.layer = ScrollingMapEntityDisplayLayer(self.tmx_data, default_layer=2)
         self.display.add_layer(self.layer)
 
         self.player = self.entities.create_entity_from_template('player')
         self.player.components['position'].position = self.layer.map_layer.rect.center
-        self.player.components['map_layer'].layer = self.layer
-        self.entities.add_entity(self.player)
 
-        self.layer.add_object(self.player)
+        self.layer.add_entity(self.player)
         self.layer.center = self.player
 
         # Load audio files
