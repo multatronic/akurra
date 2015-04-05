@@ -171,15 +171,7 @@ class ScrollingMapDisplayLayer(DisplayLayer):
     def update(self, delta_time):
         """Compute an update to the layer's state."""
         super().update(delta_time)
-
         self.group.update(delta_time)
-
-        # Check if entity bases are colliding with the collision map
-        # Entities must have a rect called core, and a revert_move method,
-        # otherwise this will fail
-        for entity in self.group.sprites():
-            if entity.core.collidelist(self.collision_map) > -1:
-                entity.revert_move()
 
     def add_object(self, object):
         """Add an object to the layer."""

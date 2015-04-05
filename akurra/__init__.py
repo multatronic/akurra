@@ -12,19 +12,22 @@ from injector import Injector, inject, singleton
 
 from ballercfg import ConfigurationManager
 
-from akurra.locals import *  # noqa
+from .locals import *  # noqa
 
-from akurra.events import EventManager, TickEvent
-from akurra.modules import ModuleManager
-from akurra.logger import configure_logging
+from .events import EventManager, TickEvent
+from .modules import ModuleManager
+from .logger import configure_logging
 
-from akurra.display import DisplayManager
-from akurra.debug import DebugManager
-from akurra.keyboard import KeyboardManager
-from akurra.states import StateManager
-from akurra.assets import AssetManager
+from .display import DisplayManager
+from .debug import DebugManager
+from .keyboard import KeyboardManager
+from .states import StateManager
+from .assets import AssetManager
+from .entities import EntityManager
+from .items import ItemManager
+from .utils import get_data_path
 
-from akurra.demo import DemoIntroScreen, DemoGameState
+from .demo import DemoIntroScreen, DemoGameState
 
 
 DEBUG = 'debug' in sys.argv
@@ -43,15 +46,19 @@ def build_container(binder):
     binder.bind(ShutdownFlag, to=Event())
 
     # Configuration
-    CFG_FILE = os.path.expanduser('~/.config/akurra/config.yml')
+    CFG_FILES = [
+        os.path.expanduser('~/.config/akurra/config.yml'),
+        get_data_path('entities.yml')
+    ]
 
     # If the directories or files don't exist, create them
-    if not os.path.isfile(CFG_FILE):
-        os.makedirs(os.path.dirname(CFG_FILE))
-        with open(CFG_FILE, 'a+'):
-            pass
+    for f in CFG_FILES:
+        if not os.path.isfile(f):
+            os.makedirs(os.path.dirname(f))
+            with open(f, 'a+'):
+                pass
 
-    cfg = ConfigurationManager.load_single(CFG_FILE)
+    cfg = ConfigurationManager.load(CFG_FILES)
     binder.bind(Configuration, to=cfg)
 
     # Modules
@@ -86,6 +93,17 @@ def build_container(binder):
     binder.bind(AssetManager, scope=singleton)
     binder.bind(AssetBasePath, to=cfg.get('akurra.assets.base_path', 'assets'))
 
+    # Entities
+    binder.bind(EntityManager, scope=singleton)
+    binder.bind(EntitySystemEntryPointGroup, to=cfg.get('akurra.entities.systems.entry_point_group',
+                                                        'akurra.entities.systems'))
+    binder.bind(EntityComponentEntryPointGroup, to=cfg.get('akurra.entities.components.entry_point_group',
+                                                           'akurra.entities.components'))
+    binder.bind(EntityTemplates, to=cfg.get('akurra.entities.templates', {}))
+
+    # Items
+    binder.bind(ItemManager, scope=singleton)
+
     # Demo
     binder.bind(DemoIntroScreen)
     binder.bind(DemoGameState)
@@ -101,6 +119,8 @@ class Akurra:
 
         self.modules.load()
         self.modules.start()
+
+        self.entities.start()
 
         # create states, set introscreen as initial state
         game_realm = self.container.get(DemoGameState)
@@ -125,6 +145,8 @@ class Akurra:
         logger.info('Stopping..')
         self.shutdown.set()
 
+        self.entities.stop()
+
         self.modules.stop()
         self.modules.unload()
 
@@ -137,9 +159,11 @@ class Akurra:
 
     @inject(modules=ModuleManager, events=EventManager, display=DisplayManager,
             debugger=DebugManager, keyboard=KeyboardManager, states=StateManager,
+            entities=EntityManager,
             clock=DisplayClock, max_fps=DisplayMaxFPS,
             shutdown=ShutdownFlag, debug=DebugFlag)
-    def __init__(self, modules, events, display, debugger, keyboard, states, clock, max_fps, shutdown, debug):
+    def __init__(self, modules, events, display, debugger, keyboard, states, entities, clock, max_fps, shutdown,
+                 debug):
         """Constructor."""
         configure_logging(debug=debug.value)
         logger.info('Initializing..')
@@ -149,6 +173,7 @@ class Akurra:
 
         self.modules = modules
         self.events = events
+        self.entities = entities
         self.states = states
 
         self.clock = clock

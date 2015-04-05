@@ -24,3 +24,8 @@ EventPollTimeout = Key('EventPollTimeout')
 
 # Assets
 AssetBasePath = Key('AssetBasePath')
+
+# Entities
+EntityComponentEntryPointGroup = Key('EntityComponentEntryPointGroup')
+EntitySystemEntryPointGroup = Key('EntitySystemEntryPointGroup')
+EntityTemplates = Key('EntityTemplates')

@@ -25,6 +25,7 @@ class TickEvent(Event):
     def __init__(self, delta_time=0):
         """Constructor."""
         super().__init__()
+
         self.delta_time = delta_time
 
 

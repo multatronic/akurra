@@ -1,0 +1,30 @@
+akurra:
+    entities:
+        templates:
+            player:
+                components:
+                    - player
+                    - position
+                    - velocity
+                    - input
+                    - map_layer
+                    -
+                        - physics
+                        - core_offset: [0, 0.35]
+                          core_size: [24, 12]
+                    -
+                        - sprite
+                        - sprite_size: [64, 64]
+                          animations:
+                              stationary:
+                                  sheet_path: sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
+                                  directions: [NORTH, WEST, SOUTH, EAST]
+                                  frame_size: [64, 64]
+                                  frames: 1
+                              moving:
+                                  sheet_path: sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
+                                  directions: [NORTH, WEST, SOUTH, EAST]
+                                  frames: 9
+                                  frame_size: [64, 64]
+                                  frame_interval: 20
+                                  loop: true
