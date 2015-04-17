@@ -87,12 +87,17 @@ class Entity(pygame.sprite.Sprite):
 
     """
 
-    def __init__(self, id=uuid4(), components={}):
+    def __init__(self, id=None, components={}):
         """Constructor."""
         super().__init__()
 
-        self.id = id
+        self.id = id if id else uuid4()
         self.components = {}
+
+        # @DO Have the EntityManager inject the container to avoid overhead?
+        # @DO Maybe use a ContainerComponent with a static container inside?
+        from . import container
+        self.entities = container.get(EntityManager)
 
         for key in components:
             self.add_component(components[key])
@@ -102,10 +107,16 @@ class Entity(pygame.sprite.Sprite):
         self.components[component.type] = component
         component.entity = self
 
+        # Add entity to component dict in entitymanager
+        self.entities.entities_components[component.type][self.id] = self
+
     def remove_component(self, component):
         """Remove a component from the entity."""
         self.components.pop(component.type, None)
         component.entity = None
+
+        # Remove entity from component dict in entitymanager
+        self.entities_components[component.type].pop(self.id, None)
 
 
 class EntityManager:
@@ -313,7 +324,6 @@ class VelocityComponent(Component):
         """Constructor."""
         super().__init__(**kwargs)
         self.velocity = velocity
-        self.direction = EntityDirection.NORTH
         self.max = 300
 
 
@@ -349,15 +359,21 @@ class SpriteComponent(Component):
         self._entity.rect = self.rect
         self._entity.image = self.image
 
-    def __init__(self, sprite_size=[0, 0], animations={}, **kwargs):
+    def __init__(self, sprite_size=[0, 0], animations={}, direction=EntityDirection.SOUTH,
+                 state=EntityState.STATIONARY, **kwargs):
         """Constructor."""
+        self.direction = direction
+        self.state = state
+
         self.image = pygame.Surface(sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
         self.default_image = self.image.copy()
-        self.rect = self.image.get_rect()
         self.animations = {}
 
         for state in animations:
             self.animations[state] = SpriteAnimation(**animations[state])
+            self.animations[state].direction = self.direction.name
+
+        self.rect = self.image.get_rect()
 
         super().__init__(**kwargs)
 
@@ -444,6 +460,25 @@ class System(ContainerAware):
         raise NotImplementedError()
 
 
+class SpriteRectPositionCorrectionSystem(System):
+
+    """Sprite rect position correction system."""
+
+    requirements = [
+        'sprite',
+        'position'
+    ]
+
+    event_handlers = {
+        TickEvent: 'on_event'
+    }
+
+    def update(self, entity, event=None):
+        """Have an entity updated by the system."""
+        # pygame.sprite.Sprite logic
+        entity.components['sprite'].rect.topleft = list(entity.components['position'].position)
+
+
 class PlayerInputSystem(System):
 
     """Input system."""
@@ -507,15 +542,6 @@ class VelocitySystem(System):
                 entity.components['velocity'].velocity =  \
                     [y * entity.components['velocity'].max for y in self.input_velocities[x]]
 
-                direction = EntityDirection.NORTH.value if entity.components['velocity'].velocity[1] < 0 \
-                    else EntityDirection.SOUTH.value if entity.components['velocity'].velocity[1] else 0
-                direction |= EntityDirection.EAST.value if entity.components['velocity'].velocity[0] > 0 \
-                    else EntityDirection.WEST.value if entity.components['velocity'].velocity[0] else 0
-
-                if direction:
-                    entity.components['velocity'].direction = EntityDirection(direction)
-
-                # Return if we have found a direction, so we don't reset our velocity
                 return
 
         entity.components['velocity'].velocity = [0, 0]
@@ -543,6 +569,9 @@ class MovementSystem(System):
             entity.components['sprite'].rect.topleft = list(entity.components['position'].position)
             return
 
+        entity.components['sprite'].state = EntityState.MOVING if \
+            list(filter(None, entity.components['velocity'].velocity)) else EntityState.STATIONARY
+
         # Do nothing if there is no velocity
         if not entity.components['velocity'].velocity[0] and not entity.components['velocity'].velocity[1]:
             return
@@ -552,12 +581,16 @@ class MovementSystem(System):
         entity.components['position'].position[0] += entity.components['velocity'].velocity[0] * event.delta_time
         entity.components['position'].position[1] += entity.components['velocity'].velocity[1] * event.delta_time
 
-        # pygame.sprite.Sprite logic
-        entity.components['sprite'].rect.topleft = list(entity.components['position'].position)
+        # Calculate and set direction
+        direction = EntityDirection.NORTH.value if entity.components['velocity'].velocity[1] < 0 \
+            else EntityDirection.SOUTH.value if entity.components['velocity'].velocity[1] else 0
+        direction |= EntityDirection.EAST.value if entity.components['velocity'].velocity[0] > 0 \
+            else EntityDirection.WEST.value if entity.components['velocity'].velocity[0] else 0
 
-        # Set direction properly
+        entity.components['sprite'].direction = EntityDirection(direction)
+
         for state in entity.components['sprite'].animations:
-            entity.components['sprite'].animations[state].direction = entity.components['velocity'].direction.name
+            entity.components['sprite'].animations[state].direction = entity.components['sprite'].direction.name
 
         # Trigger a move event
         self.events.dispatch(EntityMoveEvent(entity.id))
@@ -601,11 +634,7 @@ class RenderingSystem(System):
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         try:
-            # Calculate entity state
-            # Future: maybe create a StateSystem?
-            state = 'moving' if list(filter(None, entity.components['velocity'].velocity)) else 'stationary'
-
-            frame = entity.components['sprite'].animations[state].get_frame()
+            frame = entity.components['sprite'].animations[entity.components['sprite'].state.name].get_frame()
             entity.components['sprite'].image.fill([0, 0, 0, 0])
             entity.components['sprite'].image.blit(frame, [0, 0])
         except KeyError:

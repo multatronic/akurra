@@ -103,10 +103,7 @@ class DemoGameState(GameState):
         self.layer = ScrollingMapEntityDisplayLayer(self.tmx_data, default_layer=2)
         self.display.add_layer(self.layer)
 
-        self.player = self.entities.create_entity_from_template('player')
-        self.player.components['position'].position = self.layer.map_layer.rect.center
-
-        self.layer.add_entity(self.player)
+        self.player = self.entities.find_entities_by_components(['player'])[0]
         self.layer.center = self.player
 
         # Load audio files

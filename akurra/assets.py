@@ -107,7 +107,7 @@ class SpriteAnimation(ContainerAware):
         """Constructor."""
         # If a list of sheet paths is passed, blit them over each other
         if type(sheet_path) is list:
-            self.sheet = self.container.get(AssetManager).get_image(sheet_path, alpha=True)
+            self.sheet = self.container.get(AssetManager).get_image(sheet_path[0], alpha=True)
 
             for path in sheet_path[1:]:
                 self.sheet.blit(self.container.get(AssetManager).get_image(path, alpha=True), [0, 0])

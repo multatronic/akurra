@@ -1,13 +1,15 @@
 """Screen module."""
 import logging
 import pygame
+import random
 from injector import inject
 import pyscroll
 from pyscroll.util import PyscrollGroup
 
 from .locals import *  # noqa
 from .events import Event, TickEvent, EventManager
-from .entities import MapLayerComponent
+from .entities import MapLayerComponent, EntityManager
+from .utils import ContainerAware
 
 
 logger = logging.getLogger(__name__)
@@ -18,7 +20,7 @@ class FrameRenderCompletedEvent(Event):
     """Frame render completion event."""
 
 
-class DisplayLayer:
+class DisplayLayer(ContainerAware):
 
     """Display layer."""
 
@@ -184,16 +186,42 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
         """Constructor."""
         super().__init__(**kwargs)
 
+        self.em = self.container.get(EntityManager)
+
         # Create data source
         self.map_data = pyscroll.data.TiledMapData(tmx_data)
-        # Auto-generate collision map
-        self.collision_map = [pygame.Rect(x.x, x.y, x.width, x.height) for x in tmx_data.objects]
-
         self.map_layer = pyscroll.BufferedRenderer(self.map_data, self.size, clamp_camera=True)
+
         self.surface = self.map_layer.buffer
         self.group = PyscrollGroup(map_layer=self.map_layer, default_layer=default_layer)
 
+        self.build_collision_map()
+        self.spawn_entities()
+
         self.center = None
+
+    def build_collision_map(self):
+        """Build a collision map based on map data."""
+        self.collision_map = []
+
+        for o in self.map_data.tmx.objects:
+            if o.properties.get('collision', False):
+                self.collision_map.append(pygame.Rect(o.x, o.y, o.width, o.height))
+
+    def spawn_entities(self):
+        """Spawn entities on the map based on map data."""
+        for o in self.map_data.tmx.objects:
+            if o.properties.get('spawn', False):
+                templates = o.properties['spawn_templates'].split(';')
+
+                for i in range(0, o.properties.get('spawn_count', 1)):
+                    template = random.choice(templates)
+                    entity = self.em.create_entity_from_template(template)
+
+                    if 'position' in entity.components:
+                        entity.components['position'].position = pygame.Rect(o.x, o.y, o.width, o.height).center
+
+                    self.add_entity(entity)
 
     def update(self, delta_time):
         """Compute an update to the layer's state."""
