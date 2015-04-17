@@ -359,13 +359,13 @@ class SpriteComponent(Component):
         self._entity.rect = self.rect
         self._entity.image = self.image
 
-    def __init__(self, sprite_size=[0, 0], animations={}, direction=EntityDirection.SOUTH,
+    def __init__(self, image=None, sprite_size=[0, 0], animations={}, direction=EntityDirection.SOUTH,
                  state=EntityState.STATIONARY, **kwargs):
         """Constructor."""
         self.direction = direction
         self.state = state
 
-        self.image = pygame.Surface(sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
+        self.image = image if image else pygame.Surface(sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
         self.default_image = self.image.copy()
         self.animations = {}
 
