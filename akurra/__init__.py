@@ -24,6 +24,7 @@ from .keyboard import KeyboardManager
 from .states import StateManager
 from .assets import AssetManager
 from .entities import EntityManager
+from .session import SessionManager
 from .items import ItemManager
 from .audio import AudioManager
 from .utils import get_data_path
@@ -89,6 +90,9 @@ def build_container(binder):
 
     # State manager
     binder.bind(StateManager, scope=singleton)
+
+    # Session manager
+    binder.bind(SessionManager, scope=singleton)
 
     # Assets
     binder.bind(AssetManager, scope=singleton)

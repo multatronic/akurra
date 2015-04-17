@@ -2,14 +2,15 @@
 import pygame
 import logging
 from injector import inject
-from akurra.assets import AssetManager
-from akurra.display import DisplayManager, ScrollingMapEntityDisplayLayer, FrameRenderCompletedEvent, DisplayLayer
-from akurra.events import EventManager
-from akurra.entities import EntityManager
-from akurra.keyboard import KeyboardManager
-from akurra.states import GameState, StateManager
-from akurra.audio import AudioManager
-from akurra.locals import *  # noqa
+from .assets import AssetManager
+from .display import DisplayManager, ScrollingMapEntityDisplayLayer, FrameRenderCompletedEvent, DisplayLayer
+from .events import EventManager
+from .entities import EntityManager
+from .session import SessionManager
+from .keyboard import KeyboardManager
+from .states import GameState, StateManager
+from .audio import AudioManager
+from .locals import *  # noqa
 
 
 logger = logging.getLogger(__name__)
@@ -75,8 +76,8 @@ class DemoGameState(GameState):
     """Temporary demo middleware."""
 
     @inject(assets=AssetManager, entities=EntityManager, display=DisplayManager, keyboard=KeyboardManager,
-            events=EventManager, audio=AudioManager, shutdown=ShutdownFlag)
-    def __init__(self, assets, entities, display, keyboard, events, audio, shutdown):
+            events=EventManager, session=SessionManager, audio=AudioManager, shutdown=ShutdownFlag)
+    def __init__(self, assets, entities, display, session, keyboard, events, audio, shutdown):
         """Constructor."""
         super().__init__()
 
@@ -85,6 +86,7 @@ class DemoGameState(GameState):
         self.audio = audio
         self.assets = assets
         self.entities = entities
+        self.session = session
         self.keyboard = keyboard
         self.shutdown = shutdown
 
