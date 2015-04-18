@@ -9,23 +9,24 @@ akurra:
                     - position
                     # - velocity
                     # - input
-                    # -
-                    #     - physics
-                    #     - core_offset: [0, 0.35]
-                    #       core_size: [24, 16]
+                    -
+                        - physics
+                        - core_offset: [0, 20]
+                          core_size: [24, 16]
                     -
                         - sprite
                         - sprite_size: [64, 64]
                           animations:
                               STATIONARY:
-                                  sheet_path:
+                                  sprite_sheets:
                                       - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
-                                      - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/FEET_plate_armor_shoes.png
+                                      - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/FEET_shoes_brown.png
                                       - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/LEGS_plate_armor_pants.png
                                       - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/TORSO_plate_armor_torso.png
+                                      - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BELT_leather.png
                                       - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/TORSO_plate_armor_arms_shoulders.png
                                       - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/HANDS_plate_armor_gloves.png
-                                      - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/HEAD_plate_armor_helmet.png
+                                      - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/HEAD_hair_blonde.png
                                       - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/WEAPON_shield_cutout_body.png
                                   directions: [NORTH, WEST, SOUTH, EAST]
                                   frame_size: [64, 64]
@@ -39,21 +40,38 @@ akurra:
                     - input
                     -
                         - physics
-                        - core_offset: [0, 0.35]
+                        - core_offset: [0, 20]
                           core_size: [24, 16]
                     -
                         - sprite
-                        - sprite_size: [64, 64]
+                        - sprite_size: [192, 192]
                           animations:
                               STATIONARY:
-                                  sheet_path: sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
+                                  sprite_sheets:
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/FEET_plate_armor_shoes.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/LEGS_plate_armor_pants.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/TORSO_plate_armor_torso.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/TORSO_plate_armor_arms_shoulders.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/HANDS_plate_armor_gloves.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/HEAD_plate_armor_helmet.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/WEAPON_shield_cutout_chain_armor_helmet.png, [64, 64]]
+                                      #- [sprites/lpc_medieval_fantasy_character_sprites/thrust/WEAPON_spear.png, [64, 64]]
                                   directions: [NORTH, WEST, SOUTH, EAST]
-                                  frame_size: [64, 64]
+                                  frame_size: [192, 192]
                                   frames: 1
                               MOVING:
-                                  sheet_path: sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
+                                  sprite_sheets:
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/FEET_plate_armor_shoes.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/LEGS_plate_armor_pants.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/TORSO_plate_armor_torso.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/TORSO_plate_armor_arms_shoulders.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/HANDS_plate_armor_gloves.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/HEAD_plate_armor_helmet.png, [64, 64]]
+                                      - [sprites/lpc_medieval_fantasy_character_sprites/walkcycle/WEAPON_shield_cutout_chain_armor_helmet.png, [64, 64]]
+                                      #- [sprites/lpc_medieval_fantasy_character_sprites/thrust/WEAPON_spear.png, [64, 64]]
                                   directions: [NORTH, WEST, SOUTH, EAST]
+                                  frame_size: [192, 192]
                                   frames: 9
-                                  frame_size: [64, 64]
-                                  frame_interval: 20
                                   loop: true

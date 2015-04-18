@@ -475,6 +475,9 @@ class SpriteRectPositionCorrectionSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
+        if not entity.components['position'].old:
+            entity.components['position'].old = list(entity.components['position'].position)
+
         # pygame.sprite.Sprite logic
         entity.components['sprite'].rect.topleft = list(entity.components['position'].position)
 
@@ -563,12 +566,6 @@ class MovementSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        # If we have no old position, assume we have to initialize
-        if not entity.components['position'].old:
-            entity.components['position'].old = list(entity.components['position'].position)
-            entity.components['sprite'].rect.topleft = list(entity.components['position'].position)
-            return
-
         entity.components['sprite'].state = EntityState.MOVING if \
             list(filter(None, entity.components['velocity'].velocity)) else EntityState.STATIONARY
 
@@ -663,14 +660,26 @@ class CollisionSystem(System):
             return
 
         entity.components['physics'].collision_core.center = entity.components['sprite'].rect.center
-        entity.components['physics'].collision_core.centery += entity.components['sprite'].rect.height * \
+
+        entity.components['physics'].collision_core.centerx += \
+            entity.components['physics'].collision_core_offset[0]
+        entity.components['physics'].collision_core.centery += \
             entity.components['physics'].collision_core_offset[1]
 
-        if entity.components['physics'].collision_core.collidelist(
-                entity.components['map_layer'].layer.collision_map) > -1:
+        collision_rects = entity.components['map_layer'].layer.collision_map[:]
+        collision_rects.remove(entity.components['physics'].collision_core)
+
+        collisions = entity.components['physics'].collision_core.collidelist(collision_rects)
+
+        if collisions > -1:
             entity.components['position'].position = entity.components['position'].old
             entity.components['sprite'].rect.topleft = list(entity.components['position'].position)
             entity.components['physics'].collision_core.center = entity.components['sprite'].rect.center
+
+            entity.components['physics'].collision_core.centerx += \
+                entity.components['physics'].collision_core_offset[0]
+            entity.components['physics'].collision_core.centery += \
+                entity.components['physics'].collision_core_offset[1]
 
 
 class PlayerTerrainSoundSystem(System):

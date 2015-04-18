@@ -233,10 +233,18 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
         super().add_entity(entity)
         self.group.add(entity)
 
+        # If this entity supports collision detection, add its collision core to our collision map
+        if 'physics' in entity.components:
+            self.collision_map.append(entity.components['physics'].collision_core)
+
     def remove_entity(self, entity):
         """Remove an entity from the layer."""
         super().remove_entity(entity)
         self.group.remove(entity)
+
+        # If this entity supports collision detection, remove its collision core from our collision map
+        if 'physics' in entity.components:
+            self.collision_map.remove(entity.components['physics'].collision_core)
 
     def draw(self, surface):
         """Draw the layer onto a surface."""
