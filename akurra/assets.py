@@ -102,8 +102,8 @@ class SpriteAnimation(ContainerAware):
 
         self._frame = value
 
-    def __init__(self, sprite_sheets, frames=1, directions=[1], frame_size=None, frame_offset=0,
-                 frame_interval=60, loop=False):
+    def __init__(self, sprite_sheet, frames=1, directions=[1], direction=None, frame_size=None, frame_offset=0,
+                 frame_interval=60, render_offset=[0, 0], loop=False):
         """Constructor."""
         self.frames = frames
 
@@ -112,29 +112,19 @@ class SpriteAnimation(ContainerAware):
         self.frame_interval = frame_interval
         self.frame_size = frame_size
 
-        sprite_sheets = sprite_sheets if type(sprite_sheets) is list else [sprite_sheets]
-        self.sprite_sheets = []
+        self.render_offset = render_offset
+
+        sprite_sheet = sprite_sheet if type(sprite_sheet) is list else [sprite_sheet]
+        self.sprite_sheet = self.container.get(AssetManager).get_image(sprite_sheet[0], alpha=True)
 
         # We support sprite sheet layering
-        for sprite_sheet in sprite_sheets:
-            # Determine the path to the sprite sheet
-            # If we only got a single string assume it's the path, else assume a frame size override is present
-            sprite_sheet_path = sprite_sheet[0] if type(sprite_sheet) is list else sprite_sheet
-
-            # Determine correct frame size for this sprite sheet
-            sprite_sheet_frame_size = sprite_sheet[1] if type(sprite_sheet) is list else frame_size
-
-            # Calculate sprite sheet frame positioning offset compared to combined image
-            sprite_sheet_frame_offset = [(self.frame_size[x] - sprite_sheet_frame_size[x]) / 2 for x in [0, 1]]
-
-            self.sprite_sheets.append([self.container.get(AssetManager).get_image(sprite_sheet_path, alpha=True),
-                                       sprite_sheet_frame_size,
-                                       sprite_sheet_frame_offset])
+        for path in sprite_sheet[1:]:
+            self.sprite_sheet.blit(self.container.get(AssetManager).get_image(path, alpha=True), [0, 0])
 
         self.loop = loop
 
         self.directions = directions
-        self.direction = directions[0]
+        self.direction = direction if direction else directions[0]
 
         self.image = pygame.Surface(self.frame_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
 
@@ -150,14 +140,12 @@ class SpriteAnimation(ContainerAware):
                 self.last_tick = current_tick
 
         self.image.fill([0, 0, 0, 0])
-
-        for sprite_sheet in self.sprite_sheets:
-            self.image.blit(sprite_sheet[0], sprite_sheet[2], [
-                [
-                    (self.frame + self.frame_offset - 1) * sprite_sheet[1][0],
-                    (self.directions.index(self.direction)) * sprite_sheet[1][1]
-                ],
-                sprite_sheet[1]
-            ])
+        self.image.blit(self.sprite_sheet, [0, 0], [
+            [
+                (self.frame + self.frame_offset - 1) * self.frame_size[0],
+                (self.directions.index(self.direction)) * self.frame_size[1]
+            ],
+            self.frame_size
+        ])
 
         return self.image

@@ -320,11 +320,11 @@ class VelocityComponent(Component):
 
     type = 'velocity'
 
-    def __init__(self, velocity=[0, 0], max=300, **kwargs):
+    def __init__(self, velocity=[0, 0], max=200, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
         self.velocity = velocity
-        self.max = 300
+        self.max = max
 
 
 class CharacterComponent(Component):
@@ -365,13 +365,23 @@ class SpriteComponent(Component):
         self.direction = direction
         self.state = state
 
-        self.image = image if image else pygame.Surface(sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
+        self.sprite_size = sprite_size
+        self.image = image if image else pygame.Surface(self.sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
         self.default_image = self.image.copy()
         self.animations = {}
 
         for state in animations:
-            self.animations[state] = SpriteAnimation(**animations[state])
-            self.animations[state].direction = self.direction.name
+            animations[state] = animations[state] if type(animations[state]) is list else [animations[state]]
+            self.animations[state] = []
+
+            for value in animations[state]:
+                value['frame_size'] = value.get('frame_size', self.sprite_size)
+                value['render_offset'] = value.get('render_offset', [(self.sprite_size[y] - value['frame_size'][y]) / 2
+                                                   for y in [0, 1]])
+                value['direction'] = value.get('direction', self.direction.name)
+
+                animation = SpriteAnimation(**value)
+                self.animations[state].append(animation)
 
         self.rect = self.image.get_rect()
 
@@ -587,7 +597,8 @@ class MovementSystem(System):
         entity.components['sprite'].direction = EntityDirection(direction)
 
         for state in entity.components['sprite'].animations:
-            entity.components['sprite'].animations[state].direction = entity.components['sprite'].direction.name
+            for animation in entity.components['sprite'].animations[state]:
+                animation.direction = entity.components['sprite'].direction.name
 
         # Trigger a move event
         self.events.dispatch(EntityMoveEvent(entity.id))
@@ -631,9 +642,10 @@ class RenderingSystem(System):
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         try:
-            frame = entity.components['sprite'].animations[entity.components['sprite'].state.name].get_frame()
             entity.components['sprite'].image.fill([0, 0, 0, 0])
-            entity.components['sprite'].image.blit(frame, [0, 0])
+
+            for x in entity.components['sprite'].animations[entity.components['sprite'].state.name]:
+                entity.components['sprite'].image.blit(x.get_frame(), x.render_offset)
         except KeyError:
             entity.components['sprite'].image.blit(entity.components['sprite'].default_image, [0, 0])
 
