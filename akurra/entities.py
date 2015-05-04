@@ -662,6 +662,36 @@ class RenderingSystem(System):
             entity.components['sprite'].image.blit(entity.components['sprite'].default_image, [0, 0])
 
 
+class SpriteRenderOrderingSystem(System):
+
+    """Sprite render ordering system."""
+
+    requirements = [
+        'position',
+        'sprite',
+        'map_layer'
+    ]
+
+    event_handlers = {
+        EntityMoveEvent: ['on_event', 10]
+    }
+
+    def on_event(self, event):
+        """Handle an event."""
+        for entity in self.entities.find_entities_by_components(self.requirements):
+            # Since only one map layer should be active at a time, it should be safe to only order the sprites once
+            # self.update(entity, event)
+            entity.components['map_layer'].layer.group._spritelist = sorted(
+                entity.components['map_layer'].layer.group._spritelist,
+                key=lambda x: x.components['position'].position[1])
+            break
+
+    def update(self, entity, event=None):
+        """Have an entity updated by the system."""
+        # entity.components['map_layer'].layer.group._spritelist = sorted(
+        #   entity.components['map_layer'].layer.group._spritelist, key=lambda x: x.components['position'].position[1])
+
+
 class CollisionSystem(System):
 
     """Collision system."""

@@ -52,6 +52,7 @@ setup(
             'map_location = akurra.entities:MapLocationSystem',
             'player_terrain_sound = akurra.entities:PlayerTerrainSoundSystem',
             'sprite_rect_position_correction_system = akurra.entities:SpriteRectPositionCorrectionSystem',
+            'sprite_render_ordering_system = akurra.entities:SpriteRenderOrderingSystem'
         ]
     },
 
