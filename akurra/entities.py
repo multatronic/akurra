@@ -453,12 +453,12 @@ class System(ContainerAware):
     def start(self):
         """Start the system."""
         for event, handler in self.event_handlers.items():
-            self.events.register(event, getattr(self, handler))
+            self.events.register(event, getattr(self, handler[0]), handler[1])
 
     def stop(self):
         """Stop the system."""
         for handler in self.event_handlers.values():
-            self.events.unregister(getattr(self, handler))
+            self.events.unregister(getattr(self, handler[0]))
 
     def on_event(self, event):
         """Handle an event."""
@@ -480,7 +480,7 @@ class SpriteRectPositionCorrectionSystem(System):
     ]
 
     event_handlers = {
-        TickEvent: 'on_event'
+        TickEvent:  ['on_event', 13]
     }
 
     def update(self, entity, event=None):
@@ -545,7 +545,7 @@ class VelocitySystem(System):
     }
 
     event_handlers = {
-        TickEvent: 'on_event'
+        TickEvent: ['on_event', 10]
     }
 
     def update(self, entity, event=None):
@@ -571,7 +571,7 @@ class MovementSystem(System):
     ]
 
     event_handlers = {
-        TickEvent: 'on_event'
+        TickEvent: ['on_event', 11]
     }
 
     def update(self, entity, event=None):
@@ -616,7 +616,7 @@ class MapLocationSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: 'on_event'
+        EntityMoveEvent: ['on_event', 10]
     }
 
     def update(self, entity, event=None):
@@ -636,7 +636,7 @@ class RenderingSystem(System):
     ]
 
     event_handlers = {
-        TickEvent: 'on_event'
+        TickEvent: ['on_event', 13]
     }
 
     def update(self, entity, event=None):
@@ -662,7 +662,7 @@ class CollisionSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: 'on_event'
+        EntityMoveEvent: ['on_event', 12]
     }
 
     def update(self, entity, event=None):
@@ -704,7 +704,7 @@ class PlayerTerrainSoundSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: 'on_event'
+        EntityMoveEvent: ['on_event', 13]
     }
 
     def __init__(self):

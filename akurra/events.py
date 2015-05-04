@@ -44,7 +44,7 @@ class EventManager:
 
     """Event manager."""
 
-    def register(self, event_type, listener):
+    def register(self, event_type, listener, priority=50):
         """
         Register a listener for an event type.
 
@@ -56,9 +56,12 @@ class EventManager:
             event_type = fqcn(event_type)
 
         if event_type not in self.listeners:
-            self.listeners[event_type] = {}
+            self.listeners[event_type] = 99 * [None]
 
-        self.listeners[event_type][listener] = 1
+        if not self.listeners[event_type][priority]:
+            self.listeners[event_type][priority] = []
+
+        self.listeners[event_type][priority].append(listener)
         logger.debug('Registered listener for event type "%s"', hr_event_type(event_type))
 
     def unregister(self, listener):
@@ -69,8 +72,13 @@ class EventManager:
 
         """
         for event_type in self.listeners:
-            if self.listeners[event_type].pop(listener, None):
-                logger.debug('Unregistered listener for event type "%s"', hr_event_type(event_type))
+            for event_listeners in self.listeners[event_type]:
+                if event_listeners:
+                    try:
+                        event_listeners.remove(listener)
+                        logger.debug('Unregistered listener for event type "%s"', hr_event_type(event_type))
+                    except ValueError:
+                        pass
 
     def dispatch(self, event):
         """
@@ -89,8 +97,10 @@ class EventManager:
 
         """
         try:
-            for listener in self.listeners[event.type]:
-                listener(event)
+            for event_listeners in self.listeners[event.type]:
+                if event_listeners:
+                    for listener in event_listeners:
+                        listener(event)
         except KeyError:
             logger.debug('No listeners defined for event "%s"', hr_event_type(event.type))
             pass
