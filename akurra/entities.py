@@ -255,12 +255,24 @@ class EntityManager:
     def create_entity_from_template(self, template_name):
         """Create an entity from a template."""
         template = self.entity_templates[template_name]
+
+        # If the template has a parent, merge this data into a copy of the parent
+        # Before we do this, unset the parent of the current template
+        # This also means that if our parent has its own parent, we will
+        # continue to merge our ancestors in until we run out
+        while template.get('parent', None):
+            # Copy the template's parent and remove the template's parent reference
+            parent = self.entity_templates[template['parent']].copy()
+            template.pop('parent', None)
+
+            # Update the parent's components with the child template's components
+            parent['components'].update(template['components'])
+            template = parent
+
         entity = Entity()
 
-        for component in template['components']:
-            component_name = component[0] if type(component) is list else component
-            component_args = component[1] if type(component) is list else {}
-
+        for component_name, component_args in template['components'].items():
+            component_args = component_args if component_args else {}
             entity.components[component_name] = self.components[component_name](entity=entity, **component_args)
 
         self.add_entity(entity)
