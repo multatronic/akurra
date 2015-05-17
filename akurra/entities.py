@@ -1,6 +1,7 @@
 """Entities module."""
 import logging
 import pygame
+import pdb
 from uuid import uuid4
 from enum import Enum
 from pkg_resources import iter_entry_points
@@ -12,7 +13,7 @@ from .events import TickEvent, EntityMoveEvent, EventManager
 from .keyboard import KeyboardManager
 from .audio import AudioManager
 from .utils import ContainerAware
-
+from .assets import AssetManager
 
 logger = logging.getLogger(__name__)
 
@@ -280,7 +281,7 @@ class EntityManager:
         return entity
 
 
-class Component:
+class Component(ContainerAware):
 
     """Base component."""
 
@@ -371,12 +372,14 @@ class SpriteComponent(Component):
         self._entity.rect = self.rect
         self._entity.image = self.image
 
-    def __init__(self, image=None, sprite_size=[0, 0], animations={}, direction=EntityDirection.SOUTH,
+    def __init__(self, image=None, sprite_sheet=None, sprite_size=[0, 0], animations={}, direction=EntityDirection.SOUTH,
                  state=EntityState.STATIONARY, **kwargs):
         """Constructor."""
         self.direction = direction
         self.state = state
 
+        if sprite_sheet:
+            self.sprite_sheet = self.container.get(AssetManager).get_image(sprite_sheet, alpha=True)
         self.sprite_size = sprite_size
         self.image = image if image else pygame.Surface(self.sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
         self.default_image = self.image.copy()
@@ -656,8 +659,13 @@ class RenderingSystem(System):
         try:
             entity.components['sprite'].image.fill([0, 0, 0, 0])
 
-            for x in entity.components['sprite'].animations[entity.components['sprite'].state.name]:
-                entity.components['sprite'].image.blit(x.get_frame(), x.render_offset)
+            if entity.components['sprite'].animations:
+                for x in entity.components['sprite'].animations[entity.components['sprite'].state.name]:
+                    entity.components['sprite'].image.blit(x.get_frame(), x.render_offset)
+            else:
+                # pdb.set_trace()
+                if entity.components['sprite'].sprite_sheet:
+                    entity.components['sprite'].image.blit(entity.components['sprite'].sprite_sheet, entity.components['position'].position)
         except KeyError:
             entity.components['sprite'].image.blit(entity.components['sprite'].default_image, [0, 0])
 
@@ -681,6 +689,7 @@ class SpriteRenderOrderingSystem(System):
         for entity in self.entities.find_entities_by_components(self.requirements):
             # Since only one map layer should be active at a time, it should be safe to only order the sprites once
             # self.update(entity, event)
+
             entity.components['map_layer'].layer.group._spritelist = sorted(
                 entity.components['map_layer'].layer.group._spritelist,
                 key=lambda x: x.components['position'].position[1])

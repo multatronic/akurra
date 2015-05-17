@@ -16,6 +16,26 @@ class DebugManager:
 
     """Debug manager."""
 
+    @inject(keyboard=KeyboardManager, events=EventManager, display=DisplayManager, clock=DisplayClock, debug=DebugFlag)
+    def __init__(self, keyboard, events, display, clock, debug):
+        """Constructor."""
+        logger.debug('Initializing DebugManager')
+
+        self.keyboard = keyboard
+        self.keyboard.register(pygame.K_F11, self.on_toggle, mods=pygame.KMOD_LCTRL)
+
+        self.debug = debug
+        self.events = events
+        self.clock = clock
+
+        self.display = display
+        self.font = pygame.font.SysFont('monospace', 14)
+
+        self.layer = DisplayLayer(size=[300, 190], position=[5, 5], flags=pygame.SRCALPHA, z_index=9999)
+
+        if self.debug.value:
+            self.enable()
+
     def on_frame_render_completed(self, event):
         """Handle a frame render completion."""
         self.layer.surface.fill([10, 10, 10, 200])
@@ -65,23 +85,3 @@ class DebugManager:
 
         self.events.unregister(self.on_frame_render_completed)
         self.display.remove_layer(self.layer)
-
-    @inject(keyboard=KeyboardManager, events=EventManager, display=DisplayManager, clock=DisplayClock, debug=DebugFlag)
-    def __init__(self, keyboard, events, display, clock, debug):
-        """Constructor."""
-        logger.debug('Initializing DebugManager')
-
-        self.keyboard = keyboard
-        self.keyboard.register(pygame.K_F11, self.on_toggle, mods=pygame.KMOD_LCTRL)
-
-        self.debug = debug
-        self.events = events
-        self.clock = clock
-
-        self.display = display
-        self.font = pygame.font.SysFont('monospace', 14)
-
-        self.layer = DisplayLayer(size=[300, 190], position=[5, 5], flags=pygame.SRCALPHA, z_index=9999)
-
-        if self.debug.value:
-            self.enable()

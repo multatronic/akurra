@@ -162,9 +162,10 @@ class EntityDisplayLayer(DisplayLayer):
         super().__init__(**kwargs)
         self.entities = {}
 
-    def add_entity(self, entity):
+    def add_entity(self, entity, add_map_ref=True):
         """Add an entity to the layer."""
-        entity.add_component(MapLayerComponent(layer=self))
+        if add_map_ref:
+            entity.add_component(MapLayerComponent(layer=self))
         self.entities[entity.id] = entity
 
     def remove_entity(self, entity):

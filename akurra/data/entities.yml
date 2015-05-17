@@ -1,6 +1,13 @@
 akurra:
   entities:
     templates:
+      dialog:
+        components:
+          position: ~
+          sprite:
+             sprite_size: [400, 200]
+             sprite_sheet: sprites/ui/dialog.png
+
       human:
         components:
           position: ~

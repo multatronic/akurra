@@ -3,7 +3,8 @@ import pygame
 import logging
 from injector import inject
 from .assets import AssetManager
-from .display import DisplayManager, ScrollingMapEntityDisplayLayer, FrameRenderCompletedEvent, DisplayLayer
+from .display import (DisplayManager, EntityDisplayLayer, ScrollingMapEntityDisplayLayer,
+                      FrameRenderCompletedEvent, DisplayLayer)
 from .events import EventManager
 from .entities import EntityManager
 from .session import SessionManager
@@ -101,10 +102,16 @@ class DemoGameState(GameState):
         # self.tmx_data = self.assets.get_tmx_data('pyscroll_demo/grasslands.tmx')
         self.tmx_data = self.assets.get_tmx_data('maps/urdarbrunn/map.tmx')
         self.layer = ScrollingMapEntityDisplayLayer(self.tmx_data, default_layer=2)
+        self.uiLayer = EntityDisplayLayer(size=[300, 190], position=[5, 5], flags=pygame.SRCALPHA, z_index=999999)
+
         self.display.add_layer(self.layer)
+        self.display.add_layer(self.uiLayer)
 
         self.player = self.entities.find_entities_by_components(['player'])[0]
         self.layer.center = self.player
+
+        self.dialog = self.entities.create_entity_from_template('dialog')
+        self.uiLayer.add_entity(self.dialog, add_map_ref=False)
 
         # Load audio files
         # music
