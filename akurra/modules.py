@@ -3,10 +3,28 @@ import sys
 import logging
 from pkg_resources import iter_entry_points
 from injector import inject
-from akurra.locals import *  # noqa
+
+from .utils import ContainerAware
+from .locals import *  # noqa
 
 
 logger = logging.getLogger(__name__)
+
+
+class Module(ContainerAware):
+
+    """Base module."""
+
+    def __init__(self):
+        """Constructor."""
+
+    def start(self):
+        """Start the module."""
+        pass
+
+    def stop(self):
+        """Stop the module."""
+        pass
 
 
 class ModuleManager:

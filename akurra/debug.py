@@ -3,21 +3,17 @@ import pygame
 import logging
 
 from .display import DisplayManager, DisplayLayer
-from .events import TickEvent
-from .entities import System
+from .events import TickEvent, EventManager
+from .modules import Module
 from .locals import *  # noqa
 
 
 logger = logging.getLogger(__name__)
 
 
-class DebuggingSystem(System):
+class DebugModule(Module):
 
-    """Debugging system."""
-
-    event_handlers = {
-        TickEvent: ['on_event', 10]
-    }
+    """Debugging module."""
 
     def __init__(self):
         """Constructor."""
@@ -25,15 +21,26 @@ class DebuggingSystem(System):
 
         self.debug = self.container.get(DebugFlag)
 
+        self.events = self.container.get(EventManager)
+
         self.clock = self.container.get(DisplayClock)
         self.display = self.container.get(DisplayManager)
         self.font = pygame.font.SysFont('monospace', 14)
 
         self.layer = DisplayLayer(size=[300, 190], position=[5, 5], flags=pygame.SRCALPHA, z_index=250)
-        self.display.add_layer(self.layer)
 
-    def on_event(self, event):
-        """Handle an event."""
+    def start(self):
+        """Start the module."""
+        self.display.add_layer(self.layer)
+        self.events.register(TickEvent, self.on_tick)
+
+    def stop(self):
+        """Stop the module."""
+        self.events.unregister(self.on_tick)
+        self.display.remove_layer(self.layer)
+
+    def on_tick(self, event):
+        """Handle a tick."""
         if not self.debug.value:
             return
 
