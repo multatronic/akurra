@@ -1,6 +1,8 @@
 """Session module."""
 import logging
 import pickle
+from injector import inject
+
 from .utils import get_data_path
 from .locals import *  # noqa
 
@@ -12,45 +14,33 @@ class SessionManager:
 
     """Manager class for handling session variables."""
 
-    def __init__(self,):
+    @inject(file_path=SessionFilePath)
+    def __init__(self, file_path=get_data_path('session/main.sav')):
         """Constructor."""
         logger.debug('Initializing SessionManager')
 
-        self.filepath = get_data_path('session')
-        self.variables = {}
+        self.file_path = file_path
+        self.data = {}
 
-    def set(self, variable, value):
+    def set(self, key, value):
         """Set the value for a session variable."""
-        self.variables[variable] = value
-        logger.debug('Setting value "%s" for variable "%s"', variable, value)
+        self.data[key] = value
+        logger.debug('Setting value "%s" for variable "%s"', value, key)
 
-    def get(self, variable, default=None):
+    def get(self, key, default=None):
         """Get the value for a session variable."""
-        if variable in self.variables:
-            return self.variables[variable]
-        else:
-            return default
-
-    def hasVar(self, variable):
-        """Return true if a variable is in the dictionary, else false."""
-        return variable in self.variables
-
-    def setFilePath(self, filepath):
-        """Set path file where state is persisted."""
-        self.filepath = filepath
-
-    def getFilePath(self):
-        """Return path for file where state is persisted."""
-        return self.filepath
+        return self.data.get(key, default)
 
     def flush(self):
         """Persist session state to disk."""
-        logger.debug('Flushing session state to file %s', self.filepath)
-        with open(self.filepath, 'wb') as session:
-            pickle.dump(self.variables, session)
+        logger.debug('Flushing session state to file %s', self.file_path)
+
+        with open(self.file_path, 'wb') as f:
+            pickle.dump(self.data, f)
 
     def load(self):
         """Load state from disk."""
-        logger.debug('Loading state from file %s', self.filepath)
-        with open(self.filepath, 'rb') as session:
-            self.variables = pickle.load(session)
+        logger.debug('Loading state from file %s', self.file_path)
+
+        with open(self.file_path, 'rb') as f:
+            self.data = pickle.load(f)

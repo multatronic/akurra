@@ -1,11 +1,29 @@
 ### assets/sprites/lpc_medieval_fantasy_character_sprites/*
 
 * _Author:_ wulax
-* _Source_: http://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+* _Source:_ http://opengameart.org/content/lpc-medieval-fantasy-character-sprites
 * _License:_ CC-BY SA 3.0, GPL 3.0
 
 ### assets/tiles/mage_city_arcanos/*
 
 * _Author:_ Hyptosis
-* _Soruce_: http://opengameart.org/content/mage-city-arcanos
+* _Source:_ http://opengameart.org/content/mage-city-arcanos
 * _License:_ CC0
+
+### assets/audio/music/magical_theme.{ogg,flac}
+
+* _Author:_ remaxim
+* _Source:_ http://opengameart.org/content/magical-theme
+* _License:_ CC-BY 3.0
+
+### assets/audio/music/heroic_demise.{ogg,mp3}
+
+* _Author:_ matthew.pablo
+* _Source:_ http://opengameart.org/content/heroic-demise-updated-version
+* _License:_ CC-BY 3.0
+
+### assets/audio/music/soliloquy.{ogg,mp3}
+
+* _Author:_ matthew.pablo
+* _Source:_ http://opengameart.org/content/soliloquy
+* _License:_ CC-BY 3.0

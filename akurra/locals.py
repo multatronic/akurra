@@ -29,3 +29,6 @@ AssetBasePath = Key('AssetBasePath')
 EntityComponentEntryPointGroup = Key('EntityComponentEntryPointGroup')
 EntitySystemEntryPointGroup = Key('EntitySystemEntryPointGroup')
 EntityTemplates = Key('EntityTemplates')
+
+# Session
+SessionFilePath = Key('SessionFilePath')

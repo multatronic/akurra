@@ -110,7 +110,7 @@ class DemoGameState(GameState):
 
         # Load audio files
         # music
-        self.audio.add_music("audio/music/drums_of_the_deep.mp3", "world01")
+        self.audio.add_music("audio/music/magical_theme.ogg", "world01")
 
         # sound effects
         self.audio.add_sound("audio/sfx/sfx_step_grass.ogg", "terrain_grass")

@@ -91,8 +91,10 @@ def build_container(binder):
     # State manager
     binder.bind(StateManager, scope=singleton)
 
-    # Session manager
+    # Session
     binder.bind(SessionManager, scope=singleton)
+    binder.bind(SessionFilePath, to=cfg.get('akurra.session.file_path',
+                                            get_data_path('session/main.sav')))
 
     # Assets
     binder.bind(AssetManager, scope=singleton)
