@@ -1,7 +1,8 @@
 """States module."""
 import logging
-from akurra.utils import fqcn
-from akurra.locals import *  # noqa
+
+from .utils import fqcn, ContainerAware
+from .locals import *  # noqa
 
 
 logger = logging.getLogger(__name__)
@@ -61,7 +62,7 @@ class StateManager:
             self.active.disable()
 
 
-class GameState:
+class GameState(ContainerAware):
 
     """Base game state class."""
 

@@ -75,20 +75,18 @@ class DemoGameState(GameState):
 
     """Temporary demo middleware."""
 
-    @inject(assets=AssetManager, entities=EntityManager, display=DisplayManager, keyboard=KeyboardManager,
-            events=EventManager, session=SessionManager, audio=AudioManager, shutdown=ShutdownFlag)
-    def __init__(self, assets, entities, display, session, keyboard, events, audio, shutdown):
+    def __init__(self):
         """Constructor."""
         super().__init__()
 
-        self.events = events
-        self.display = display
-        self.audio = audio
-        self.assets = assets
-        self.entities = entities
-        self.session = session
-        self.keyboard = keyboard
-        self.shutdown = shutdown
+        self.events = self.container.get(EventManager)
+        self.display = self.container.get(DisplayManager)
+        self.audio = self.container.get(AudioManager)
+        self.assets = self.container.get(AssetManager)
+        self.entities = self.container.get(EntityManager)
+        self.session = self.container.get(SessionManager)
+        self.keyboard = self.container.get(KeyboardManager)
+        self.shutdown = self.container.get(ShutdownFlag)
 
     def on_quit(self, event):
         """Handle quitting."""

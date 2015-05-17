@@ -61,7 +61,7 @@ def build_container(binder):
                 pass
 
     cfg = ConfigurationManager.load(CFG_FILES)
-    binder.bind(Configuration, to=cfg)
+    binder.bind(Configuration, to=ConfigurationManager.load(CFG_FILES))
 
     # Modules
     binder.bind(ModuleManager, scope=singleton)
@@ -94,7 +94,7 @@ def build_container(binder):
     # Session
     binder.bind(SessionManager, scope=singleton)
     binder.bind(SessionFilePath, to=cfg.get('akurra.session.file_path',
-                                            get_data_path('session/main.sav')))
+                                            '~/.config/akurra/session/main.sav'))
 
     # Assets
     binder.bind(AssetManager, scope=singleton)
