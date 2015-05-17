@@ -35,3 +35,8 @@ EntityTemplates = Key('EntityTemplates')
 
 # Session
 SessionFilePath = Key('SessionFilePath')
+
+# Audio
+AudioMasterVolume = Key('AudioMasterVolume')
+AudioBackgroundMusicVolume = Key('AudioBackgroundMusicVolume')
+AudioSpecialEffectsVolume = Key('AudioSpecialEffectsVolume')

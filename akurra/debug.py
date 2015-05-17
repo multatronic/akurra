@@ -3,6 +3,7 @@ import pygame
 import logging
 
 from .display import DisplayManager, DisplayLayer
+from .entities import EntityManager
 from .events import TickEvent, EventManager
 from .modules import Module
 from .locals import *  # noqa
@@ -22,12 +23,13 @@ class DebugModule(Module):
         self.debug = self.container.get(DebugFlag)
 
         self.events = self.container.get(EventManager)
+        self.entities = self.container.get(EntityManager)
+        self.display = self.container.get(DisplayManager)
 
         self.clock = self.container.get(DisplayClock)
-        self.display = self.container.get(DisplayManager)
         self.font = pygame.font.SysFont('monospace', 14)
 
-        self.layer = DisplayLayer(size=[300, 190], position=[5, 5], flags=pygame.SRCALPHA, z_index=250)
+        self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=250)
 
     def start(self):
         """Start the module."""
@@ -44,7 +46,60 @@ class DebugModule(Module):
         if not self.debug.value:
             return
 
-        self.layer.surface.fill([10, 10, 10, 200])
+        # First, clear the layer
+        self.layer.surface.fill([0, 0, 0, 0])
+
+        # Keep track of all layers and rects so we can render collision stuff later
+        layers = []
+        entity_rects = []
+
+        # Loop through all entities which have collision detection enabled, that are linked to the map
+        for entity in self.entities.find_entities_by_components(['map_layer', 'physics']):
+            layer = entity.components['map_layer'].layer
+
+            rect = entity.components['physics'].collision_core
+            entity_rects.append(rect)
+
+            offset = [
+                layer.map_layer.xoffset + layer.map_layer.view.left * layer.map_layer.data.tilewidth,
+                layer.map_layer.yoffset + layer.map_layer.view.top * layer.map_layer.data.tileheight,
+            ]
+
+            rect = [
+                rect.x - offset[0],
+                rect.y - offset[1],
+                rect.width,
+                rect.height
+            ]
+
+            self.layer.surface.fill([128, 0, 128, 150], rect)
+
+            # Track the collision rectangles of this layer
+            if layer not in layers:
+                layers.append(layer)
+
+        # Loop through layers and render collision map
+        for layer in layers:
+            for rect in layer.collision_map:
+                # Skip rects if they belong to entities
+                if rect in entity_rects:
+                    continue
+
+                offset = [
+                    layer.map_layer.xoffset + (layer.map_layer.view.left * layer.map_layer.data.tilewidth),
+                    layer.map_layer.yoffset + (layer.map_layer.view.top * layer.map_layer.data.tileheight),
+                ]
+
+                rect = [
+                    rect.x - offset[0],
+                    rect.y - offset[1],
+                    rect.width,
+                    rect.height
+                ]
+
+                self.layer.surface.fill([0, 128, 0, 150], rect)
+
+        self.layer.surface.fill([10, 10, 10, 200], [5, 5, 300, 190])
 
         info = pygame.display.Info()
 
@@ -63,8 +118,8 @@ class DebugModule(Module):
             "SW surface pixel alpha blit accel: %s" % info.blit_sw_A
         ]
 
-        offset_x = 5
-        offset_y = 5
+        offset_x = 10
+        offset_y = 10
         line_height = 15
 
         for t in text:

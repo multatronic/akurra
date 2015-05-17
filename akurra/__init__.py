@@ -92,8 +92,7 @@ def build_container(binder):
 
     # Session
     binder.bind(SessionManager, scope=singleton)
-    binder.bind(SessionFilePath, to=cfg.get('akurra.session.file_path',
-                                            '~/.config/akurra/session/main.sav'))
+    binder.bind(SessionFilePath, to=cfg.get('akurra.session.file_path', '~/.config/akurra/session/main.sav'))
 
     # Assets
     binder.bind(AssetManager, scope=singleton)
@@ -109,6 +108,9 @@ def build_container(binder):
 
     # Audio
     binder.bind(AudioManager, scope=singleton)
+    binder.bind(AudioMasterVolume, to=cfg.get('akurra.audio.master.volume', 0.75))
+    binder.bind(AudioBackgroundMusicVolume, to=cfg.get('akurra.audio.background_music.volume', 1.0))
+    binder.bind(AudioSpecialEffectsVolume, to=cfg.get('akurra.audio.special_effects.volume', 1.0))
 
     # Items
     binder.bind(ItemManager, scope=singleton)
