@@ -1,7 +1,6 @@
 """Demo module."""
 import pygame
 import logging
-from injector import inject
 from .assets import AssetManager
 from .display import DisplayManager, ScrollingMapEntityDisplayLayer, FrameRenderCompletedEvent, DisplayLayer
 from .events import EventManager
@@ -20,15 +19,14 @@ class DemoIntroScreen(GameState):
 
     """Tester class for gamestates."""
 
-    @inject(display=DisplayManager, keyboard=KeyboardManager, events=EventManager, states=StateManager)
-    def __init__(self, display, keyboard, events, states):
+    def __init__(self):
         """Constructor."""
         super().__init__()
 
-        self.display = display
-        self.keyboard = keyboard
-        self.events = events
-        self.states = states
+        self.display = self.container.get(DisplayManager)
+        self.keyboard = self.container.get(KeyboardManager)
+        self.events = self.container.get(EventManager)
+        self.states = self.container.get(StateManager)
         self.font = pygame.font.SysFont('monospace', 14)
 
     def enable(self):
