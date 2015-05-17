@@ -1,23 +1,42 @@
-"""Debug module."""
-import logging
+"""Debugging module."""
 import pygame
-from injector import inject
-from akurra.logger import configure_logging
-from akurra.events import EventManager
-from akurra.display import FrameRenderCompletedEvent, DisplayManager, DisplayLayer
-from akurra.keyboard import KeyboardManager
-from akurra.locals import *  # noqa
+import logging
+
+from .display import DisplayManager, DisplayLayer
+from .events import TickEvent
+from .entities import System
+from .locals import *  # noqa
 
 
 logger = logging.getLogger(__name__)
 
 
-class DebugManager:
+class DebuggingSystem(System):
 
-    """Debug manager."""
+    """Debugging system."""
 
-    def on_frame_render_completed(self, event):
-        """Handle a frame render completion."""
+    event_handlers = {
+        TickEvent: ['on_event', 10]
+    }
+
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
+
+        self.debug = self.container.get(DebugFlag)
+
+        self.clock = self.container.get(DisplayClock)
+        self.display = self.container.get(DisplayManager)
+        self.font = pygame.font.SysFont('monospace', 14)
+
+        self.layer = DisplayLayer(size=[300, 190], position=[5, 5], flags=pygame.SRCALPHA, z_index=250)
+        self.display.add_layer(self.layer)
+
+    def on_event(self, event):
+        """Handle an event."""
+        if not self.debug.value:
+            return
+
         self.layer.surface.fill([10, 10, 10, 200])
 
         info = pygame.display.Info()
@@ -44,44 +63,3 @@ class DebugManager:
         for t in text:
             self.layer.surface.blit(self.font.render(t, 1, (255, 255, 0)), [offset_x, offset_y])
             offset_y += line_height
-
-    def on_toggle(self, event):
-        """Handle a debug toggle."""
-        logger.debug('Toggling debug state')
-        self.disable() if self.debug.value else self.enable()
-
-    def enable(self):
-        """Enable debugging."""
-        self.debug.value = True
-        configure_logging(debug=self.debug.value)
-
-        self.events.register(FrameRenderCompletedEvent, self.on_frame_render_completed)
-        self.display.add_layer(self.layer)
-
-    def disable(self):
-        """Disable debugging."""
-        self.debug.value = False
-        configure_logging(debug=self.debug.value)
-
-        self.events.unregister(self.on_frame_render_completed)
-        self.display.remove_layer(self.layer)
-
-    @inject(keyboard=KeyboardManager, events=EventManager, display=DisplayManager, clock=DisplayClock, debug=DebugFlag)
-    def __init__(self, keyboard, events, display, clock, debug):
-        """Constructor."""
-        logger.debug('Initializing DebugManager')
-
-        self.keyboard = keyboard
-        self.keyboard.register(pygame.K_F11, self.on_toggle, mods=pygame.KMOD_LCTRL)
-
-        self.debug = debug
-        self.events = events
-        self.clock = clock
-
-        self.display = display
-        self.font = pygame.font.SysFont('monospace', 14)
-
-        self.layer = DisplayLayer(size=[300, 190], position=[5, 5], flags=pygame.SRCALPHA, z_index=9999)
-
-        if self.debug.value:
-            self.enable()

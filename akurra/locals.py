@@ -2,8 +2,11 @@
 from injector import Key
 
 # General
-DebugFlag = Key('DebugFlag')
 ShutdownFlag = Key('ShutdownFlag')
+
+# Debug
+DebugFlag = Key('DebugFlag')
+DebugToggleKey = Key('DebugToggleKey')
 
 # Configuration
 Configuration = Key('Configuration')

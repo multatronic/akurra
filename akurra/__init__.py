@@ -19,7 +19,6 @@ from .modules import ModuleManager
 from .logger import configure_logging
 
 from .display import DisplayManager
-from .debug import DebugManager
 from .keyboard import KeyboardManager
 from .states import StateManager
 from .assets import AssetManager
@@ -44,7 +43,6 @@ def build_container(binder):
     binder.bind(Akurra, scope=singleton)
 
     # General
-    binder.bind(DebugFlag, to=Value('B', DEBUG))
     binder.bind(ShutdownFlag, to=Event())
 
     # Configuration
@@ -83,7 +81,8 @@ def build_container(binder):
     binder.bind(EventManager, scope=singleton)
 
     # Debug
-    binder.bind(DebugManager, scope=singleton)
+    binder.bind(DebugFlag, to=Value('B', DEBUG))
+    binder.bind(DebugToggleKey, to=getattr(pygame, cfg.get('akurra.keyboard.bindings.toggle_debug', 'K_F11')))
 
     # Keyboard
     binder.bind(KeyboardManager, scope=singleton)
@@ -168,11 +167,11 @@ class Akurra:
         self.shutdown.set()
 
     @inject(modules=ModuleManager, events=EventManager, display=DisplayManager,
-            debugger=DebugManager, keyboard=KeyboardManager, states=StateManager,
+            keyboard=KeyboardManager, states=StateManager,
             entities=EntityManager,
             clock=DisplayClock, max_fps=DisplayMaxFPS,
             shutdown=ShutdownFlag, debug=DebugFlag)
-    def __init__(self, modules, events, display, debugger, keyboard, states, entities, clock, max_fps, shutdown,
+    def __init__(self, modules, events, display, keyboard, states, entities, clock, max_fps, shutdown,
                  debug):
         """Constructor."""
         configure_logging(debug=debug.value)
