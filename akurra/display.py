@@ -162,16 +162,22 @@ class EntityDisplayLayer(DisplayLayer):
         super().__init__(**kwargs)
         self.entities = {}
 
-    def add_entity(self, entity, add_map_ref=True):
+    def add_entity(self, entity):
         """Add an entity to the layer."""
-        if add_map_ref:
-            entity.add_component(MapLayerComponent(layer=self))
+        entity.add_component(MapLayerComponent(layer=self))
         self.entities[entity.id] = entity
 
     def remove_entity(self, entity):
         """Remove an entity from the layer."""
         entity.components.pop(MapLayerComponent, None)
         self.entities.pop(entity.id, None)
+
+    def draw(self, surface):
+        """Draw the layer onto a surface."""
+        for entity_id in self.entities:
+            self.surface.blit(self.entities[entity_id].components['sprite'].image, self.entities[entity_id].components['position'].position)
+
+        super().draw(surface)
 
 
 class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
@@ -279,6 +285,8 @@ class DisplayManager:
         # Set display within layer
         layer.display = self
 
+        logger.debug('Added layer "%s" to display [z-index=%s]', layer, layer.z_index)
+
     def remove_layer(self, layer):
         """Remove a layer from the display."""
         to_remove = None
@@ -294,6 +302,8 @@ class DisplayManager:
 
         # Remove display from layer
         layer.display = None
+
+        logger.debug('Removed layer "%s" to display [z-index=%s]', layer, layer.z_index)
 
     def on_tick(self, event):
         """
