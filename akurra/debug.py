@@ -1,44 +1,105 @@
-"""Debug module."""
-import logging
+"""Debugging module."""
 import pygame
-from injector import inject
-from akurra.logger import configure_logging
-from akurra.events import EventManager
-from akurra.display import FrameRenderCompletedEvent, DisplayManager, DisplayLayer
-from akurra.keyboard import KeyboardManager
-from akurra.locals import *  # noqa
+import logging
+
+from .display import DisplayManager, DisplayLayer
+from .entities import EntityManager
+from .events import TickEvent, EventManager
+from .modules import Module
+from .locals import *  # noqa
 
 
 logger = logging.getLogger(__name__)
 
 
-class DebugManager:
+class DebugModule(Module):
 
-    """Debug manager."""
+    """Debugging module."""
 
-    @inject(keyboard=KeyboardManager, events=EventManager, display=DisplayManager, clock=DisplayClock, debug=DebugFlag)
-    def __init__(self, keyboard, events, display, clock, debug):
+    def __init__(self):
         """Constructor."""
-        logger.debug('Initializing DebugManager')
+        super().__init__()
 
-        self.keyboard = keyboard
-        self.keyboard.register(pygame.K_F11, self.on_toggle, mods=pygame.KMOD_LCTRL)
+        self.debug = self.container.get(DebugFlag)
 
-        self.debug = debug
-        self.events = events
-        self.clock = clock
+        self.events = self.container.get(EventManager)
+        self.entities = self.container.get(EntityManager)
+        self.display = self.container.get(DisplayManager)
 
-        self.display = display
+        self.clock = self.container.get(DisplayClock)
         self.font = pygame.font.SysFont('monospace', 14)
 
-        self.layer = DisplayLayer(size=[300, 190], position=[5, 5], flags=pygame.SRCALPHA, z_index=9999)
+        self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=250)
 
-        if self.debug.value:
-            self.enable()
+    def start(self):
+        """Start the module."""
+        self.display.add_layer(self.layer)
+        self.events.register(TickEvent, self.on_tick)
 
-    def on_frame_render_completed(self, event):
-        """Handle a frame render completion."""
-        self.layer.surface.fill([10, 10, 10, 200])
+    def stop(self):
+        """Stop the module."""
+        self.events.unregister(self.on_tick)
+        self.display.remove_layer(self.layer)
+
+    def on_tick(self, event):
+        """Handle a tick."""
+        if not self.debug.value:
+            return
+
+        # First, clear the layer
+        self.layer.surface.fill([0, 0, 0, 0])
+
+        # Keep track of all layers and rects so we can render collision stuff later
+        layers = []
+        entity_rects = []
+
+        # Loop through all entities which have collision detection enabled, that are linked to the map
+        for entity in self.entities.find_entities_by_components(['map_layer', 'physics']):
+            layer = entity.components['map_layer'].layer
+
+            rect = entity.components['physics'].collision_core
+            entity_rects.append(rect)
+
+            offset = [
+                layer.map_layer.xoffset + layer.map_layer.view.left * layer.map_layer.data.tilewidth,
+                layer.map_layer.yoffset + layer.map_layer.view.top * layer.map_layer.data.tileheight,
+            ]
+
+            rect = [
+                rect.x - offset[0],
+                rect.y - offset[1],
+                rect.width,
+                rect.height
+            ]
+
+            self.layer.surface.fill([128, 0, 128, 150], rect)
+
+            # Track the collision rectangles of this layer
+            if layer not in layers:
+                layers.append(layer)
+
+        # Loop through layers and render collision map
+        for layer in layers:
+            for rect in layer.collision_map:
+                # Skip rects if they belong to entities
+                if rect in entity_rects:
+                    continue
+
+                offset = [
+                    layer.map_layer.xoffset + (layer.map_layer.view.left * layer.map_layer.data.tilewidth),
+                    layer.map_layer.yoffset + (layer.map_layer.view.top * layer.map_layer.data.tileheight),
+                ]
+
+                rect = [
+                    rect.x - offset[0],
+                    rect.y - offset[1],
+                    rect.width,
+                    rect.height
+                ]
+
+                self.layer.surface.fill([0, 128, 0, 150], rect)
+
+        self.layer.surface.fill([10, 10, 10, 200], [5, 5, 300, 190])
 
         info = pygame.display.Info()
 
@@ -57,31 +118,10 @@ class DebugManager:
             "SW surface pixel alpha blit accel: %s" % info.blit_sw_A
         ]
 
-        offset_x = 5
-        offset_y = 5
+        offset_x = 10
+        offset_y = 10
         line_height = 15
 
         for t in text:
             self.layer.surface.blit(self.font.render(t, 1, (255, 255, 0)), [offset_x, offset_y])
             offset_y += line_height
-
-    def on_toggle(self, event):
-        """Handle a debug toggle."""
-        logger.debug('Toggling debug state')
-        self.disable() if self.debug.value else self.enable()
-
-    def enable(self):
-        """Enable debugging."""
-        self.debug.value = True
-        configure_logging(debug=self.debug.value)
-
-        self.events.register(FrameRenderCompletedEvent, self.on_frame_render_completed)
-        self.display.add_layer(self.layer)
-
-    def disable(self):
-        """Disable debugging."""
-        self.debug.value = False
-        configure_logging(debug=self.debug.value)
-
-        self.events.unregister(self.on_frame_render_completed)
-        self.display.remove_layer(self.layer)

@@ -2,7 +2,9 @@
 import logging
 import pygame
 from injector import inject
+
 from .assets import AssetManager
+from .locals import *  # noqa
 
 
 logger = logging.getLogger(__name__)
@@ -17,10 +19,15 @@ class AudioManager:
 
     """
 
-    @inject(assets=AssetManager)
-    def __init__(self, assets):
+    @inject(assets=AssetManager, master_volume=AudioMasterVolume, bgm_volume=AudioBackgroundMusicVolume,
+            sfx_volume=AudioSpecialEffectsVolume)
+    def __init__(self, assets, master_volume=1.0, bgm_volume=1.0, sfx_volume=1.0):
         """Constructor."""
         logger.debug('Initializing AudioManager')
+
+        self.master_volume = master_volume
+        self.bgm_volume = bgm_volume
+        self.sfx_volume = sfx_volume
 
         self.assets = assets
         self.channels = [False for x in range(0, 8)]
@@ -76,7 +83,9 @@ class AudioManager:
     def play_music(self, name, loop_counter=-1, starting_point=0.0):
         """Play background music."""
         logger.debug('Playing music "%s"', name)
+
         pygame.mixer.music.load(self.music[name])
+        pygame.mixer.music.set_volume(self.master_volume * self.bgm_volume)
         pygame.mixer.music.play(loop_counter, starting_point)
 
     def stop_music():
@@ -87,6 +96,7 @@ class AudioManager:
     def play_sound(self, name, channel=None, queue=False):
         """Play sound effect."""
         sound = self.sounds[name]
+        sound.set_volume(self.master_volume * self.sfx_volume)
 
         if channel:
             channel = self.get_channel(channel)

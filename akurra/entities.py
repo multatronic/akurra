@@ -51,6 +51,14 @@ class EntityInput(Enum):
     MOVE_RIGHT = 3
 
 
+class SystemStatus(Enum):
+
+    """System status enum."""
+
+    STOPPED = 0
+    STARTED = 1
+
+
 # class EquipmentSlot(Enum):
 
 #     """Equipment slot enum."""
@@ -142,6 +150,7 @@ class EntityManager:
 
         self.components = {}
         self.systems = {}
+        self.systems_statuses = {}
 
     def start(self):
         """Start."""
@@ -177,11 +186,17 @@ class EntityManager:
         [self.load_system(x.name) for x in iter_entry_points(group=self.systems_entry_point_group)]
 
     def load_system(self, name):
-        """Load a system by name."""
+        """
+        Load a system by name.
+
+        :param name: A string identifier for a system.
+
+        """
         logger.debug('Loading entity system "%s"', name)
 
         for entry_point in iter_entry_points(group=self.systems_entry_point_group, name=name):
             self.systems[name] = entry_point.load()()
+            self.systems_statuses[name] = SystemStatus.STOPPED
 
         logger.debug('Entity system "%s" loaded', name)
 
@@ -191,9 +206,17 @@ class EntityManager:
         [self.start_system(x) for x in self.systems]
 
     def start_system(self, name):
-        """Start a system by name."""
+        """
+        Start a system by name.
+
+        :param name: A string identifier for a system.
+
+        """
         logger.debug('Starting entity system "%s"', name)
+
         self.systems[name].start()
+        self.systems_statuses[name] = SystemStatus.STARTED
+
         logger.debug('Entity system "%s" started', name)
 
     def stop_systems(self):
@@ -202,9 +225,17 @@ class EntityManager:
         [self.stop_system(x) for x in self.systems]
 
     def stop_system(self, name):
-        """Stop a system by name."""
+        """
+        Stop a system by name.
+
+        :param name: A string identifier for a system.
+
+        """
         logger.debug('Stopping entity system "%s"', name)
+
         self.systems[name].stop()
+        self.systems_statuses[name] = SystemStatus.STOPPED
+
         logger.debug('Entity system "%s" stopped', name)
 
     def unload_system(self, name):
@@ -229,6 +260,18 @@ class EntityManager:
         # We need to copy the list of names, because unloading a system
         # removes it from the systems dict
         [self.unload_system(x) for x in list(self.systems.keys())]
+
+    def toggle_system(self, name):
+        """
+        Toggle a system by name.
+
+        :param name: A string identifier for a system.
+
+        """
+        if self.systems_statuses[name] is SystemStatus.STOPPED:
+            self.start_system(name)
+        else:
+            self.stop_system(name)
 
     def add_entity(self, entity):
         """Add an entity to the manager."""
