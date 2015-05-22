@@ -483,7 +483,7 @@ class PlayerComponent(Component):
     type = 'player'
 
 
-class MapLayerComponent(Component):
+class LayerComponent(Component):
 
     """Map layer component."""
 
@@ -494,6 +494,13 @@ class MapLayerComponent(Component):
         super().__init__(**kwargs)
         self.layer = layer
         self.location = location
+
+
+class MapLayerComponent(Component):
+
+    """Map layer component."""
+
+    type = 'map_layer'
 
 
 class System(ContainerAware):
@@ -668,6 +675,7 @@ class MapLocationSystem(System):
 
     requirements = [
         'map_layer',
+        'layer',
         'physics',
         'velocity',
         'position'
@@ -679,10 +687,10 @@ class MapLocationSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        entity.components['map_layer'].location[0] = entity.components['physics'].collision_core.center[0] / \
-            entity.components['map_layer'].layer.map_data.tilewidth
-        entity.components['map_layer'].location[1] = entity.components['physics'].collision_core.center[1] / \
-            entity.components['map_layer'].layer.map_data.tileheight
+        entity.components['layer'].location[0] = entity.components['physics'].collision_core.center[0] / \
+            entity.components['layer'].layer.map_data.tilewidth
+        entity.components['layer'].location[1] = entity.components['physics'].collision_core.center[1] / \
+            entity.components['layer'].layer.map_data.tileheight
 
 
 class RenderingSystem(System):
@@ -720,6 +728,7 @@ class SpriteRenderOrderingSystem(System):
     requirements = [
         'position',
         'sprite',
+        'layer',
         'map_layer'
     ]
 
@@ -732,9 +741,9 @@ class SpriteRenderOrderingSystem(System):
         for entity in self.entities.find_entities_by_components(self.requirements):
             # Since only one map layer should be active at a time, it should be safe to only order the sprites once
             # self.update(entity, event)
-
-            entity.components['map_layer'].layer.group._spritelist = sorted(
-                entity.components['map_layer'].layer.group._spritelist,
+            # pdb.set_trace()
+            entity.components['layer'].layer.group._spritelist = sorted(
+                entity.components['layer'].layer.group._spritelist,
                 key=lambda x: x.components['position'].position[1])
             break
 
@@ -751,6 +760,7 @@ class CollisionSystem(System):
     requirements = [
         'position',
         'map_layer',
+        'layer',
         'physics',
         'sprite'
     ]
@@ -772,7 +782,7 @@ class CollisionSystem(System):
         entity.components['physics'].collision_core.centery += \
             entity.components['physics'].collision_core_offset[1]
 
-        collision_rects = entity.components['map_layer'].layer.collision_map[:]
+        collision_rects = entity.components['layer'].layer.collision_map[:]
         collision_rects.remove(entity.components['physics'].collision_core)
 
         collisions = entity.components['physics'].collision_core.collidelist(collision_rects)
@@ -794,7 +804,8 @@ class PlayerTerrainSoundSystem(System):
 
     requirements = [
         'player',
-        'map_layer'
+        'map_layer',
+        'layer'
     ]
 
     event_handlers = {
@@ -809,11 +820,11 @@ class PlayerTerrainSoundSystem(System):
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         # Fetch the current tile the player is walking on, based on the current map location
-        coords = [int(x) for x in entity.components['map_layer'].location]
+        coords = [int(x) for x in entity.components['layer'].location]
 
-        for l in range(0, len(list(entity.components['map_layer'].layer.map_data.tmx.visible_layers))):
+        for l in range(0, len(list(entity.components['layer'].layer.map_data.tmx.visible_layers))):
             try:
-                tile = entity.components['map_layer'].layer.map_data.tmx.get_tile_properties(coords[0], coords[1], l)
+                tile = entity.components['layer'].layer.map_data.tmx.get_tile_properties(coords[0], coords[1], l)
 
                 if tile and tile.get('terrain_type'):
                     self.audio.play_sound('terrain_%s' % tile.get('terrain_type'), channel='terrain', queue=False)

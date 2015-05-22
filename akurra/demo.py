@@ -109,7 +109,7 @@ class DemoGameState(GameState):
         self.layer.center = self.player
 
         self.dialog = self.entities.create_entity_from_template('dialog')
-        self.uiLayer.add_entity(self.dialog, add_map_ref=False)
+        self.uiLayer.add_entity(self.dialog)
 
         # Load audio files
         # music

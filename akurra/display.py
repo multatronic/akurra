@@ -1,5 +1,6 @@
 """Screen module."""
 import logging
+import pdb
 import pygame
 import random
 from injector import inject
@@ -8,7 +9,7 @@ from pyscroll.util import PyscrollGroup
 
 from .locals import *  # noqa
 from .events import Event, TickEvent, EventManager
-from .entities import MapLayerComponent, EntityManager
+from .entities import LayerComponent, EntityManager, MapLayerComponent
 from .utils import ContainerAware
 
 
@@ -162,16 +163,27 @@ class EntityDisplayLayer(DisplayLayer):
         super().__init__(**kwargs)
         self.entities = {}
 
-    def add_entity(self, entity, add_map_ref=True):
+    def add_entity(self, entity):
         """Add an entity to the layer."""
-        if add_map_ref:
-            entity.add_component(MapLayerComponent(layer=self))
+        entity.add_component(LayerComponent(layer=self))
         self.entities[entity.id] = entity
 
     def remove_entity(self, entity):
         """Remove an entity from the layer."""
-        entity.components.pop(MapLayerComponent, None)
+        entity.components.pop(LayerComponent, None)
         self.entities.pop(entity.id, None)
+
+    def draw(self, surface):
+        """Draw the layer onto a surface."""
+        for key in self.entities:
+            position = (0, 0)
+            entity = self.entities[key]
+            if entity.components['position']:
+                position = entity.components['position'].position
+
+            self.surface.blit(entity.image, position)
+
+        super().draw(surface)
 
 
 class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
@@ -232,6 +244,7 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
     def add_entity(self, entity):
         """Add an entity to the layer."""
         super().add_entity(entity)
+        entity.add_component(MapLayerComponent())
         self.group.add(entity)
 
         # If this entity supports collision detection, add its collision core to our collision map
@@ -241,6 +254,7 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
     def remove_entity(self, entity):
         """Remove an entity from the layer."""
         super().remove_entity(entity)
+        entity.remove_component(MapLayerComponent())
         self.group.remove(entity)
 
         # If this entity supports collision detection, remove its collision core from our collision map

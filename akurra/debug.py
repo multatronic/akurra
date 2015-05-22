@@ -55,7 +55,7 @@ class DebugModule(Module):
 
         # Loop through all entities which have collision detection enabled, that are linked to the map
         for entity in self.entities.find_entities_by_components(['map_layer', 'physics']):
-            layer = entity.components['map_layer'].layer
+            layer = entity.components['layer'].layer
 
             rect = entity.components['physics'].collision_core
             entity_rects.append(rect)

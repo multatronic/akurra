@@ -42,6 +42,7 @@ setup(
             'velocity = akurra.entities:VelocityComponent',
             'character = akurra.entities:CharacterComponent',
             'player = akurra.entities:PlayerComponent',
+            'layer = akurra.entities:LayerComponent',
             'map_layer = akurra.entities:MapLayerComponent',
             'sprite = akurra.entities:SpriteComponent',
             'physics = akurra.entities:PhysicsComponent',
