@@ -16,6 +16,7 @@ class Event:
     def __init__(self):
         """Constructor."""
         self.type = fqcn(self.__class__)
+        self.handled = False
 
 
 class TickEvent(Event):
@@ -100,7 +101,8 @@ class EventManager:
             for event_listeners in self.listeners[event.type]:
                 if event_listeners:
                     for listener in event_listeners:
-                        listener(event)
+                        if listener(event) is False:
+                            break
         except KeyError:
             logger.debug('No listeners defined for event "%s"', hr_event_type(event.type))
             pass
