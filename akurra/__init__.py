@@ -26,6 +26,7 @@ from .entities import EntityManager
 from .session import SessionManager
 from .items import ItemManager
 from .audio import AudioManager
+from .mouse import MouseManager
 from .utils import get_data_path
 
 from .demo import DemoIntroScreen, DemoGameState
@@ -115,6 +116,9 @@ def build_container(binder):
     # Items
     binder.bind(ItemManager, scope=singleton)
 
+    # Mouse
+    binder.bind(MouseManager, scope=singleton)
+
     # Demo
     binder.bind(DemoIntroScreen)
     binder.bind(DemoGameState)
@@ -170,10 +174,10 @@ class Akurra:
 
     @inject(modules=ModuleManager, events=EventManager, display=DisplayManager,
             keyboard=KeyboardManager, states=StateManager,
-            entities=EntityManager,
+            entities=EntityManager, mouse=MouseManager,
             clock=DisplayClock, max_fps=DisplayMaxFPS,
             shutdown=ShutdownFlag, debug=DebugFlag)
-    def __init__(self, modules, events, display, keyboard, states, entities, clock, max_fps, shutdown,
+    def __init__(self, modules, events, display, keyboard, states, entities, mouse, clock, max_fps, shutdown,
                  debug):
         """Constructor."""
         configure_logging(debug=debug.value)
@@ -185,6 +189,7 @@ class Akurra:
         self.modules = modules
         self.events = events
         self.entities = entities
+        self.mouse = mouse
         self.states = states
 
         self.clock = clock

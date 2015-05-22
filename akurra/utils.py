@@ -20,6 +20,17 @@ def hr_key_id(key_id):
     return key_id
 
 
+def hr_button_id(button_id):
+    """Convert a button identifier to human readable format."""
+    buttons = {
+        1: 'LEFT',
+        2: 'MIDDLE',
+        3: 'RIGHT'
+    }
+
+    return buttons[button_id]
+
+
 def fqcn(cls):
     """Return the fully qualified class name of a class."""
     return '%s.%s' % (cls.__module__, cls.__name__)
