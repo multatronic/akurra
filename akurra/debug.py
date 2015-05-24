@@ -8,6 +8,7 @@ from .display import DisplayManager, DisplayLayer
 from .entities import EntityManager
 from .events import TickEvent, EventManager
 from .modules import Module
+from .logger import configure_logging
 
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,7 @@ class DebugModule(Module):
         """Toggle debug mode."""
         if event.original_event['type'] == pygame.KEYDOWN:
             self.debug.value = not self.debug.value
+            configure_logging(debug=self.debug.value)
 
             if self.debug.value:
                 self.display.add_layer(self.layer)

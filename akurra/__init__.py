@@ -25,7 +25,6 @@ from .entities import EntityManager
 from .session import SessionManager
 from .items import ItemManager
 from .audio import AudioManager
-from .mouse import MouseManager
 from .utils import get_data_path
 
 from .demo import DemoIntroScreen, DemoGameState
@@ -44,6 +43,7 @@ def build_container(binder):
 
     # General
     binder.bind(ShutdownFlag, to=Event())
+    binder.bind(DebugFlag, to=Value('B', DEBUG))
 
     # Configuration
     CFG_FILES = [
@@ -80,10 +80,6 @@ def build_container(binder):
     # Events
     binder.bind(EventManager, scope=singleton)
 
-    # Debug
-    binder.bind(DebugFlag, to=Value('B', DEBUG))
-    binder.bind(DebugToggleKey, to=getattr(pygame, cfg.get('akurra.keyboard.bindings.toggle_debug', 'K_F11')))
-
     # State manager
     binder.bind(StateManager, scope=singleton)
 
@@ -111,9 +107,6 @@ def build_container(binder):
 
     # Items
     binder.bind(ItemManager, scope=singleton)
-
-    # Mouse
-    binder.bind(MouseManager, scope=singleton)
 
     # Demo
     binder.bind(DemoIntroScreen)
@@ -170,10 +163,10 @@ class Akurra:
 
     @inject(modules=ModuleManager, events=EventManager, display=DisplayManager,
             states=StateManager,
-            entities=EntityManager, mouse=MouseManager,
+            entities=EntityManager,
             clock=DisplayClock, max_fps=DisplayMaxFPS,
             shutdown=ShutdownFlag, debug=DebugFlag)
-    def __init__(self, modules, events, display, states, entities, mouse, clock, max_fps, shutdown,
+    def __init__(self, modules, events, display, states, entities, clock, max_fps, shutdown,
                  debug):
         """Constructor."""
         configure_logging(debug=debug.value)
@@ -185,7 +178,6 @@ class Akurra:
         self.modules = modules
         self.events = events
         self.entities = entities
-        self.mouse = mouse
         self.states = states
 
         self.clock = clock

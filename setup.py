@@ -34,6 +34,7 @@ setup(
         'akurra.modules': [
             'debug = akurra.debug:DebugModule',
             'keyboard = akurra.keyboard:KeyboardManager',
+            'mouse = akurra.mouse:MouseManager',
         ],
 
         'akurra.entities.components': [
