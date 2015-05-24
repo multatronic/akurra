@@ -15,7 +15,7 @@ class MouseManager(Module):
     """
     Mouse manager.
 
-    The mouse manager is in charge of managing key bindings and acting upon
+    The mouse manager is in charge of managing button bindings and acting upon
     mouse clicks or hovers.
 
     """
