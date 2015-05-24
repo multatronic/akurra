@@ -1,5 +1,6 @@
 """Keyboard module."""
 import logging
+import functools
 import pygame
 
 from .locals import *  # noqa
@@ -114,10 +115,16 @@ class KeyboardManager(Module):
         bindings = self.configuration.get('akurra.keyboard.action_bindings', {})
 
         for action, binding in bindings.items():
-            binding = binding if type(binding) is list else [binding, 0]
+            # If no modifier was specified for this binding, default to 0
+            binding = binding if type(binding) is list else [binding, ['KMOD_NONE']]
+
+            # Combine modifier array into one bitmask if needed
+            if binding[1]:
+                binding[1] = functools.reduce(lambda x, y: x | y, [getattr(pygame, x) for x in binding[1]])
+
             self.add_action_binding(action, getattr(pygame, binding[0]), mods=binding[1])
 
-    def add_action_binding(self, action, key_id, mods=0):
+    def add_action_binding(self, action, key_id, mods=0, event_type=pygame.KEYDOWN):
         """
         Register an action to be triggered on a press, hold or release of a key.
 

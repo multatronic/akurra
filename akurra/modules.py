@@ -15,6 +15,9 @@ class Module(ContainerAware):
 
     """Base module."""
 
+    # Other modules this module depends on
+    dependencies = []
+
     def __init__(self):
         """Constructor."""
 
@@ -40,8 +43,18 @@ class ModuleManager(ContainerAware):
         """
         logger.debug('Loading module "%s"', name)
 
+        if name in self.modules:
+            logger.debug('Module "%s" already loaded, skipping', name)
+            return
+
         for entry_point in iter_entry_points(group=self.group, name=name):
-            self.modules[name] = entry_point.load()()
+            module_class = entry_point.load()
+
+            # If the module has any dependencies, ensure those are loaded first
+            if module_class.dependencies:
+                [self.load_single(x) for x in module_class.dependencies]
+
+            self.modules[name] = module_class()
 
             # Add the module to the container
             self.container.binder.bind(self.modules[name].__class__, to=self.modules[name])
