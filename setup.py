@@ -32,7 +32,8 @@ setup(
         ],
 
         'akurra.modules': [
-            'debug = akurra.debug:DebugModule'
+            'debug = akurra.debug:DebugModule',
+            'keyboard = akurra.keyboard:KeyboardManager',
         ],
 
         'akurra.entities.components': [

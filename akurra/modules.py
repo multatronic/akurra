@@ -27,7 +27,7 @@ class Module(ContainerAware):
         pass
 
 
-class ModuleManager:
+class ModuleManager(ContainerAware):
 
     """The ModuleManager manages the loading, unloading, etc. of modules."""
 
@@ -42,6 +42,9 @@ class ModuleManager:
 
         for entry_point in iter_entry_points(group=self.group, name=name):
             self.modules[name] = entry_point.load()()
+
+            # Add the module to the container
+            self.container.binder.bind(self.modules[name].__class__, to=self.modules[name])
 
         logger.debug('Module "%s" loaded', name)
 

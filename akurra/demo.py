@@ -32,7 +32,7 @@ class DemoIntroScreen(GameState):
     def enable(self):
         """Set up the gamestate."""
         # listen for certain key presses
-        self.keyboard.register(pygame.K_SPACE, self.on_key_down)
+        self.keyboard.add_listener(pygame.K_SPACE, self.on_key_down)
 
         # draw stuff on screen when frame render is completed
         self.events.register(FrameRenderCompletedEvent, self.on_frame_render_completed)
@@ -42,7 +42,7 @@ class DemoIntroScreen(GameState):
     def disable(self):
         """Stop the gamestate."""
         self.events.unregister(self.on_frame_render_completed)
-        self.keyboard.unregister(self.on_key_down)
+        self.keyboard.remove_listener(self.on_key_down)
         self.display.remove_layer(self.layer)
 
     def on_key_down(self, event):
@@ -94,7 +94,7 @@ class DemoGameState(GameState):
     def enable(self):
         """Initialize the gamestate."""
         # pygame.key.set_repeat(100, 100)
-        self.keyboard.register(pygame.K_ESCAPE, self.on_quit)
+        self.keyboard.add_listener(pygame.K_ESCAPE, self.on_quit)
 
         # self.tmx_data = self.assets.get_tmx_data('pyscroll_demo/grasslands.tmx')
         self.tmx_data = self.assets.get_tmx_data('maps/urdarbrunn/map.tmx')
@@ -120,4 +120,4 @@ class DemoGameState(GameState):
 
     def disable(self):
         """Stop the gamestate."""
-        self.keyboard.unregister(self.on_quit)
+        self.keyboard.remove_listener(self.on_quit)
