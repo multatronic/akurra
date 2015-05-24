@@ -49,18 +49,15 @@ class DebugModule(Module):
 
     def debug_toggle(self, event):
         """Toggle debug mode."""
-        if event.type == pygame.KEYDOWN:
+        if event.original_event['type'] == pygame.KEYDOWN:
             self.debug.value = not self.debug.value
-            self.handle_debug_change()
 
-    def handle_debug_change(self):
-        """Handle a debug state change."""
-        if self.debug.value:
-            self.display.add_layer(self.layer)
-            self.events.register(TickEvent, self.on_tick)
-        else:
-            self.display.remove_layer(self.layer)
-            self.events.unregister(self.on_tick)
+            if self.debug.value:
+                self.display.add_layer(self.layer)
+                self.events.register(TickEvent, self.on_tick)
+            else:
+                self.display.remove_layer(self.layer)
+                self.events.unregister(self.on_tick)
 
     def on_tick(self, event):
         """Handle a tick."""

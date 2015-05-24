@@ -582,7 +582,8 @@ class PlayerInputSystem(System):
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         if event.action in self.action_inputs:
-            entity.components['input'].input[self.action_inputs[event.action]] = event.type == pygame.KEYDOWN
+            entity.components['input'].input[self.action_inputs[event.action]] = \
+                event.original_event['type'] == pygame.KEYDOWN
 
 
 class VelocitySystem(System):

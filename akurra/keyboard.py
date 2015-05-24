@@ -5,11 +5,24 @@ import pygame
 
 from .locals import *  # noqa
 from .modules import Module
-from .events import EventManager
+from .events import EventManager, Event
 from .utils import hr_key_id, hr_event_type, fqcn
 
 
 logger = logging.getLogger(__name__)
+
+
+class KeyboardActionEvent(Event):
+
+    """Keyboard action event."""
+
+    def __init__(self, action, original_event):
+        """Constructor."""
+        super().__init__()
+
+        self.action = action
+        self.original_event = original_event.__dict__
+        self.original_event['type'] = original_event.type
 
 
 class KeyboardManager(Module):
@@ -35,10 +48,12 @@ class KeyboardManager(Module):
         """Start the module."""
         self.events.register(pygame.KEYDOWN, self.on_key_down)
         self.events.register(pygame.KEYUP, self.on_key_up)
+        self.events.register(KeyboardActionEvent, self.on_keyboard_action)
         self.load_action_bindings()
 
     def stop(self):
         """Stop the module."""
+        self.events.unregister(self.on_keyboard_action)
         self.events.unregister(self.on_key_down)
         self.events.unregister(self.on_key_up)
 
@@ -153,14 +168,21 @@ class KeyboardManager(Module):
         :param action: Action to trigger.
 
         """
-        # Populate the event with some additional data
-        event.action = action
+        self.events.dispatch(KeyboardActionEvent(action=action, original_event=event))
+        logger.debug('Triggered key action "%s"', action)
 
-        for listener in self.action_listeners[action]:
+    def on_keyboard_action(self, event):
+        """
+        Handle a keyboard action.
+
+        :param event: Event to process.
+
+        """
+        for listener in self.action_listeners[event.action]:
             if listener(event) is False:
                 break
 
-        logger.debug('Triggered key action "%s"', action)
+        logger.debug('Handled key action "%s"', event.action)
 
     def add_action_listener(self, action, listener):
         """
