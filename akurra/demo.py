@@ -93,8 +93,7 @@ class DemoGameState(GameState):
 
     def enable(self):
         """Initialize the gamestate."""
-        # pygame.key.set_repeat(100, 100)
-        self.keyboard.add_listener(pygame.K_ESCAPE, self.on_quit)
+        self.keyboard.add_action_listener('quit', self.on_quit)
 
         # self.tmx_data = self.assets.get_tmx_data('pyscroll_demo/grasslands.tmx')
         self.tmx_data = self.assets.get_tmx_data('maps/urdarbrunn/map.tmx')
@@ -120,4 +119,4 @@ class DemoGameState(GameState):
 
     def disable(self):
         """Stop the gamestate."""
-        self.keyboard.remove_listener(self.on_quit)
+        self.keyboard.remove_action_listener(self.on_quit)
