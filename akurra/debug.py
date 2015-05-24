@@ -38,7 +38,10 @@ class DebugModule(Module):
     def start(self):
         """Start the module."""
         self.keyboard.add_action_listener('debug_toggle', self.debug_toggle)
-        self.handle_debug_change()
+
+        if self.debug.value:
+            self.display.add_layer(self.layer)
+            self.events.register(TickEvent, self.on_tick)
 
     def stop(self):
         """Stop the module."""
