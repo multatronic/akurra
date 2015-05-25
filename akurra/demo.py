@@ -100,7 +100,7 @@ class DemoGameState(GameState):
         # self.tmx_data = self.assets.get_tmx_data('pyscroll_demo/grasslands.tmx')
         self.tmx_data = self.assets.get_tmx_data('maps/urdarbrunn/map.tmx')
         self.layer = ScrollingMapEntityDisplayLayer(self.tmx_data, default_layer=2)
-        self.uiLayer = EntityDisplayLayer(size=[300, 190], position=[5, 5], flags=pygame.SRCALPHA, z_index=999999)
+        self.uiLayer = EntityDisplayLayer(size=[400, 250], flags=pygame.SRCALPHA, z_index=102)
 
         self.display.add_layer(self.layer)
         self.display.add_layer(self.uiLayer)

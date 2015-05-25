@@ -1,7 +1,6 @@
 """Entities module."""
 import logging
 import pygame
-import pdb
 from uuid import uuid4
 from enum import Enum
 from pkg_resources import iter_entry_points
@@ -125,7 +124,7 @@ class Entity(pygame.sprite.Sprite):
         component.entity = None
 
         # Remove entity from component dict in entitymanager
-        self.entities_components[component.type].pop(self.id, None)
+        self.entities.entities_components[component.type].pop(self.id, None)
 
 
 class EntityManager:
@@ -415,16 +414,18 @@ class SpriteComponent(Component):
         self._entity.rect = self.rect
         self._entity.image = self.image
 
-    def __init__(self, image=None, sprite_sheet=None, sprite_size=[0, 0], animations={}, direction=EntityDirection.SOUTH,
+    def __init__(self, image=None, sprite_size=[0, 0], animations={}, direction=EntityDirection.SOUTH,
                  state=EntityState.STATIONARY, **kwargs):
         """Constructor."""
         self.direction = direction
         self.state = state
-
-        if sprite_sheet:
-            self.sprite_sheet = self.container.get(AssetManager).get_image(sprite_sheet, alpha=True)
         self.sprite_size = sprite_size
-        self.image = image if image else pygame.Surface(self.sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
+
+        if image:
+            self.image = self.container.get(AssetManager).get_image(image, alpha=True)
+        else:
+            self.image = pygame.Surface(self.sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
+
         self.default_image = self.image.copy()
         self.animations = {}
 
@@ -710,13 +711,8 @@ class RenderingSystem(System):
         try:
             entity.components['sprite'].image.fill([0, 0, 0, 0])
 
-            if entity.components['sprite'].animations:
-                for x in entity.components['sprite'].animations[entity.components['sprite'].state.name]:
-                    entity.components['sprite'].image.blit(x.get_frame(), x.render_offset)
-            else:
-                # pdb.set_trace()
-                if entity.components['sprite'].sprite_sheet:
-                    entity.components['sprite'].image.blit(entity.components['sprite'].sprite_sheet, entity.components['position'].position)
+            for x in entity.components['sprite'].animations[entity.components['sprite'].state.name]:
+                entity.components['sprite'].image.blit(x.get_frame(), x.render_offset)
         except KeyError:
             entity.components['sprite'].image.blit(entity.components['sprite'].default_image, [0, 0])
 

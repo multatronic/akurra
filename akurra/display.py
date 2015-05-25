@@ -165,7 +165,8 @@ class EntityDisplayLayer(DisplayLayer):
 
     def add_entity(self, entity):
         """Add an entity to the layer."""
-        entity.add_component(LayerComponent(layer=self))
+        entity.add_component(MapLayerComponent(layer=self))
+
         self.entities[entity.id] = entity
 
     def remove_entity(self, entity):
@@ -175,14 +176,14 @@ class EntityDisplayLayer(DisplayLayer):
 
     def draw(self, surface):
         """Draw the layer onto a surface."""
+
         for key in self.entities:
             position = (0, 0)
             entity = self.entities[key]
             if entity.components['position']:
                 position = entity.components['position'].position
 
-            self.surface.blit(entity.image, position)
-
+            self.surface.blit(entity.components['sprite'].image, position)
         super().draw(surface)
 
 
@@ -293,6 +294,8 @@ class DisplayManager:
         # Set display within layer
         layer.display = self
 
+        logger.debug('Added layer "%s" to display [z-index=%s]', layer, layer.z_index)
+
     def remove_layer(self, layer):
         """Remove a layer from the display."""
         to_remove = None
@@ -308,6 +311,8 @@ class DisplayManager:
 
         # Remove display from layer
         layer.display = None
+
+        logger.debug('Removed layer "%s" to display [z-index=%s]', layer, layer.z_index)
 
     def on_tick(self, event):
         """
