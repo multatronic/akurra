@@ -165,7 +165,7 @@ class EntityDisplayLayer(DisplayLayer):
 
     def add_entity(self, entity):
         """Add an entity to the layer."""
-        entity.add_component(MapLayerComponent(layer=self))
+        entity.add_component(LayerComponent(layer=self))
 
         self.entities[entity.id] = entity
 
@@ -246,6 +246,7 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
         """Add an entity to the layer."""
         super().add_entity(entity)
         entity.add_component(MapLayerComponent())
+
         self.group.add(entity)
 
         # If this entity supports collision detection, add its collision core to our collision map
