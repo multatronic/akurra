@@ -2,11 +2,13 @@
 import pygame
 import logging
 
+from .locals import *  # noqa
+from .keyboard import KeyboardManager
 from .display import DisplayManager, DisplayLayer
 from .entities import EntityManager
 from .events import TickEvent, EventManager
 from .modules import Module
-from .locals import *  # noqa
+from .logger import configure_logging
 
 
 logger = logging.getLogger(__name__)
@@ -16,12 +18,15 @@ class DebugModule(Module):
 
     """Debugging module."""
 
+    dependencies = ['keyboard']
+
     def __init__(self):
         """Constructor."""
         super().__init__()
 
         self.debug = self.container.get(DebugFlag)
 
+        self.keyboard = self.container.get(KeyboardManager)
         self.events = self.container.get(EventManager)
         self.entities = self.container.get(EntityManager)
         self.display = self.container.get(DisplayManager)
@@ -33,19 +38,31 @@ class DebugModule(Module):
 
     def start(self):
         """Start the module."""
-        self.display.add_layer(self.layer)
-        self.events.register(TickEvent, self.on_tick)
+        self.keyboard.add_action_listener('debug_toggle', self.debug_toggle)
+
+        if self.debug.value:
+            self.display.add_layer(self.layer)
+            self.events.register(TickEvent, self.on_tick)
 
     def stop(self):
         """Stop the module."""
-        self.events.unregister(self.on_tick)
-        self.display.remove_layer(self.layer)
+        self.keyboard.remove_action_listener(self.debug_toggle)
+
+    def debug_toggle(self, event):
+        """Toggle debug mode."""
+        if event.original_event['type'] == pygame.KEYDOWN:
+            self.debug.value = not self.debug.value
+            configure_logging(debug=self.debug.value)
+
+            if self.debug.value:
+                self.display.add_layer(self.layer)
+                self.events.register(TickEvent, self.on_tick)
+            else:
+                self.display.remove_layer(self.layer)
+                self.events.unregister(self.on_tick)
 
     def on_tick(self, event):
         """Handle a tick."""
-        if not self.debug.value:
-            return
-
         # First, clear the layer
         self.layer.surface.fill([0, 0, 0, 0])
 

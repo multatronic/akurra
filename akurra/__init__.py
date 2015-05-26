@@ -19,14 +19,12 @@ from .modules import ModuleManager
 from .logger import configure_logging
 
 from .display import DisplayManager
-from .keyboard import KeyboardManager
 from .states import StateManager
 from .assets import AssetManager
 from .entities import EntityManager
 from .session import SessionManager
 from .items import ItemManager
 from .audio import AudioManager
-from .mouse import MouseManager
 from .utils import get_data_path
 
 from .demo import DemoIntroScreen, DemoGameState
@@ -45,11 +43,13 @@ def build_container(binder):
 
     # General
     binder.bind(ShutdownFlag, to=Event())
+    binder.bind(DebugFlag, to=Value('B', DEBUG))
 
     # Configuration
     CFG_FILES = [
         os.path.expanduser('~/.config/akurra/config.yml'),
-        get_data_path('entities.yml')
+        get_data_path('entities.yml'),
+        get_data_path('keyboard.yml')
     ]
 
     # If the directories or files don't exist, create them
@@ -60,7 +60,7 @@ def build_container(binder):
                 pass
 
     cfg = ConfigurationManager.load(CFG_FILES)
-    binder.bind(Configuration, to=ConfigurationManager.load(CFG_FILES))
+    binder.bind(Configuration, to=cfg)
 
     # Modules
     binder.bind(ModuleManager, scope=singleton)
@@ -71,22 +71,14 @@ def build_container(binder):
     binder.bind(DisplayResolution, to=cfg.get('akurra.display.resolution', [0, 0]))
     binder.bind(DisplayMaxFPS, to=cfg.get('akurra.display.max_fps', 60))
     binder.bind(DisplayCaption, to=cfg.get('akurra.display.caption', 'Akurra DEV'))
+    binder.bind(DisplayClock, to=pygame.time.Clock, scope=singleton)
 
     flags = cfg.get('akurra.display.flags', ['DOUBLEBUF', 'HWSURFACE', 'RESIZABLE'])
     flags = functools.reduce(lambda x, y: x | y, [getattr(pygame, x) for x in flags])
-
     binder.bind(DisplayFlags, to=flags)
-    binder.bind(DisplayClock, to=pygame.time.Clock, scope=singleton)
 
     # Events
     binder.bind(EventManager, scope=singleton)
-
-    # Debug
-    binder.bind(DebugFlag, to=Value('B', DEBUG))
-    binder.bind(DebugToggleKey, to=getattr(pygame, cfg.get('akurra.keyboard.bindings.toggle_debug', 'K_F11')))
-
-    # Keyboard
-    binder.bind(KeyboardManager, scope=singleton)
 
     # State manager
     binder.bind(StateManager, scope=singleton)
@@ -115,9 +107,6 @@ def build_container(binder):
 
     # Items
     binder.bind(ItemManager, scope=singleton)
-
-    # Mouse
-    binder.bind(MouseManager, scope=singleton)
 
     # Demo
     binder.bind(DemoIntroScreen)
@@ -173,11 +162,11 @@ class Akurra:
         self.shutdown.set()
 
     @inject(modules=ModuleManager, events=EventManager, display=DisplayManager,
-            keyboard=KeyboardManager, states=StateManager,
-            entities=EntityManager, mouse=MouseManager,
+            states=StateManager,
+            entities=EntityManager,
             clock=DisplayClock, max_fps=DisplayMaxFPS,
             shutdown=ShutdownFlag, debug=DebugFlag)
-    def __init__(self, modules, events, display, keyboard, states, entities, mouse, clock, max_fps, shutdown,
+    def __init__(self, modules, events, display, states, entities, clock, max_fps, shutdown,
                  debug):
         """Constructor."""
         configure_logging(debug=debug.value)
@@ -189,7 +178,6 @@ class Akurra:
         self.modules = modules
         self.events = events
         self.entities = entities
-        self.mouse = mouse
         self.states = states
 
         self.clock = clock

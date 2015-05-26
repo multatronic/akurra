@@ -1,31 +1,50 @@
 """Mouse module."""
 import logging
 import pygame
-from injector import inject
-from akurra.events import EventManager
-from akurra.utils import hr_button_id, hr_event_type, fqcn
+
+from .modules import Module
+from .events import EventManager
+from .utils import hr_button_id, hr_event_type, fqcn
 
 
 logger = logging.getLogger(__name__)
 
 
-class MouseManager:
+class MouseManager(Module):
 
     """
     Mouse manager.
 
-    The mouse manager is in charge of managing key bindings and acting upon
+    The mouse manager is in charge of managing button bindings and acting upon
     mouse clicks or hovers.
 
     """
 
-    def register(self, button_id, listener, event_type=pygame.MOUSEBUTTONDOWN):
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
+
+        self.events = self.container.get(EventManager)
+        self.listeners = {}
+
+    def start(self):
+        """Start the module."""
+        self.events.register(pygame.MOUSEBUTTONDOWN, self.on_mouse_button_down)
+        self.events.register(pygame.MOUSEBUTTONUP, self.on_mouse_button_up)
+        self.events.register(pygame.MOUSEMOTION, self.on_mouse_motion)
+
+    def stop(self):
+        """Stop the module."""
+        self.events.unregister(self.on_mouse_motion)
+        self.events.unregister(self.on_mouse_button_up)
+        self.events.unregister(self.on_mouse_button_down)
+
+    def add_listener(self, button_id, listener, event_type=pygame.MOUSEBUTTONDOWN):
         """
-        Register a listener for a click, hover or release of a mouse button.
+        Register a listener for a press, hold or release of a mouse button.
 
         :param event_type: An identifier for an event type.
         :param button_id: A button identifier.
-        :param mods: An integer representing a bitmask of all modifier keys that should be held.
         :param listener: An event listener which can accept an event.
 
         """
@@ -39,20 +58,20 @@ class MouseManager:
             self.listeners[event_type][button_id] = {}
 
         self.listeners[event_type][button_id][listener] = 1
-        logger.debug('Registered listener for button "%s"[event=%s]', hr_button_id(button_id),
+        logger.debug('Registered listener for button "%s" [event=%s]', hr_button_id(button_id),
                      hr_event_type(event_type))
 
-    def unregister(self, listener):
+    def remove_listener(self, listener):
         """
-        Unregister a listener for a click, hold or release of a mouse button.
+        Remove a listener for a press, hold or release of a mouse button.
 
-        :param listener: A listener to unregister.
+        :param listener: A listener to remove.
 
         """
         for event_type in self.listeners:
             for button_id in self.listeners[event_type]:
                 if self.listeners[event_type][button_id].pop(listener, None):
-                    logger.debug('Unregistered listener for button "%s" [event=%s]', hr_button_id(button_id),
+                    logger.debug('Unregistered listener for key "%s" [event=%s]', hr_button_id(button_id),
                                  hr_event_type(event_type))
 
     def on_mouse_button_down(self, event):
@@ -82,15 +101,3 @@ class MouseManager:
     def on_mouse_motion(self, event):
         """Handle mouse motion."""
         logger.debug('Detected mouse motion [pos=%s]', event.pos)
-
-    @inject(events=EventManager)
-    def __init__(self, events):
-        """Constructor."""
-        logger.debug('Initializing MouseManager')
-
-        self.events = events
-        self.events.register(pygame.MOUSEBUTTONDOWN, self.on_mouse_button_down)
-        self.events.register(pygame.MOUSEBUTTONUP, self.on_mouse_button_up)
-        self.events.register(pygame.MOUSEMOTION, self.on_mouse_motion)
-
-        self.listeners = {}

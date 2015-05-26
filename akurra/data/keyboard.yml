@@ -1,0 +1,9 @@
+akurra:
+    keyboard:
+        action_bindings:
+            debug_toggle: [K_F11, [KMOD_LCTRL]]
+            quit: K_ESCAPE
+            move_up: K_UP
+            move_down: K_DOWN
+            move_left: K_LEFT
+            move_right: K_RIGHT

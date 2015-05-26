@@ -16,7 +16,6 @@ class Event:
     def __init__(self):
         """Constructor."""
         self.type = fqcn(self.__class__)
-        self.handled = False
 
 
 class TickEvent(Event):

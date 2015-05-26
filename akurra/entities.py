@@ -8,8 +8,8 @@ from injector import inject
 
 from .locals import *  # noqa
 from .assets import SpriteAnimation
-from .events import TickEvent, EntityMoveEvent, EventManager
 from .keyboard import KeyboardManager
+from .events import TickEvent, EntityMoveEvent, EventManager
 from .audio import AudioManager
 from .utils import ContainerAware
 from .assets import AssetManager
@@ -567,31 +567,34 @@ class PlayerInputSystem(System):
         'player'
     ]
 
-    key_inputs = {
-        pygame.K_UP: EntityInput.MOVE_UP,
-        pygame.K_DOWN: EntityInput.MOVE_DOWN,
-        pygame.K_LEFT: EntityInput.MOVE_LEFT,
-        pygame.K_RIGHT: EntityInput.MOVE_RIGHT
+    action_inputs = {
+        'move_up': EntityInput.MOVE_UP,
+        'move_down': EntityInput.MOVE_DOWN,
+        'move_left': EntityInput.MOVE_LEFT,
+        'move_right': EntityInput.MOVE_RIGHT
     }
 
     def __init__(self):
         """Constructor."""
         super().__init__()
+
         self.keyboard = self.container.get(KeyboardManager)
 
     def start(self):
         """Start the system."""
-        for key in pygame.KEYDOWN, pygame.KEYUP:
-            [self.keyboard.register(x, self.on_event, event_type=key) for x in self.key_inputs.keys()]
+        # for key in pygame.KEYDOWN, pygame.KEYUP:
+        #     [self.keyboard.register(x, self.on_event, event_type=key) for x in self.action_inputs.keys()]
+        [self.keyboard.add_action_listener(x, self.on_event) for x in self.action_inputs.keys()]
 
     def stop(self):
         """Stop the system."""
-        self.keyboard.unregister(self.on_event)
+        self.keyboard.remove_action_listener(self.on_event)
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        if event.key in self.key_inputs:
-            entity.components['input'].input[self.key_inputs[event.key]] = event.type == pygame.KEYDOWN
+        if event.action in self.action_inputs:
+            entity.components['input'].input[self.action_inputs[event.action]] = \
+                event.original_event['type'] == pygame.KEYDOWN
 
 
 class VelocitySystem(System):
