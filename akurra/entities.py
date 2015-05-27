@@ -488,7 +488,7 @@ class LayerComponent(Component):
 
     """Map layer component."""
 
-    type = 'map_layer'
+    type = 'layer'
 
     def __init__(self, layer=None, location=[0, 0], **kwargs):
         """Constructor."""
@@ -740,7 +740,6 @@ class SpriteRenderOrderingSystem(System):
         for entity in self.entities.find_entities_by_components(self.requirements):
             # Since only one map layer should be active at a time, it should be safe to only order the sprites once
             # self.update(entity, event)
-            # pdb.set_trace()
             entity.components['layer'].layer.group._spritelist = sorted(
                 entity.components['layer'].layer.group._spritelist,
                 key=lambda x: x.components['position'].position[1])

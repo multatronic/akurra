@@ -246,7 +246,6 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
         """Add an entity to the layer."""
         super().add_entity(entity)
         entity.add_component(MapLayerComponent())
-
         self.group.add(entity)
 
         # If this entity supports collision detection, add its collision core to our collision map
