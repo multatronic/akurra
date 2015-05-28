@@ -27,6 +27,8 @@ akurra:
       town_guard:
         parent: human
         components:
+          dialog:
+            text: 'hello wanderer'
           character:
             name: Town Guard
           sprite:

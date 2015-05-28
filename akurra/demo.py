@@ -4,7 +4,7 @@ import logging
 from .assets import AssetManager
 from .display import (DisplayManager, EntityDisplayLayer, ScrollingMapEntityDisplayLayer,
                       FrameRenderCompletedEvent, DisplayLayer)
-from .events import EventManager
+from .events import EventManager, InitDialogEvent
 from .entities import EntityManager
 from .session import SessionManager
 from .keyboard import KeyboardManager
@@ -107,9 +107,9 @@ class DemoGameState(GameState):
         self.player = self.entities.find_entities_by_components(['player'])[0]
         self.layer.center = self.player
 
-        self.dialog = self.entities.create_entity_from_template('dialog')
-        self.uiLayer.add_entity(self.dialog)
-
+        # self.dialog = self.entities.create_entity_from_template('dialog')
+        # self.uiLayer.add_entity(self.dialog)
+        self.events.dispatch(InitDialogEvent())
         # Load audio files
         # music
         self.audio.add_music("audio/music/magical_theme.ogg", "world01")

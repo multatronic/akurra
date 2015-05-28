@@ -9,7 +9,7 @@ from injector import inject
 from .locals import *  # noqa
 from .assets import SpriteAnimation
 from .keyboard import KeyboardManager
-from .events import TickEvent, EntityMoveEvent, EventManager
+from .events import TickEvent, EntityMoveEvent, EventManager, InitDialogEvent
 from .audio import AudioManager
 from .utils import ContainerAware
 from .assets import AssetManager
@@ -394,6 +394,18 @@ class CharacterComponent(Component):
         self.name = name
 
 
+class DialogComponent(Component):
+
+    """Dialog component."""
+
+    type = 'dialog'
+
+    def __init__(self, text, **kwargs):
+        """Constructor."""
+        super().__init__(**kwargs)
+        self.text = text
+
+
 class SpriteComponent(Component):
 
     """Sprite component."""
@@ -627,6 +639,32 @@ class VelocitySystem(System):
                 return
 
         entity.components['velocity'].velocity = [0, 0]
+
+
+class DialogSystem(System):
+
+    """Dialog system."""
+
+    requirements = [
+        'dialog',
+        'layer',
+        'map_layer',
+        'position'
+    ]
+
+    event_handlers = {
+      InitDialogEvent: ['on_event', 10]
+    }
+
+    def on_event(self, event):
+        """Handle an event."""
+        for entity in self.entities.find_entities_by_components(self.requirements):
+            dialog = self.container.get(EntityManager).create_entity_from_template('dialog')
+            dialog.components['position'] = entity.components['position']
+            entity.components['layer'].layer.add_entity(dialog)
+
+    def update(self, entity, event=None):
+        """Placeholder function."""
 
 
 class MovementSystem(System):

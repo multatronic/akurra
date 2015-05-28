@@ -231,7 +231,6 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
                 for i in range(0, o.properties.get('spawn_count', 1)):
                     template = random.choice(templates)
                     entity = self.em.create_entity_from_template(template)
-
                     if 'position' in entity.components:
                         entity.components['position'].position = pygame.Rect(o.x, o.y, o.width, o.height).center
 
