@@ -1,5 +1,6 @@
 """Entities module."""
 import logging
+import pdb
 import pygame
 from uuid import uuid4
 from enum import Enum
@@ -400,10 +401,11 @@ class DialogComponent(Component):
 
     type = 'dialog'
 
-    def __init__(self, text, **kwargs):
+    def __init__(self, text='', position=(0, 0), **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
         self.text = text
+        self.position = position
 
 
 class SpriteComponent(Component):
@@ -653,15 +655,21 @@ class DialogSystem(System):
     ]
 
     event_handlers = {
-      InitDialogEvent: ['on_event', 10]
+      TickEvent: ['on_event', 10]
     }
 
     def on_event(self, event):
         """Handle an event."""
         for entity in self.entities.find_entities_by_components(self.requirements):
-            dialog = self.container.get(EntityManager).create_entity_from_template('dialog')
-            dialog.components['position'] = entity.components['position']
-            entity.components['layer'].layer.add_entity(dialog)
+            RED = (255, 0, 0)
+            BLUE = (0, 0, 128)
+            fontObj = pygame.font.Font('freesansbold.ttf', 32)
+            textSurfaceObj = fontObj.render(entity.components['dialog'].text, True, BLUE)
+            textRectObj = textSurfaceObj.get_rect()
+            entity.ui_layer.surface.blit(textSurfaceObj, entity.components['position'].position)
+            # dialog = self.container.get(EntityManager).create_entity_from_template('dialog')
+            # dialog.components['position'] = entity.components['position']
+            # entity.components['layer'].layer.add_entity(dialog)
 
     def update(self, entity, event=None):
         """Placeholder function."""

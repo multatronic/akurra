@@ -99,16 +99,19 @@ class DemoGameState(GameState):
         # self.tmx_data = self.assets.get_tmx_data('pyscroll_demo/grasslands.tmx')
         self.tmx_data = self.assets.get_tmx_data('maps/urdarbrunn/map.tmx')
         self.layer = ScrollingMapEntityDisplayLayer(self.tmx_data, default_layer=2)
-        self.uiLayer = EntityDisplayLayer(size=[400, 250], flags=pygame.SRCALPHA, z_index=102)
 
+        self.ui_layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=150)
+        # TODO find a better way to make the UI layer accessible!
+        dialogEntities = self.entities.find_entities_by_components(['dialog'])
+        for entity in dialogEntities:
+            entity.ui_layer = self.ui_layer
+
+        self.display.add_layer(self.ui_layer)
         self.display.add_layer(self.layer)
-        self.display.add_layer(self.uiLayer)
 
         self.player = self.entities.find_entities_by_components(['player'])[0]
         self.layer.center = self.player
 
-        # self.dialog = self.entities.create_entity_from_template('dialog')
-        # self.uiLayer.add_entity(self.dialog)
         self.events.dispatch(InitDialogEvent())
         # Load audio files
         # music

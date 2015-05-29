@@ -46,6 +46,8 @@ setup(
             'player = akurra.entities:PlayerComponent',
             'layer = akurra.entities:LayerComponent',
             'map_layer = akurra.entities:MapLayerComponent',
+            'dialog = akurra.entities:DialogComponent',
+            'dialog_box = akurra.entities:DialogBoxComponent',
             'sprite = akurra.entities:SpriteComponent',
             'physics = akurra.entities:PhysicsComponent',
         ],
@@ -57,6 +59,7 @@ setup(
             'collision = akurra.entities:CollisionSystem',
             'rendering = akurra.entities:RenderingSystem',
             'map_location = akurra.entities:MapLocationSystem',
+            'dialog = akurra.entities:DialogSystem',
             'player_terrain_sound = akurra.entities:PlayerTerrainSoundSystem',
             'sprite_rect_position_correction = akurra.entities:SpriteRectPositionCorrectionSystem',
             'sprite_render_ordering = akurra.entities:SpriteRenderOrderingSystem'

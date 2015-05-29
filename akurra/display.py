@@ -1,6 +1,5 @@
 """Screen module."""
 import logging
-import pdb
 import pygame
 import random
 from injector import inject
@@ -74,9 +73,12 @@ class DisplayLayer(ContainerAware):
         """
         pass
 
-    def draw(self, surface):
+    def draw(self, surface, position=None):
         """Draw the layer onto a surface."""
-        surface.blit(self.surface, self.position)
+        if position is None:
+            position = self.position
+
+        surface.blit(self.surface, position)
 
     def resize(self, size):
         """
@@ -176,7 +178,6 @@ class EntityDisplayLayer(DisplayLayer):
 
     def draw(self, surface):
         """Draw the layer onto a surface."""
-
         for key in self.entities:
             position = (0, 0)
             entity = self.entities[key]
