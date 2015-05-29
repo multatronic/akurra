@@ -176,17 +176,6 @@ class EntityDisplayLayer(DisplayLayer):
         entity.components.pop(LayerComponent, None)
         self.entities.pop(entity.id, None)
 
-    def draw(self, surface):
-        """Draw the layer onto a surface."""
-        for key in self.entities:
-            position = (0, 0)
-            entity = self.entities[key]
-            if entity.components['position']:
-                position = entity.components['position'].position
-
-            self.surface.blit(entity.components['sprite'].image, position)
-        super().draw(surface)
-
 
 class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
 
