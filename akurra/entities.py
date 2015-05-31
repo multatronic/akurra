@@ -1,6 +1,5 @@
 """Entities module."""
 import logging
-import pdb
 import pygame
 from uuid import uuid4
 from enum import Enum
@@ -10,7 +9,7 @@ from injector import inject
 from .locals import *  # noqa
 from .assets import SpriteAnimation
 from .keyboard import KeyboardManager
-from .events import TickEvent, EntityMoveEvent, EventManager, InitDialogEvent
+from .events import TickEvent, EntityMoveEvent, EventManager
 from .audio import AudioManager
 from .utils import ContainerAware
 from .assets import AssetManager
@@ -657,18 +656,16 @@ class DialogSystem(System):
     ]
 
     event_handlers = {
-      TickEvent: ['on_event', 10]
+        TickEvent: ['on_event', 10]
     }
 
     def on_event(self, event):
         """Handle an event."""
         for entity in self.entities.find_entities_by_components(self.requirements):
-            RED = (255, 0, 0)
-            BLUE = (0, 0, 128)
-            fontObj = pygame.font.Font('freesansbold.ttf', 32)
-            textSurfaceObj = fontObj.render(entity.components['dialog'].text, True, BLUE)
-            textRectObj = textSurfaceObj.get_rect()
-            entity.ui_layer.surface.blit(textSurfaceObj, entity.components['position'].position)
+            color_blue = (0, 0, 128)
+            font = pygame.font.Font('freesansbold.ttf', 32)
+            text_surface = font.render(entity.components['dialog'].text, True, color_blue)
+            entity.ui_layer.surface.blit(text_surface, entity.components['position'].position)
             # dialog = self.container.get(EntityManager).create_entity_from_template('dialog')
             # dialog.components['position'] = entity.components['position']
             # entity.components['layer'].layer.add_entity(dialog)

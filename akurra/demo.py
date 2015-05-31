@@ -100,7 +100,7 @@ class DemoGameState(GameState):
         self.tmx_data = self.assets.get_tmx_data('maps/urdarbrunn/map.tmx')
         self.layer = ScrollingMapEntityDisplayLayer(self.tmx_data, default_layer=2)
 
-        self.ui_layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=150)
+        self.ui_layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=101)
         # TODO find a better way to make the UI layer accessible!
         dialogEntities = self.entities.find_entities_by_components(['dialog'])
         for entity in dialogEntities:

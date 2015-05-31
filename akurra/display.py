@@ -73,12 +73,9 @@ class DisplayLayer(ContainerAware):
         """
         pass
 
-    def draw(self, surface, position=None):
+    def draw(self, surface):
         """Draw the layer onto a surface."""
-        if position is None:
-            position = self.position
-
-        surface.blit(self.surface, position)
+        surface.blit(self.surface, self.position)
 
     def resize(self, size):
         """
