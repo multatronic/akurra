@@ -80,3 +80,7 @@ akurra:
                 frames: 8
                 frame_offset: 1
                 loop: true
+
+      cursor:
+        components:
+          position: ~

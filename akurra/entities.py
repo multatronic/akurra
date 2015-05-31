@@ -151,9 +151,10 @@ class EntityManager:
         self.systems = {}
         self.systems_statuses = {}
 
+        self.load_components()
+
     def start(self):
         """Start."""
-        self.load_components()
         self.load_systems()
         self.start_systems()
 
@@ -329,7 +330,8 @@ class Component:
 
     def __init__(self, entity=None):
         """Constructor."""
-        self.entity = entity
+        if entity:
+            self.entity = entity
 
 
 class HealthComponent(Component):

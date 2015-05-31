@@ -1,0 +1,6 @@
+akurra:
+    mouse:
+        cursor:
+            image: graphics/ui/cursors/iron_plague.png
+            alpha: ~
+            colorkey: ~
