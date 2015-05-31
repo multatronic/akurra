@@ -505,11 +505,10 @@ class LayerComponent(Component):
 
     type = 'layer'
 
-    def __init__(self, layer=None, location=[0, 0], **kwargs):
+    def __init__(self, layer=None, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
         self.layer = layer
-        self.location = location
 
 
 class MapLayerComponent(Component):
@@ -517,6 +516,11 @@ class MapLayerComponent(Component):
     """Map layer component."""
 
     type = 'map_layer'
+
+    def __init__(self, location=[0, 0], **kwargs):
+        """Constructor."""
+        super().__init__(**kwargs)
+        self.location = location
 
 
 class System(ContainerAware):
@@ -726,8 +730,6 @@ class MapLocationSystem(System):
         'map_layer',
         'layer',
         'physics',
-        'velocity',
-        'position'
     ]
 
     event_handlers = {
@@ -736,9 +738,9 @@ class MapLocationSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        entity.components['layer'].location[0] = entity.components['physics'].collision_core.center[0] / \
+        entity.components['map_layer'].location[0] = entity.components['physics'].collision_core.center[0] / \
             entity.components['layer'].layer.map_data.tilewidth
-        entity.components['layer'].location[1] = entity.components['physics'].collision_core.center[1] / \
+        entity.components['map_layer'].location[1] = entity.components['physics'].collision_core.center[1] / \
             entity.components['layer'].layer.map_data.tileheight
 
 
@@ -863,7 +865,7 @@ class PlayerTerrainSoundSystem(System):
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         # Fetch the current tile the player is walking on, based on the current map location
-        coords = [int(x) for x in entity.components['layer'].location]
+        coords = [int(x) for x in entity.components['map_layer'].location]
 
         for l in range(0, len(list(entity.components['layer'].layer.map_data.tmx.visible_layers))):
             try:
