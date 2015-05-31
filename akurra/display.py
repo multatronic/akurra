@@ -230,7 +230,7 @@ class DisplayManager:
         # Set display within layer
         layer.display = self
 
-        logger.debug('Added layer "%s" to display [z-index=%s]', id(layer), layer.z_index)
+        logger.debug('Added layer "%s" to display [z_index=%s]', id(layer), layer.z_index)
 
     def remove_layer(self, layer):
         """Remove a layer from the display."""
@@ -248,7 +248,7 @@ class DisplayManager:
         # Remove display from layer
         layer.display = None
 
-        logger.debug('Removed layer "%s" to display [z-index=%s]', id(layer), layer.z_index)
+        logger.debug('Removed layer "%s" from display [z_index=%s]', id(layer), layer.z_index)
 
     def on_tick(self, event):
         """
