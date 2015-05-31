@@ -47,7 +47,6 @@ setup(
             'layer = akurra.entities:LayerComponent',
             'map_layer = akurra.entities:MapLayerComponent',
             'dialog = akurra.entities:DialogComponent',
-            'dialog_box = akurra.entities:DialogBoxComponent',
             'sprite = akurra.entities:SpriteComponent',
             'physics = akurra.entities:PhysicsComponent',
         ],

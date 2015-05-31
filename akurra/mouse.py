@@ -130,13 +130,10 @@ class MouseManager(Module):
 
     def load_cursor(self):
         """Load the mouse cursor."""
-        self.cursor_image = self.assets.get_image(
-            self.configuration.get('akurra.mouse.cursor.image', 'graphics/ui/cursors/default.png'),
-            colorkey=self.configuration.get('akurra.mouse.cursor.colorkey', None),
-            alpha=self.configuration.get('akurra.mouse.cursor.alpha', True))
+        self.cursor_image_path = self.configuration.get('akurra.mouse.cursor.image', 'graphics/ui/cursors/default.png')
 
         self.cursor = self.entities.create_entity_from_template('cursor')
-        self.cursor.add_component(SpriteComponent(image=self.cursor_image))
+        self.cursor.add_component(SpriteComponent(image=self.cursor_image_path))
 
         self.cursor_layer.add_entity(self.cursor)
 
