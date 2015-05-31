@@ -20,7 +20,7 @@ akurra:
       town_guard:
         parent: human
         components:
-          dialog:
+          dialogue:
             text: 'hello wanderer'
           character:
             name: Town Guard

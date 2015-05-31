@@ -29,13 +29,15 @@ class TickEvent(Event):
         self.delta_time = delta_time
 
 
-class InitDialogEvent(Event):
+class EntityDialogueEvent(Event):
 
     """Initialize dialog event."""
 
-    def __init__(self, delta_time=0):
+    def __init__(self, entity_id):
         """Constructor."""
         super().__init__()
+
+        self.entity_id = entity_id
 
 
 class EntityMoveEvent(Event):

@@ -248,7 +248,7 @@ class DisplayManager:
         # Remove display from layer
         layer.display = None
 
-        logger.debug('Removed layer "%s" to display [z-index=%s]', layer, layer.z_index)
+        logger.debug('Removed layer "%s" from display [z-index=%s]', layer, layer.z_index)
 
     def on_tick(self, event):
         """

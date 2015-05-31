@@ -9,8 +9,7 @@ from injector import inject
 from .locals import *  # noqa
 from .assets import SpriteAnimation
 from .keyboard import KeyboardManager
-from .events import TickEvent, EntityMoveEvent, EventManager
-from .audio import AudioManager
+from .events import TickEvent, EntityMoveEvent, EventManager, EntityDialogueEvent
 from .utils import ContainerAware
 from .assets import AssetManager
 
@@ -396,17 +395,23 @@ class CharacterComponent(Component):
         self.name = name
 
 
-class DialogComponent(Component):
+class TextComponent(Component):
 
-    """Dialog component."""
+    """Text component."""
 
-    type = 'dialog'
+    type = 'text'
 
-    def __init__(self, text='', position=(0, 0), **kwargs):
+    def __init__(self, text=None, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
         self.text = text
-        self.position = position
+
+
+class DialogueComponent(TextComponent):
+
+    """Dialogue component."""
+
+    type = 'dialogue'
 
 
 class SpriteComponent(Component):
@@ -505,11 +510,10 @@ class LayerComponent(Component):
 
     type = 'layer'
 
-    def __init__(self, layer=None, location=[0, 0], **kwargs):
+    def __init__(self, layer=None, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
         self.layer = layer
-        self.location = location
 
 
 class MapLayerComponent(Component):
@@ -517,6 +521,11 @@ class MapLayerComponent(Component):
     """Map layer component."""
 
     type = 'map_layer'
+
+    def __init__(self, position=[0, 0], **kwargs):
+        """Constructor."""
+        super().__init__(**kwargs)
+        self.position = position
 
 
 class System(ContainerAware):
@@ -644,36 +653,6 @@ class VelocitySystem(System):
         entity.components['velocity'].velocity = [0, 0]
 
 
-class DialogSystem(System):
-
-    """Dialog system."""
-
-    requirements = [
-        'dialog',
-        'layer',
-        'map_layer',
-        'position'
-    ]
-
-    event_handlers = {
-        TickEvent: ['on_event', 10]
-    }
-
-    def on_event(self, event):
-        """Handle an event."""
-        for entity in self.entities.find_entities_by_components(self.requirements):
-            color_blue = (0, 0, 128)
-            font = pygame.font.Font('freesansbold.ttf', 32)
-            text_surface = font.render(entity.components['dialog'].text, True, color_blue)
-            entity.ui_layer.surface.blit(text_surface, entity.components['position'].position)
-            # dialog = self.container.get(EntityManager).create_entity_from_template('dialog')
-            # dialog.components['position'] = entity.components['position']
-            # entity.components['layer'].layer.add_entity(dialog)
-
-    def update(self, entity, event=None):
-        """Placeholder function."""
-
-
 class MovementSystem(System):
 
     """Movement system."""
@@ -726,8 +705,6 @@ class MapLocationSystem(System):
         'map_layer',
         'layer',
         'physics',
-        'velocity',
-        'position'
     ]
 
     event_handlers = {
@@ -736,9 +713,9 @@ class MapLocationSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        entity.components['layer'].location[0] = entity.components['physics'].collision_core.center[0] / \
+        entity.components['map_layer'].position[0] = entity.components['physics'].collision_core.center[0] / \
             entity.components['layer'].layer.map_data.tilewidth
-        entity.components['layer'].location[1] = entity.components['physics'].collision_core.center[1] / \
+        entity.components['map_layer'].position[1] = entity.components['physics'].collision_core.center[1] / \
             entity.components['layer'].layer.map_data.tileheight
 
 
@@ -858,12 +835,15 @@ class PlayerTerrainSoundSystem(System):
     def __init__(self):
         """Constructor."""
         super().__init__()
+
+        from .audio import AudioManager
+
         self.audio = self.container.get(AudioManager)
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         # Fetch the current tile the player is walking on, based on the current map location
-        coords = [int(x) for x in entity.components['layer'].location]
+        coords = [int(x) for x in entity.components['map_layer'].position]
 
         for l in range(0, len(list(entity.components['layer'].layer.map_data.tmx.visible_layers))):
             try:
@@ -874,3 +854,80 @@ class PlayerTerrainSoundSystem(System):
             except KeyError:
                 # If no tile was found on this layer, that's too bad but we can continue regardless
                 pass
+
+
+class DialogueSystem(System):
+
+    """Dialogue system."""
+
+    requirements = [
+        'dialogue',
+        'map_layer',
+        'position'
+    ]
+
+    event_handlers = {
+        TickEvent: ['on_event', 10],
+        EntityDialogueEvent: ['on_dialogue', 10]
+    }
+
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
+
+        from .display import DisplayLayer, DisplayManager
+        from .entities import EntityManager
+
+        self.entities = self.container.get(EntityManager)
+        self.display = self.container.get(DisplayManager)
+
+        # @TODO Use an EntityDisplayLayer instead
+        self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=101)
+        self.font = pygame.font.Font('freesansbold.ttf', 24)
+
+        self.dialogs = {}
+
+    def start(self):
+        """Start the system."""
+        super().start()
+
+        self.display.add_layer(self.layer)
+
+    def stop(self):
+        """Stop the system."""
+        self.display.remove_layer(self.layer)
+
+        super().stop()
+
+    def on_event(self, event):
+        """Handle an event."""
+        self.layer.surface.fill([0, 0, 0, 0])
+
+        super().on_event(event)
+
+    def update(self, entity, event=None):
+        """Have an entity updated by the system."""
+        # If the dialogue isn't active, do nothing
+        if entity.id not in self.dialogs:
+            return
+
+        # Align text box with the entity it belongs to
+        map_layer = entity.components['layer'].layer.map_layer
+
+        offset = [
+            map_layer.xoffset + map_layer.view.left * map_layer.data.tilewidth,
+            map_layer.yoffset + map_layer.view.top * map_layer.data.tileheight,
+        ]
+
+        text_surface = self.font.render(self.dialogs[entity.id], True, [0, 0, 128])
+        self.layer.surface.blit(text_surface, [entity.components['position'].position[x] - offset[x] for x in [0, 1]])
+
+    def on_dialogue(self, event=None):
+        """Handle a dialogue initialization."""
+        entity = self.entities.find_entity_by_id(event.entity_id)
+        self.dialogs[event.entity_id] = entity.components['dialogue'].text
+
+        # Remove the text after a while
+        from threading import Timer
+        tmr = Timer(10, lambda x: self.dialogs.pop(x) and print('Removed'), args=[entity.id])
+        tmr.start()

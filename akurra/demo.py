@@ -2,9 +2,8 @@
 import pygame
 import logging
 from .assets import AssetManager
-from .display import (DisplayManager, EntityDisplayLayer, ScrollingMapEntityDisplayLayer,
-                      FrameRenderCompletedEvent, DisplayLayer)
-from .events import EventManager, InitDialogEvent
+from .display import DisplayManager, ScrollingMapEntityDisplayLayer, FrameRenderCompletedEvent, DisplayLayer
+from .events import EventManager, EntityDialogueEvent
 from .entities import EntityManager
 from .session import SessionManager
 from .keyboard import KeyboardManager
@@ -100,19 +99,14 @@ class DemoGameState(GameState):
         self.tmx_data = self.assets.get_tmx_data('maps/urdarbrunn/map.tmx')
         self.layer = ScrollingMapEntityDisplayLayer(self.tmx_data, default_layer=2)
 
-        self.ui_layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=101)
-        # TODO find a better way to make the UI layer accessible!
-        dialogEntities = self.entities.find_entities_by_components(['dialog'])
-        for entity in dialogEntities:
-            entity.ui_layer = self.ui_layer
-
-        self.display.add_layer(self.ui_layer)
         self.display.add_layer(self.layer)
 
         self.player = self.entities.find_entities_by_components(['player'])[0]
         self.layer.center = self.player
 
-        self.events.dispatch(InitDialogEvent())
+        event = EntityDialogueEvent(entity_id=self.entities.find_entities_by_components(['dialogue'])[0].id)
+        self.events.dispatch(event)
+
         # Load audio files
         # music
         self.audio.add_music("audio/music/magical_theme.ogg", "world01")
