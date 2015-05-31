@@ -27,3 +27,9 @@
 * _Author:_ matthew.pablo
 * _Source:_ http://opengameart.org/content/soliloquy
 * _License:_ CC-BY 3.0
+
+### assets/graphics/ui/cursors/iron_plague.{bmp,png}
+
+* _Author:_ Daniel Cook
+* _Source:_ http://opengameart.org/content/iron-plague-pointercursor
+* _License:_ CC-BY 3.0

@@ -91,66 +91,6 @@ class DisplayLayer(ContainerAware):
         self.surface = pygame.transform.scale(self.surface, self.size)
 
 
-class ObjectsDisplayLayer(DisplayLayer):
-
-    """
-    Objects display layer.
-
-    A display layer for rendering display objects with surfaces onto a root surface.
-
-    """
-
-    def __init__(self, **kwargs):
-        """Constructor."""
-        super().__init__(**kwargs)
-
-        self.objects = {}
-        self.object_z_indexes = []
-
-    def add_object(self, object):
-        """Add an object to the layer."""
-        if object.z_index not in self.objects:
-            self.objects[object.z_index] = {}
-            self.object_z_indexes = sorted(self.objects.keys(), key=int)
-
-        self.objects[object.z_index][object] = 1
-
-        # Set layer within object
-        object.layer = self
-
-    def remove_object(self, object):
-        """Remove an object from the layer."""
-        to_remove = None
-
-        # If we're able to remov an object and there are no other objects for this z_index,
-        # queue the key for removal
-        if self.objects[object.z_index].pop(object, None) and not self.objects[object.z_index]:
-            to_remove = object.z_index
-
-        if to_remove:
-            self.objects.pop(to_remove, None)
-            self.object_z_indexes.remove(to_remove)
-
-        # Remove layer from object
-        object.layer = None
-
-    def update(self, delta_time):
-        """Compute an update to the layer's state."""
-        super().update(delta_time)
-
-        for z_index in self.object_z_indexes:
-            for object in self.objects[z_index]:
-                object.update(delta_time)
-
-    def draw(self, surface):
-        """Draw the layer onto a surface."""
-        for z_index in self.object_z_indexes:
-            for object in self.objects[z_index]:
-                object.draw(self.surface)
-
-        super().draw(surface)
-
-
 class EntityDisplayLayer(DisplayLayer):
 
     """
@@ -175,6 +115,16 @@ class EntityDisplayLayer(DisplayLayer):
         """Remove an entity from the layer."""
         entity.components.pop(LayerComponent, None)
         self.entities.pop(entity.id, None)
+
+    def draw(self, surface):
+        """Draw the layer onto a surface."""
+        self.surface.fill([0, 0, 0, 0])
+
+        for entity_id in self.entities:
+            self.surface.blit(self.entities[entity_id].components['sprite'].image,
+                              self.entities[entity_id].components['position'].position)
+
+        super().draw(surface)
 
 
 class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):

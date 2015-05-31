@@ -48,8 +48,6 @@ def build_container(binder):
     # Configuration
     CFG_FILES = [
         os.path.expanduser('~/.config/akurra/config.yml'),
-        get_data_path('entities.yml'),
-        get_data_path('keyboard.yml')
     ]
 
     # If the directories or files don't exist, create them
@@ -59,7 +57,7 @@ def build_container(binder):
             with open(f, 'a+'):
                 pass
 
-    cfg = ConfigurationManager.load(CFG_FILES)
+    cfg = ConfigurationManager.load(CFG_FILES + [get_data_path('*.yml')])
     binder.bind(Configuration, to=cfg)
 
     # Modules
@@ -122,9 +120,8 @@ class Akurra:
         logger.debug('Starting..')
 
         self.modules.load()
-        self.modules.start()
-
         self.entities.start()
+        self.modules.start()
 
         # create states, set introscreen as initial state
         game_realm = self.container.get(DemoGameState)
@@ -149,9 +146,8 @@ class Akurra:
         logger.info('Stopping..')
         self.shutdown.set()
 
-        self.entities.stop()
-
         self.modules.stop()
+        self.entities.stop()
         self.modules.unload()
 
         self.states.close()
