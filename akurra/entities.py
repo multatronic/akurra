@@ -522,10 +522,10 @@ class MapLayerComponent(Component):
 
     type = 'map_layer'
 
-    def __init__(self, position=[0, 0], **kwargs):
+    def __init__(self, location=[0, 0], **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
-        self.position = position
+        self.location = location
 
 
 class System(ContainerAware):
@@ -713,9 +713,9 @@ class MapLocationSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        entity.components['map_layer'].position[0] = entity.components['physics'].collision_core.center[0] / \
+        entity.components['map_layer'].location[0] = entity.components['physics'].collision_core.center[0] / \
             entity.components['layer'].layer.map_data.tilewidth
-        entity.components['map_layer'].position[1] = entity.components['physics'].collision_core.center[1] / \
+        entity.components['map_layer'].location[1] = entity.components['physics'].collision_core.center[1] / \
             entity.components['layer'].layer.map_data.tileheight
 
 
@@ -843,7 +843,7 @@ class PlayerTerrainSoundSystem(System):
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         # Fetch the current tile the player is walking on, based on the current map location
-        coords = [int(x) for x in entity.components['map_layer'].position]
+        coords = [int(x) for x in entity.components['map_layer'].location]
 
         for l in range(0, len(list(entity.components['layer'].layer.map_data.tmx.visible_layers))):
             try:
