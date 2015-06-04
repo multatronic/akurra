@@ -104,8 +104,8 @@ class DemoGameState(GameState):
         self.player = self.entities.find_entities_by_components(['player'])[0]
         self.layer.center = self.player
 
-        event = EntityDialogueEvent(entity_id=self.entities.find_entities_by_components(['dialogue'])[0].id)
-        self.events.dispatch(event)
+        # event = EntityDialogueEvent(entity_id=self.entities.find_entities_by_components(['dialogue'])[0].id)
+        # self.events.dispatch(event)
 
         # Load audio files
         # music

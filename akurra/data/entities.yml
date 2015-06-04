@@ -83,6 +83,12 @@ akurra:
                 frame_offset: 1
                 loop: true
 
+      dialogue_box:
+        text_buffer: ~
+        components:
+          sprite:
+            image: sprites/ui/dialogue_box.png
+
       cursor:
         components:
           position: ~

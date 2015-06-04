@@ -551,7 +551,7 @@ class System(ContainerAware):
             self.events.unregister(getattr(self, handler[0]))
 
     def on_event(self, event):
-        """Handle an event."""
+        """Handle an event, passing it on to entities which meet our requirements."""
         for entity in self.entities.find_entities_by_components(self.requirements):
             self.update(entity, event)
 
@@ -878,6 +878,7 @@ class DialogueSystem(System):
         from .display import DisplayLayer, DisplayManager
         from .entities import EntityManager
 
+        self.keyboard = self.container.get(KeyboardManager)
         self.entities = self.container.get(EntityManager)
         self.display = self.container.get(DisplayManager)
 
@@ -885,12 +886,15 @@ class DialogueSystem(System):
         self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=101)
         self.font = pygame.font.Font('freesansbold.ttf', 24)
 
+        self.dialog_box = self.entities.create_entity_from_template('dialogue_box')
+
         self.dialogs = {}
 
     def start(self):
         """Start the system."""
         super().start()
 
+        self.keyboard.add_action_listener('start_dialog', self.start_dialogue)
         self.display.add_layer(self.layer)
 
     def stop(self):
@@ -902,7 +906,6 @@ class DialogueSystem(System):
     def on_event(self, event):
         """Handle an event."""
         self.layer.surface.fill([0, 0, 0, 0])
-
         super().on_event(event)
 
     def update(self, entity, event=None):
@@ -920,14 +923,28 @@ class DialogueSystem(System):
         ]
 
         text_surface = self.font.render(self.dialogs[entity.id], True, [0, 0, 128])
-        self.layer.surface.blit(text_surface, [entity.components['position'].position[x] - offset[x] for x in [0, 1]])
+        self.layer.surface.blit(self.dialog_box.image,
+                                [entity.components['position'].position[x] - offset[x] for x in [0, 1]])
+        # TODO: remove this +10 hardcoded value and figure out position dynamically
+        self.layer.surface.blit(text_surface, [entity.components['position'].position[x] - offset[x] + 10
+                                for x in [0, 1]])
+
+    def start_dialogue(self, keyboard_action=None):
+        """Respond to keyboard input to initialize a dialog event."""
+        if keyboard_action.original_event['type'] == pygame.KEYDOWN:
+            event = EntityDialogueEvent(entity_id=self.entities.find_entities_by_components(['dialogue'])[0].id)
+            self.events.dispatch(event)
 
     def on_dialogue(self, event=None):
         """Handle a dialogue initialization."""
         entity = self.entities.find_entity_by_id(event.entity_id)
-        self.dialogs[event.entity_id] = entity.components['dialogue'].text
 
-        # Remove the text after a while
-        from threading import Timer
-        tmr = Timer(10, lambda x: self.dialogs.pop(x) and print('Removed'), args=[entity.id])
-        tmr.start()
+        if event.entity_id not in self.dialogs:
+            logger.debug('adding dialog for entity with uuid %s', event.entity_id)
+            self.dialogs[event.entity_id] = entity.components['dialogue'].text
+
+            # Remove the text after a while
+            from threading import Timer
+            tmr = Timer(5, lambda x: self.dialogs.pop(x) and
+                        logger.debug('removed dialog for entity %s', entity.id), args=[entity.id])
+            tmr.start()
