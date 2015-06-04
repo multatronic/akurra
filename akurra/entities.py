@@ -1,6 +1,7 @@
 """Entities module."""
 import logging
 import pygame
+import math
 from uuid import uuid4
 from enum import Enum
 from pkg_resources import iter_entry_points
@@ -302,7 +303,7 @@ class EntityManager:
         # If the template has a parent, merge this data into a copy of the parent
         # Before we do this, unset the parent of the current template
         # This also means that if our parent has its own parent, we will
-        # continue to merge our ancestors in until we run out
+        # continue to merge our ancestors in until we run out.
         while template.get('parent', None):
             # Copy the template's parent and remove the template's parent reference
             parent = self.entity_templates[template['parent']].copy()
@@ -311,6 +312,7 @@ class EntityManager:
             # Update the parent's components with the child template's components
             parent['components'].update(template['components'])
             template = parent
+            self.entity_templates[template_name] = template
 
         entity = Entity()
 
@@ -883,7 +885,7 @@ class DialogueSystem(System):
         self.display = self.container.get(DisplayManager)
 
         # @TODO Use an EntityDisplayLayer instead
-        self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=101)
+        self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=110)
         self.font = pygame.font.Font('freesansbold.ttf', 24)
 
         self.dialog_box = self.entities.create_entity_from_template('dialogue_box')
@@ -929,11 +931,32 @@ class DialogueSystem(System):
         self.layer.surface.blit(text_surface, [entity.components['position'].position[x] - offset[x] + 10
                                 for x in [0, 1]])
 
+    # TODO: extend functionality and make this available for other systems (so we can search on more than just
+    # dialogue component)
+    def find_closest_entity(self):
+        """Find the closest entity capable of engaging in dialogue."""
+        eligible_entities = self.entities.find_entities_by_components(['dialogue'])
+        player_position = self.entities.find_entities_by_components(['player'])[0].components['position'].position
+
+        try:
+            if len(eligible_entities) > 1:
+                eligible_entities.sort(key=lambda entity:
+                                       math.sqrt(
+                                        (entity.components['position'].position[0] - player_position[0]) ** 2
+                                        +
+                                        (entity.components['position'].position[1] - player_position[1]) ** 2
+                                        ))
+            return eligible_entities[0]
+        except KeyError:
+            return None
+
     def start_dialogue(self, keyboard_action=None):
         """Respond to keyboard input to initialize a dialog event."""
         if keyboard_action.original_event['type'] == pygame.KEYDOWN:
-            event = EntityDialogueEvent(entity_id=self.entities.find_entities_by_components(['dialogue'])[0].id)
-            self.events.dispatch(event)
+            closest_entity = self.find_closest_entity()
+            if closest_entity is not None:
+                event = EntityDialogueEvent(entity_id=closest_entity.id)
+                self.events.dispatch(event)
 
     def on_dialogue(self, event=None):
         """Handle a dialogue initialization."""
