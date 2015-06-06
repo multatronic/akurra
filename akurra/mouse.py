@@ -65,13 +65,14 @@ class MouseManager(Module):
         self.events.unregister(self.on_mouse_button_down)
         self.events.unregister(self.on_tick)
 
-    def add_listener(self, button_id, listener, event_type=pygame.MOUSEBUTTONDOWN):
+    def add_listener(self, button_id, listener, event_type=pygame.MOUSEBUTTONDOWN, priority=10):
         """
         Register a listener for a press, hold or release of a mouse button.
 
         :param event_type: An identifier for an event type.
         :param button_id: A button identifier.
         :param listener: An event listener which can accept an event.
+        :param priority: Priority for the event listener.
 
         """
         if type(event_type) not in [int, str]:
@@ -81,11 +82,14 @@ class MouseManager(Module):
             self.listeners[event_type] = {}
 
         if button_id not in self.listeners[event_type]:
-            self.listeners[event_type][button_id] = {}
+            self.listeners[event_type][button_id] = 99 * [None]
 
-        self.listeners[event_type][button_id][listener] = 1
-        logger.debug('Registered listener for button "%s" [event=%s]', hr_button_id(button_id),
-                     hr_event_type(event_type))
+        if not self.listeners[event_type][button_id][priority]:
+            self.listeners[event_type][button_id][priority] = []
+
+        self.listeners[event_type][button_id][listener][priority].append(listener)
+        logger.debug('Registered listener for button "%s" [event=%s, priority=%s]', hr_button_id(button_id),
+                     hr_event_type(event_type), priority)
 
     def remove_listener(self, listener):
         """
@@ -96,17 +100,24 @@ class MouseManager(Module):
         """
         for event_type in self.listeners:
             for button_id in self.listeners[event_type]:
-                if self.listeners[event_type][button_id].pop(listener, None):
-                    logger.debug('Unregistered listener for key "%s" [event=%s]', hr_button_id(button_id),
-                                 hr_event_type(event_type))
+                for listeners in self.listeners[event_type][button_id]:
+                    if listeners:
+                        for listener in listeners:
+                            if listener and listener in listeners:
+                                listeners.remove(listener)
+                                logger.debug('Unregistered listener for key "%s" [event=%s]', hr_button_id(button_id),
+                                             hr_event_type(event_type))
 
     def on_mouse_button_down(self, event):
         """Handle holding down of a mouse button."""
         logger.debug('Detected mouse button down [button=%s, pos=%s]', hr_button_id(event.button), event.pos)
 
         try:
-            for listener in self.listeners[event.type][event.button].copy():
-                    listener(event)
+            for listeners in self.listeners[event.type][event.button]:
+                if listeners:
+                    for listener in listeners.copy():
+                        if listener and listener(event) is False:
+                            break
         except KeyError:
             logger.debug('No listeners defined for button "%s" [event=%s]', hr_button_id(event.button),
                          hr_event_type(event.type))
@@ -118,7 +129,10 @@ class MouseManager(Module):
 
         try:
             for listener in self.listeners[event.type][event.button].copy():
-                listener(event)
+                if listeners:
+                    for listener in listeners.copy():
+                        if listener and listener(event) is False:
+                            break
         except KeyError:
             logger.debug('No listeners defined for button "%s" [event=%s]', hr_button_id(event.button),
                          hr_event_type(event.type))
