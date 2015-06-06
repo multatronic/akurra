@@ -2,6 +2,8 @@
 import logging
 import pygame
 import math
+import copy
+import pdb
 from uuid import uuid4
 from enum import Enum
 from pkg_resources import iter_entry_points
@@ -315,7 +317,6 @@ class EntityManager:
             self.entity_templates[template_name] = template
 
         entity = Entity()
-
         for component_name, component_args in template['components'].items():
             component_args = component_args if component_args else {}
             entity.components[component_name] = self.components[component_name](entity=entity, **component_args)
@@ -409,11 +410,16 @@ class TextComponent(Component):
         self.text = text
 
 
-class DialogueComponent(TextComponent):
+class DialogueComponent(Component):
 
     """Dialogue component."""
 
     type = 'dialogue'
+
+    def __init__(self, tree={}, **kwargs):
+        """Constructor."""
+        super().__init__(**kwargs)
+        self.tree = tree
 
 
 class SpriteComponent(Component):
@@ -888,15 +894,19 @@ class DialogueSystem(System):
         self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=110)
         self.font = pygame.font.Font('freesansbold.ttf', 24)
 
-        self.dialog_box = self.entities.create_entity_from_template('dialogue_box')
+        # self.dialog_box = self.entities.create_entity_from_template('dialogue_box')
+        self.dialogue_prompt = self.entities.create_entity_from_template('dialogue_prompt')
+        self.dialogue_prompt.active = False
+        self.dialogue_prompt.selected_index = None
 
         self.dialogs = {}
+        self.current_nodes = {}
 
     def start(self):
         """Start the system."""
         super().start()
 
-        self.keyboard.add_action_listener('start_dialog', self.start_dialogue)
+        self.keyboard.add_action_listener('start_dialog', self.handle_keyboard)
         self.display.add_layer(self.layer)
 
     def stop(self):
@@ -924,12 +934,30 @@ class DialogueSystem(System):
             map_layer.yoffset + map_layer.view.top * map_layer.data.tileheight,
         ]
 
-        text_surface = self.font.render(self.dialogs[entity.id], True, [0, 0, 128])
-        self.layer.surface.blit(self.dialog_box.image,
-                                [entity.components['position'].position[x] - offset[x] for x in [0, 1]])
+        current_node = self.current_nodes[entity.id]
+        text_surface = self.font.render(self.dialogs[entity.id][current_node]['output']['text'], True, [0, 0, 128])
+        #self.layer.surface.blit(self.dialog_box.image,
+        #                        [entity.components['position'].position[x] - offset[x] for x in [0, 1]])
         # TODO: remove this +10 hardcoded value and figure out position dynamically
         self.layer.surface.blit(text_surface, [entity.components['position'].position[x] - offset[x] + 10
                                 for x in [0, 1]])
+
+        # draw responses onscreen
+        if self.dialogue_prompt.active and self.dialogue_prompt.entity_id == entity.id:
+            position = copy.copy(self.dialogue_prompt.components['position'].position)
+            # self.layer.surface.blit(self.dialogue_prompt.image, position)
+            current_index = 0
+            logger.info(self.dialogue_prompt.text_buffer)
+            for response in self.dialogue_prompt.text_buffer:
+                if current_index != self.dialogue_prompt.selected_index:
+                    response_text = '   ' + response[0]
+                else:
+                    response_text = '>> ' + response[0]
+                text_surface = self.font.render(response_text, True, [0, 0, 128])
+                self.layer.surface.blit(text_surface, position)
+                # position[0] += self.font.size(response)[0]
+                position[1] += 5 + self.font.size(response_text)[1]
+                current_index = current_index + 1
 
     # TODO: extend functionality and make this available for other systems (so we can search on more than just
     # dialogue component)
@@ -939,6 +967,7 @@ class DialogueSystem(System):
         player_position = self.entities.find_entities_by_components(['player'])[0].components['position'].position
 
         try:
+            # sort by distance to player to find the closest entity with dialogue component
             if len(eligible_entities) > 1:
                 eligible_entities.sort(key=lambda entity:
                                        math.sqrt(
@@ -950,7 +979,23 @@ class DialogueSystem(System):
         except KeyError:
             return None
 
-    def start_dialogue(self, keyboard_action=None):
+    def select_dialog_option(self, keyboard_action=None):
+        """Respond to keyboard input to select text from a dialog prompt."""
+        if keyboard_action.original_event['type'] == pygame.KEYDOWN:
+            number_of_responses = len(self.dialogue_prompt.text_buffer)
+            if keyboard_action.action == 'move_up':
+                self.dialogue_prompt.selected_index = (self.dialogue_prompt.selected_index + 1) % number_of_responses
+            elif keyboard_action.action == 'move_down':
+                if self.dialogue_prompt.selected_index > 0:
+                    self.dialogue_prompt.selected_index = self.dialogue_prompt.selected_index - 1
+                else:
+                    self.dialogue_prompt.selected_index = number_of_responses - 1
+            else:
+                event = EntityDialogueEvent(entity_id=self.dialogue_prompt.entity_id,
+                                            response=self.dialogue_prompt.text_buffer[self.dialogue_prompt.selected_index])
+                self.events.dispatch(event)
+
+    def handle_keyboard(self, keyboard_action=None):
         """Respond to keyboard input to initialize a dialog event."""
         if keyboard_action.original_event['type'] == pygame.KEYDOWN:
             closest_entity = self.find_closest_entity()
@@ -958,16 +1003,76 @@ class DialogueSystem(System):
                 event = EntityDialogueEvent(entity_id=closest_entity.id)
                 self.events.dispatch(event)
 
+    def prune_dialog_tree(self, tree=None, node=None):
+        """Remove sections of the dialog tree which cannot be reached anymore."""
+        result = {}
+        result[node] = tree[node]
+        current_node = node
+        # if there are still sections which we can jump to, add them to the tree
+        if 'input' in current_node:
+            for input in current_node['input']:
+                key = input[1] # 0 = text output, 1 = section to jump to
+                data = tree[key]
+                result[key] = data
+        return result
+
+    def start_dialogue_prompt(self, entity_id=None, responses={}):
+        logger.debug('Starting dialog prompt for entity %s', entity_id)
+        self.dialogue_prompt.text_buffer = responses
+        self.dialogue_prompt.entity_id = entity_id
+        self.dialogue_prompt.active = True
+        self.dialogue_prompt.selected_index = 0
+
+        # position dialogue prompt
+        resolution = self.display.screen.get_size()
+        self.dialogue_prompt.components['position'].position[0] = resolution[0] - self.dialogue_prompt.image.get_size()[0] - 100
+        self.dialogue_prompt.components['position'].position[1] = 0
+
+        # do not engage in new dialogues, make prompt listen to input instead
+        self.keyboard.remove_action_listener(self.handle_keyboard)
+        self.keyboard.add_action_listener('move_up', self.select_dialog_option)
+        self.keyboard.add_action_listener('move_down', self.select_dialog_option)
+        self.keyboard.add_action_listener('start_dialog', self.select_dialog_option)
+
+    def end_dialogue(self, entity_id=None):
+        """Shut down a dialogue."""
+        self.dialogs.pop(entity_id)
+        self.current_nodes.pop(entity_id)
+        logger.debug('Ending dialog tree for entity %s', entity_id)
+        self.dialogue_prompt.entity_id = None
+        self.dialogue_prompt.active = False
+        self.dialogue_prompt.selected_index = None
+        self.keyboard.add_action_listener('start_dialog', self.handle_keyboard)
+        self.keyboard.remove_action_listener(self.select_dialog_option)
+
     def on_dialogue(self, event=None):
-        """Handle a dialogue initialization."""
+        """Handle a dialogue event."""
         entity = self.entities.find_entity_by_id(event.entity_id)
 
+        # initiate conversation
         if event.entity_id not in self.dialogs:
-            logger.debug('adding dialog for entity with uuid %s', event.entity_id)
-            self.dialogs[event.entity_id] = entity.components['dialogue'].text
+            logger.debug('Storing dialog tree for entity with uuid %s', event.entity_id)
+            self.dialogs[entity.id] = entity.components['dialogue'].tree
+            self.current_nodes[entity.id] = 'main'
+        # continue/close conversation
+        else:
+            if event.response is not None:
+                # find name of next node in conversation tree and prune the dialog tree
+                next_node = event.response[1]
+                self.dialogs[entity.id] = self.prune_dialog_tree(self.dialogs[entity.id], next_node)
+                self.current_nodes[entity.id] = next_node
+                logger.debug('Dialogue response sent: %s', event.response)
+            else:
+                self.end_dialogue(entity.id)
 
-            # Remove the text after a while
+        # start dialog prompt if required
+        current_node = self.dialogs[entity.id][self.current_nodes[entity.id]]
+        if 'input' in current_node and (not hasattr(self.dialogue_prompt, 'entity_id') or entity.id != self.dialogue_prompt.entity_id):
+            self.start_dialogue_prompt(entity.id, current_node['input'])
+
+        # if this is the final dialog node, remove it after a while
+        if len(self.dialogs[entity.id]) == 1:
+            logger.info('shutdown dialog')
             from threading import Timer
-            tmr = Timer(5, lambda x: self.dialogs.pop(x) and
-                        logger.debug('removed dialog for entity %s', entity.id), args=[entity.id])
+            tmr = Timer(5, self.end_dialogue, [entity.id])
             tmr.start()

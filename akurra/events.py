@@ -33,10 +33,10 @@ class EntityDialogueEvent(Event):
 
     """Initialize dialog event."""
 
-    def __init__(self, entity_id):
+    def __init__(self, entity_id, response=None):
         """Constructor."""
         super().__init__()
-
+        self.response = response
         self.entity_id = entity_id
 
 

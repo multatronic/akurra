@@ -219,6 +219,23 @@ class DisplayManager:
 
     """Display controller."""
 
+    @inject(events=EventManager, resolution=DisplayResolution, flags=DisplayFlags, caption=DisplayCaption)
+    def __init__(self, events, resolution=[0, 0], flags=0, caption='akurra'):
+        """Constructor."""
+        logger.debug('Initializing DisplayManager')
+
+        self.events = events
+        self.events.register(TickEvent, self.on_tick)
+        self.events.register(pygame.VIDEORESIZE, self.on_video_resize)
+
+        self.resolution = resolution
+        self.flags = flags
+        self.caption = caption
+        self.screen = self.create_screen()
+
+        self.layers = {}
+        self.layer_z_indexes = []
+
     def add_layer(self, layer):
         """Add a layer to the display."""
         if layer.z_index not in self.layers:
@@ -286,20 +303,3 @@ class DisplayManager:
         logger.debug('Display created [resolution=%s, flags=%s]', self.resolution, self.flags)
 
         return screen
-
-    @inject(events=EventManager, resolution=DisplayResolution, flags=DisplayFlags, caption=DisplayCaption)
-    def __init__(self, events, resolution=[0, 0], flags=0, caption='akurra'):
-        """Constructor."""
-        logger.debug('Initializing DisplayManager')
-
-        self.events = events
-        self.events.register(TickEvent, self.on_tick)
-        self.events.register(pygame.VIDEORESIZE, self.on_video_resize)
-
-        self.resolution = resolution
-        self.flags = flags
-        self.caption = caption
-        self.screen = self.create_screen()
-
-        self.layers = {}
-        self.layer_z_indexes = []

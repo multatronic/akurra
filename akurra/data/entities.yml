@@ -21,7 +21,18 @@ akurra:
         parent: human
         components:
           dialogue:
-            text: 'hello wanderer'
+            tree:
+              main:
+                output:
+                  text: hello wanderer
+                input:
+                  [ [ Greetings friend, end_friendly], [ Mind yer own!, end_hostile] ]
+              end_friendly:
+                output:
+                  text: Safe travels!
+              end_hostile:
+                output:
+                  text: I hope you get eaten jerk!
           character:
             name: Town Guard
           sprite:
@@ -88,6 +99,12 @@ akurra:
         components:
           sprite:
             image: sprites/ui/dialogue_box.png
+
+      dialogue_prompt:
+        parent: dialogue_box
+        components:
+          position: ~
+          input: ~
 
       cursor:
         components:
