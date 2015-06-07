@@ -5,6 +5,7 @@ import pygame
 import signal
 import logging
 import functools
+import argparse
 
 from threading import Event
 from multiprocessing import Value
@@ -33,11 +34,20 @@ from .demo import DemoIntroScreen, DemoGameState
 DEBUG = 'debug' in sys.argv
 os.chdir(os.path.dirname(os.path.dirname(__file__)))
 logger = logging.getLogger(__name__)
+
 container = None
 
 
 def build_container(binder):
     """Build a service container by binding dependencies to an injector."""
+    # Parse command-line arguments and set required variables
+    parser = argparse.ArgumentParser(description='Run the Akurra game engine.')
+    parser.add_argument('--log-level', type=str, choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'INSANE'],
+                        default='INFO')
+    args = parser.parse_args()
+
+    binder.bind(ArgLogLevel, to=args.log_level)
+
     # Overlord
     binder.bind(Akurra, scope=singleton)
 
@@ -159,16 +169,15 @@ class Akurra:
 
     @inject(modules=ModuleManager, events=EventManager, display=DisplayManager,
             states=StateManager,
-            entities=EntityManager,
+            entities=EntityManager, log_level=ArgLogLevel,
             clock=DisplayClock, max_fps=DisplayMaxFPS,
-            shutdown=ShutdownFlag, debug=DebugFlag)
+            shutdown=ShutdownFlag)
     def __init__(self, modules, events, display, states, entities, clock, max_fps, shutdown,
-                 debug):
+                 log_level):
         """Constructor."""
-        configure_logging(debug=debug.value)
+        configure_logging(log_level=log_level)
         logger.info('Initializing..')
 
-        self.debug = debug
         self.shutdown = shutdown
 
         self.modules = modules

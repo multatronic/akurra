@@ -110,7 +110,7 @@ class MouseManager(Module):
 
     def on_mouse_button_down(self, event):
         """Handle holding down of a mouse button."""
-        logger.debug('Detected mouse button down [button=%s, pos=%s]', hr_button_id(event.button), event.pos)
+        logger.insane('Detected mouse button down [button=%s, pos=%s]', hr_button_id(event.button), event.pos)
 
         try:
             for listeners in self.listeners[event.type][event.button]:
@@ -119,13 +119,13 @@ class MouseManager(Module):
                         if listener and listener(event) is False:
                             break
         except KeyError:
-            logger.debug('No listeners defined for button "%s" [event=%s]', hr_button_id(event.button),
-                         hr_event_type(event.type))
+            logger.insane('No listeners defined for button "%s" [event=%s]', hr_button_id(event.button),
+                          hr_event_type(event.type))
             pass
 
     def on_mouse_button_up(self, event):
         """Handle releasing of a mouse button."""
-        logger.debug('Detected mouse button up [button=%s, pos=%s]', hr_button_id(event.button), event.pos)
+        logger.insane('Detected mouse button up [button=%s, pos=%s]', hr_button_id(event.button), event.pos)
 
         try:
             for listener in self.listeners[event.type][event.button].copy():
@@ -134,13 +134,13 @@ class MouseManager(Module):
                         if listener and listener(event) is False:
                             break
         except KeyError:
-            logger.debug('No listeners defined for button "%s" [event=%s]', hr_button_id(event.button),
-                         hr_event_type(event.type))
+            logger.insane('No listeners defined for button "%s" [event=%s]', hr_button_id(event.button),
+                          hr_event_type(event.type))
             pass
 
     def on_mouse_motion(self, event):
         """Handle mouse motion."""
-        logger.debug('Detected mouse motion [pos=%s]', event.pos)
+        logger.insane('Detected mouse motion [pos=%s]', event.pos)
 
     def load_cursor(self):
         """Load the mouse cursor."""

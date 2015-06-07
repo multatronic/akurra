@@ -1,6 +1,9 @@
 """Locals module."""
 from injector import Key
 
+# Args
+ArgLogLevel = Key('ArgLogLevel')
+
 # General
 ShutdownFlag = Key('ShutdownFlag')
 

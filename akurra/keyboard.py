@@ -106,7 +106,7 @@ class KeyboardManager(Module):
 
     def on_key_down(self, event):
         """Handle a key press."""
-        logger.debug('Detected press of key "%s" [mod=%s]', hr_key_id(event.key), event.mod)
+        logger.insane('Detected press of key "%s" [mod=%s]', hr_key_id(event.key), event.mod)
 
         try:
             for mods in self.listeners[event.type][event.key]:
@@ -117,13 +117,13 @@ class KeyboardManager(Module):
                                 if listener and listener(event) is False:
                                     break
         except KeyError:
-            logger.debug('No listeners defined for key "%s" [mods=%s, event=%s]',
-                         hr_key_id(event.key), event.mod, hr_event_type(event.type))
+            logger.insane('No listeners defined for key "%s" [mods=%s, event=%s]',
+                          hr_key_id(event.key), event.mod, hr_event_type(event.type))
             pass
 
     def on_key_up(self, event):
         """Handle a key release."""
-        logger.debug('Detected release of key "%s" [mod=%s]', hr_key_id(event.key), event.mod)
+        logger.insane('Detected release of key "%s" [mod=%s]', hr_key_id(event.key), event.mod)
 
         try:
             for mods in self.listeners[event.type][event.key]:
@@ -134,8 +134,8 @@ class KeyboardManager(Module):
                                 if listener and listener(event) is False:
                                     break
         except KeyError:
-            logger.debug('No listeners defined for key "%s" [mods=%s, event=%s]',
-                         hr_key_id(event.key), event.mod, hr_event_type(event.type))
+            logger.insane('No listeners defined for key "%s" [mods=%s, event=%s]',
+                          hr_key_id(event.key), event.mod, hr_event_type(event.type))
             pass
 
     def load_action_bindings(self):
@@ -185,7 +185,7 @@ class KeyboardManager(Module):
 
         """
         self.events.dispatch(KeyboardActionEvent(action=action, original_event=event))
-        logger.debug('Triggered key action "%s"', action)
+        logger.insane('Triggered key action "%s"', action)
 
     def on_keyboard_action(self, event):
         """
@@ -200,7 +200,7 @@ class KeyboardManager(Module):
                     if listener and listener(event) is False:
                         break
 
-        logger.debug('Handled key action "%s"', event.action)
+        logger.insane('Handled key action "%s"', event.action)
 
     def add_action_listener(self, action, listener, priority=10):
         """
