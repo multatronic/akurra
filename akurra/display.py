@@ -2,12 +2,14 @@
 import logging
 import pygame
 import random
+import math
 from injector import inject
 import pyscroll
 from pyscroll.util import PyscrollGroup
 
 from .locals import *  # noqa
 from .events import Event, TickEvent, EventManager
+from .assets import AssetManager
 from .entities import LayerComponent, EntityManager, MapLayerComponent
 from .utils import ContainerAware
 
@@ -100,6 +102,7 @@ class EntityDisplayLayer(DisplayLayer):
     def __init__(self, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+        self.em = self.container.get(EntityManager)
         self.entities = {}
 
     def add_entity(self, entity):
@@ -123,6 +126,29 @@ class EntityDisplayLayer(DisplayLayer):
 
         super().draw(surface)
 
+    def find_closest_entity(self, entity_id=None, criteria=None):
+        """Find the closest entity (with position component) relative to a target entity."""
+
+        if entity_id is not None and criteria is not None:
+            target_entity = self.em.find_entity_by_id(entity_id)
+            if target_entity is not None and 'position' in target_entity.components:
+                eligible_entities = self.em.find_entities_by_components(criteria)
+                entity_position = target_entity.components['position'].position
+
+                try:
+                    # sort by distance to player to find the closest entity with dialogue component
+                    if len(eligible_entities) > 1:
+                        eligible_entities.sort(key=lambda entity:
+                                               math.sqrt(
+                                                (entity.components['position'].position[0] - entity_position[0]) ** 2
+                                                +
+                                                (entity.components['position'].position[1] - entity_position[1]) ** 2
+                                                ))
+                    return eligible_entities[0]
+                except KeyError:
+                    return None
+        return None
+
 
 class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
 
@@ -136,8 +162,6 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
     def __init__(self, tmx_data, default_layer=0, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
-
-        self.em = self.container.get(EntityManager)
 
         # Create data source
         self.map_data = pyscroll.data.TiledMapData(tmx_data)
@@ -161,15 +185,18 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
 
     def spawn_entities(self):
         """Spawn entities on the map based on map data."""
+        assets = self.container.get(AssetManager)
         for o in self.map_data.tmx.objects:
             if o.properties.get('spawn', False):
                 templates = o.properties['spawn_templates'].split(';')
-
+                dialogue_tree = o.properties.get('dialogue_tree', None)
                 for i in range(0, o.properties.get('spawn_count', 1)):
                     template = random.choice(templates)
                     entity = self.em.create_entity_from_template(template)
                     if 'position' in entity.components:
                         entity.components['position'].position = pygame.Rect(o.x, o.y, o.width, o.height).center
+                    if 'dialogue' in entity.components:
+                        entity.components['dialogue'].tree = assets.get_dialogue_tree(dialogue_tree)
 
                     self.add_entity(entity)
 

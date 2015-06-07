@@ -1,0 +1,28 @@
+tree:
+  main:
+    output:
+      text: 'Yes?'
+    input:
+      [[ 'Why are you guys standing around here?', explain_magic_tree], [ 'Where can I get some equipment?', give_directions] ]
+  explain_magic_tree:
+    output:
+      text: "We're guarding this *supposedly* magic tree..."
+      input:
+        [[ "Sounds boring.", end_01], ["What's magic about it?.", explain_fruit]]
+  give_directions:
+    output:
+      text: "Depends on what you're looking for. Walk south toward the town center, you'll find some shops there"
+  explain_fruit:
+    output:
+      text: "This tree only blooms once every thirty years, so the fruit is very rare. The mages think it has magic properties, but so far they came up with zip"
+      input:
+        [[ "Can I eat one?", end_02], ["Mages, am I right?", end_03]]
+  end_01:
+    output:
+      text: "You ain't kidding..."
+  end_02:
+    output:
+      text: "Can you eat one of the extremely rare fruits from this tree I'm guarding? No..."
+  end_03:
+    output:
+      text: "A mage and a warlock walk into a tavern, the keep says: 'what is this, some kind of joke?'"

@@ -298,6 +298,7 @@
  <objectgroup name="spawns" width="0" height="0" visible="0">
   <object name="guard_spawn_01" x="629" y="188" width="38" height="37">
    <properties>
+    <property name="dialogue_tree" value="dialogues/urdarbrunn/town_guard/standard"/>
     <property name="spawn" value="true"/>
     <property name="spawn_templates" value="town_guard"/>
    </properties>
@@ -310,6 +311,7 @@
   </object>
   <object name="guard_spawn_02" x="131" y="543" width="59" height="61">
    <properties>
+    <property name="dialogue_tree" value="dialogues/urdarbrunn/town_guard/treeguard"/>
     <property name="spawn" value="true"/>
     <property name="spawn_templates" value="town_guard"/>
    </properties>

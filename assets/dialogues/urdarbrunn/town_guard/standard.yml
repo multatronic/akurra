@@ -1,0 +1,12 @@
+tree:
+  main:
+    output:
+      text: hello wanderer
+    input:
+      [ [ Greetings friend, end_friendly], [ Mind yer own!, end_hostile] ]
+  end_friendly:
+    output:
+      text: Safe travels!
+  end_hostile:
+    output:
+      text: I hope you get eaten jerk!

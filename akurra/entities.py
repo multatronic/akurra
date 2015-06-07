@@ -1,8 +1,6 @@
 """Entities module."""
 import logging
 import pygame
-import math
-import copy
 import pdb
 from uuid import uuid4
 from enum import Enum
@@ -300,7 +298,7 @@ class EntityManager:
 
     def create_entity_from_template(self, template_name):
         """Create an entity from a template."""
-        template = self.entity_templates[template_name]
+        template = self.entity_templates[template_name].copy()
 
         # If the template has a parent, merge this data into a copy of the parent
         # Before we do this, unset the parent of the current template
@@ -314,7 +312,6 @@ class EntityManager:
             # Update the parent's components with the child template's components
             parent['components'].update(template['components'])
             template = parent
-            self.entity_templates[template_name] = template
 
         entity = Entity()
         for component_name, component_args in template['components'].items():
@@ -514,7 +511,7 @@ class PlayerComponent(Component):
 
 class LayerComponent(Component):
 
-    """Map layer component."""
+    """Layer component."""
 
     type = 'layer'
 
@@ -934,20 +931,17 @@ class DialogueSystem(System):
             map_layer.yoffset + map_layer.view.top * map_layer.data.tileheight,
         ]
 
+        # render the text for the currently selected text node
         current_node = self.current_nodes[entity.id]
         text_surface = self.font.render(self.dialogs[entity.id][current_node]['output']['text'], True, [0, 0, 128])
-        #self.layer.surface.blit(self.dialog_box.image,
-        #                        [entity.components['position'].position[x] - offset[x] for x in [0, 1]])
-        # TODO: remove this +10 hardcoded value and figure out position dynamically
-        self.layer.surface.blit(text_surface, [entity.components['position'].position[x] - offset[x] + 10
+        self.layer.surface.blit(text_surface, [entity.components['position'].position[x] - offset[x]
                                 for x in [0, 1]])
 
         # draw responses onscreen
         if self.dialogue_prompt.active and self.dialogue_prompt.entity_id == entity.id:
-            position = copy.copy(self.dialogue_prompt.components['position'].position)
-            # self.layer.surface.blit(self.dialogue_prompt.image, position)
+            position = self.dialogue_prompt.components['position'].position.copy()
+            # render the responses, putting a marker in front of the text that is currently selected
             current_index = 0
-            logger.info(self.dialogue_prompt.text_buffer)
             for response in self.dialogue_prompt.text_buffer:
                 if current_index != self.dialogue_prompt.selected_index:
                     response_text = '   ' + response[0]
@@ -958,26 +952,6 @@ class DialogueSystem(System):
                 # position[0] += self.font.size(response)[0]
                 position[1] += 5 + self.font.size(response_text)[1]
                 current_index = current_index + 1
-
-    # TODO: extend functionality and make this available for other systems (so we can search on more than just
-    # dialogue component)
-    def find_closest_entity(self):
-        """Find the closest entity capable of engaging in dialogue."""
-        eligible_entities = self.entities.find_entities_by_components(['dialogue'])
-        player_position = self.entities.find_entities_by_components(['player'])[0].components['position'].position
-
-        try:
-            # sort by distance to player to find the closest entity with dialogue component
-            if len(eligible_entities) > 1:
-                eligible_entities.sort(key=lambda entity:
-                                       math.sqrt(
-                                        (entity.components['position'].position[0] - player_position[0]) ** 2
-                                        +
-                                        (entity.components['position'].position[1] - player_position[1]) ** 2
-                                        ))
-            return eligible_entities[0]
-        except KeyError:
-            return None
 
     def select_dialog_option(self, keyboard_action=None):
         """Respond to keyboard input to select text from a dialog prompt."""
@@ -998,9 +972,14 @@ class DialogueSystem(System):
     def handle_keyboard(self, keyboard_action=None):
         """Respond to keyboard input to initialize a dialog event."""
         if keyboard_action.original_event['type'] == pygame.KEYDOWN:
-            closest_entity = self.find_closest_entity()
-            if closest_entity is not None:
-                event = EntityDialogueEvent(entity_id=closest_entity.id)
+            # TODO: I find this a little ugly, can we make find_closest_entity() a part of
+            # EntityManager instead?
+            player = self.entities.find_entities_by_components(['player'])[0]
+            map_layer = player.components['layer'].layer
+            closest_dialogue_entity = map_layer.find_closest_entity(player.id, ['dialogue'])
+
+            if closest_dialogue_entity is not None:
+                event = EntityDialogueEvent(entity_id=closest_dialogue_entity.id)
                 self.events.dispatch(event)
 
     def prune_dialog_tree(self, tree=None, node=None):
@@ -1025,7 +1004,7 @@ class DialogueSystem(System):
 
         # position dialogue prompt
         resolution = self.display.screen.get_size()
-        self.dialogue_prompt.components['position'].position[0] = resolution[0] - self.dialogue_prompt.image.get_size()[0] - 100
+        self.dialogue_prompt.components['position'].position[0] = resolution[0] - self.dialogue_prompt.image.get_size()[0] - 400
         self.dialogue_prompt.components['position'].position[1] = 0
 
         # do not engage in new dialogues, make prompt listen to input instead
@@ -1034,16 +1013,21 @@ class DialogueSystem(System):
         self.keyboard.add_action_listener('move_down', self.select_dialog_option)
         self.keyboard.add_action_listener('start_dialog', self.select_dialog_option)
 
-    def end_dialogue(self, entity_id=None):
-        """Shut down a dialogue."""
-        self.dialogs.pop(entity_id)
-        self.current_nodes.pop(entity_id)
-        logger.debug('Ending dialog tree for entity %s', entity_id)
+    def close_dialogue_prompt(self, entity_id=None):
+        """Close a dialogue prompt."""
+        logger.debug('closing dialog prompt for entity %s', entity_id)
         self.dialogue_prompt.entity_id = None
         self.dialogue_prompt.active = False
         self.dialogue_prompt.selected_index = None
         self.keyboard.add_action_listener('start_dialog', self.handle_keyboard)
         self.keyboard.remove_action_listener(self.select_dialog_option)
+
+    def end_dialogue(self, entity_id=None):
+        """Shut down a dialogue."""
+        logger.debug('Ending dialog tree for entity %s', entity_id)
+        self.dialogs.pop(entity_id)
+        self.current_nodes.pop(entity_id)
+        self.close_dialogue_prompt(entity_id)
 
     def on_dialogue(self, event=None):
         """Handle a dialogue event."""
@@ -1062,8 +1046,10 @@ class DialogueSystem(System):
                 self.dialogs[entity.id] = self.prune_dialog_tree(self.dialogs[entity.id], next_node)
                 self.current_nodes[entity.id] = next_node
                 logger.debug('Dialogue response sent: %s', event.response)
-            else:
-                self.end_dialogue(entity.id)
+                self.close_dialogue_prompt(entity.id)
+            # else:
+            #     self.end_dialogue(entity.id)
+            #     pdb.set_trace()
 
         # start dialog prompt if required
         current_node = self.dialogs[entity.id][self.current_nodes[entity.id]]
@@ -1072,7 +1058,6 @@ class DialogueSystem(System):
 
         # if this is the final dialog node, remove it after a while
         if len(self.dialogs[entity.id]) == 1:
-            logger.info('shutdown dialog')
             from threading import Timer
             tmr = Timer(5, self.end_dialogue, [entity.id])
             tmr.start()

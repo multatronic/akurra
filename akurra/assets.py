@@ -4,9 +4,11 @@ import logging
 import pygame
 import pyscroll
 import pytmx
+import pdb
 from injector import inject
 from .locals import *  # noqa
 from .utils import ContainerAware
+from ballercfg import ConfigurationManager
 
 
 logger = logging.getLogger(__name__)
@@ -36,6 +38,16 @@ class AssetManager:
         sound = pygame.mixer.Sound(path)
 
         return sound
+
+    def get_dialogue_tree(self, asset_path):
+        """
+        Load a dialog tree from a yaml file.
+
+        :param asset_path: Relative path of asset to process.
+        """
+        path = self.get_path(asset_path) + '.yml'
+        tree = self.configuration_manager.load(path).get('tree')
+        return tree
 
     def get_image(self, asset_path, colorkey=None, alpha=False):
         """
@@ -77,11 +89,12 @@ class AssetManager:
 
         return map_data
 
-    @inject(base_path=AssetBasePath)
-    def __init__(self, base_path='assets'):
+    @inject(base_path=AssetBasePath, configuration_manager=ConfigurationManager)
+    def __init__(self, base_path='assets', configuration_manager=None):
         """Constructor."""
         logger.debug('Initializing AssetManager [base_path=%s]', base_path)
 
+        self.configuration_manager = configuration_manager
         self.base_path = base_path
 
 

@@ -60,6 +60,7 @@ def build_container(binder):
     cfg = ConfigurationManager.load(CFG_FILES + [get_data_path('*.yml')])
     binder.bind(Configuration, to=cfg)
 
+    binder.bind(ConfigurationManager, scope=singleton)
     # Modules
     binder.bind(ModuleManager, scope=singleton)
     binder.bind(ModuleEntryPointGroup, to=cfg.get('akurra.modules.entry_point_group', 'akurra.modules'))
