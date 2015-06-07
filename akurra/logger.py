@@ -3,6 +3,9 @@ import logging
 import logging.config
 
 
+DEBUG_LEVEL_INSANE_NUM = 9
+
+
 defaults = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -43,7 +46,7 @@ defaults = {
 }
 
 
-def configure_logging(config=None, debug=False):
+def configure_logging(config=None, log_level='NOT_SET'):
     """Configure logging with a provided configuration."""
     cfg = defaults.copy()
 
@@ -52,5 +55,13 @@ def configure_logging(config=None, debug=False):
 
     logging.config.dictConfig(cfg)
 
-    if debug:
-        logging.root.setLevel(logging.DEBUG)
+    # Add log level: insane
+    def insane(self, message, *args, **kws):
+        if self.isEnabledFor(DEBUG_LEVEL_INSANE_NUM):
+            self._log(DEBUG_LEVEL_INSANE_NUM, message, args, **kws)
+
+    logging.addLevelName(DEBUG_LEVEL_INSANE_NUM, "INSANE")
+    logging.INSANE = DEBUG_LEVEL_INSANE_NUM
+    logging.Logger.insane = insane
+
+    logging.root.setLevel(getattr(logging, log_level))

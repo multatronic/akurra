@@ -57,7 +57,7 @@ class KeyboardManager(Module):
         self.events.unregister(self.on_key_down)
         self.events.unregister(self.on_key_up)
 
-    def add_listener(self, key_id, listener, mods=0, event_type=pygame.KEYDOWN):
+    def add_listener(self, key_id, listener, mods=0, event_type=pygame.KEYDOWN, priority=10):
         """
         Register a listener for a press, hold or release of a key.
 
@@ -65,6 +65,7 @@ class KeyboardManager(Module):
         :param key_id: A key identifier.
         :param mods: An integer representing a bitmask of all modifier keys that should be held.
         :param listener: An event listener which can accept an event.
+        :param priority: Priority of event listener.
 
         """
         if type(event_type) not in [int, str]:
@@ -77,11 +78,14 @@ class KeyboardManager(Module):
             self.listeners[event_type][key_id] = {}
 
         if mods not in self.listeners[event_type][key_id]:
-            self.listeners[event_type][key_id][mods] = {}
+            self.listeners[event_type][key_id][mods] = 99 * [None]
 
-        self.listeners[event_type][key_id][mods][listener] = 1
-        logger.debug('Registered listener for key "%s" [mods=%s, event=%s]',
-                     hr_key_id(key_id), mods, hr_event_type(event_type))
+        if not self.listeners[event_type][key_id][mods][priority]:
+            self.listeners[event_type][key_id][mods][priority] = []
+
+        self.listeners[event_type][key_id][mods][priority].append(listener)
+        logger.debug('Registered listener for key "%s" [mods=%s, event=%s, priority=%s]',
+                     hr_key_id(key_id), mods, hr_event_type(event_type), priority)
 
     def remove_listener(self, listener):
         """
@@ -93,36 +97,45 @@ class KeyboardManager(Module):
         for event_type in self.listeners:
             for key_id in self.listeners[event_type]:
                 for mods in self.listeners[event_type][key_id]:
-                    if self.listeners[event_type][key_id][mods].pop(listener, None):
-                        logger.debug('Unregistered listener for key "%s" [mods=%s, event=%s]',
-                                     hr_key_id(key_id), mods, hr_event_type(event_type))
+                    if self.listeners[event_type][key_id][mods]:
+                        for listeners in self.listeners[event_type][key_id][mods]:
+                            if listeners and listener in listeners:
+                                listeners.remove(listener)
+                                logger.debug('Unregistered listener for key "%s" [mods=%s, event=%s]',
+                                             hr_key_id(key_id), mods, hr_event_type(event_type))
 
     def on_key_down(self, event):
         """Handle a key press."""
-        logger.debug('Detected press of key "%s" [mod=%s]', hr_key_id(event.key), event.mod)
+        logger.insane('Detected press of key "%s" [mod=%s]', hr_key_id(event.key), event.mod)
 
         try:
             for mods in self.listeners[event.type][event.key]:
                 if not mods or mods & event.mod:
-                    for listener in self.listeners[event.type][event.key][mods].copy():
-                        listener(event)
+                    for listeners in self.listeners[event.type][event.key][mods]:
+                        if listeners:
+                            for listener in listeners.copy():
+                                if listener and listener(event) is False:
+                                    break
         except KeyError:
-            logger.debug('No listeners defined for key "%s" [mods=%s, event=%s]',
-                         hr_key_id(event.key), event.mod, hr_event_type(event.type))
+            logger.insane('No listeners defined for key "%s" [mods=%s, event=%s]',
+                          hr_key_id(event.key), event.mod, hr_event_type(event.type))
             pass
 
     def on_key_up(self, event):
         """Handle a key release."""
-        logger.debug('Detected release of key "%s" [mod=%s]', hr_key_id(event.key), event.mod)
+        logger.insane('Detected release of key "%s" [mod=%s]', hr_key_id(event.key), event.mod)
 
         try:
             for mods in self.listeners[event.type][event.key]:
                 if not mods or mods & event.mod:
-                    for listener in self.listeners[event.type][event.key][mods].copy():
-                        listener(event)
+                    for listeners in self.listeners[event.type][event.key][mods]:
+                        if listeners:
+                            for listener in listeners.copy():
+                                if listener and listener(event) is False:
+                                    break
         except KeyError:
-            logger.debug('No listeners defined for key "%s" [mods=%s, event=%s]',
-                         hr_key_id(event.key), event.mod, hr_event_type(event.type))
+            logger.insane('No listeners defined for key "%s" [mods=%s, event=%s]',
+                          hr_key_id(event.key), event.mod, hr_event_type(event.type))
             pass
 
     def load_action_bindings(self):
@@ -139,17 +152,20 @@ class KeyboardManager(Module):
 
             self.add_action_binding(action, getattr(pygame, binding[0]), mods=binding[1])
 
-    def add_action_binding(self, action, key_id, mods=0, event_type=pygame.KEYDOWN):
+    def add_action_binding(self, action, key_id, mods=0, event_type=pygame.KEYDOWN, priority=10):
         """
         Register an action to be triggered on a press, hold or release of a key.
 
         :param key_id: A key identifier.
         :param mods: An integer representing a bitmask of all modifier keys that should be held.
         :param action: An action to trigger.
+        :parma event_type: Event type to trigger action on.
+        :param priority: Priority of event listener.
 
         """
         for event_type in pygame.KEYDOWN, pygame.KEYUP:
-            self.add_listener(key_id, lambda x: self.trigger_action(x, action), mods=mods, event_type=event_type)
+            self.add_listener(key_id, lambda x: self.trigger_action(x, action), mods=mods, event_type=event_type,
+                              priority=priority)
 
     def remove_action_binding(self, action):
         """
@@ -169,7 +185,7 @@ class KeyboardManager(Module):
 
         """
         self.events.dispatch(KeyboardActionEvent(action=action, original_event=event))
-        logger.debug('Triggered key action "%s"', action)
+        logger.insane('Triggered key action "%s"', action)
 
     def on_keyboard_action(self, event):
         """
@@ -178,25 +194,31 @@ class KeyboardManager(Module):
         :param event: Event to process.
 
         """
-        for listener in self.action_listeners[event.action]:
-            if listener(event) is False:
-                break
+        for listeners in self.action_listeners[event.action]:
+            if listeners:
+                for listener in listeners:
+                    if listener and listener(event) is False:
+                        break
 
-        logger.debug('Handled key action "%s"', event.action)
+        logger.insane('Handled key action "%s"', event.action)
 
-    def add_action_listener(self, action, listener):
+    def add_action_listener(self, action, listener, priority=10):
         """
         Register a listener for an action.
 
         :param action: An identifier for an action.
         :param listener: An event listener which can accept an event.
+        :param priotrity: Priority of event listener.
 
         """
         if action not in self.action_listeners:
-            self.action_listeners[action] = {}
+            self.action_listeners[action] = 99 * [None]
 
-        self.action_listeners[action][listener] = 1
-        logger.debug('Registered listener for action "%s"', action)
+        if not self.action_listeners[action][priority]:
+            self.action_listeners[action][priority] = []
+
+        self.action_listeners[action][priority].append(listener)
+        logger.debug('Registered listener for action "%s" [priority=%s]', action, priority)
 
     def remove_action_listener(self, listener):
         """
@@ -206,5 +228,7 @@ class KeyboardManager(Module):
 
         """
         for action in self.action_listeners:
-            if self.action_listeners[action].pop(listener, None):
-                logger.debug('Unregistered listener for action "%s"', action)
+            for listeners in self.action_listeners[action]:
+                if listeners and listener in listeners:
+                    listeners.remove(listener)
+                    logger.debug('Unregistered listener for action "%s"', action)
