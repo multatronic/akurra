@@ -982,17 +982,23 @@ class DialogueSystem(System):
                 event = EntityDialogueEvent(entity_id=closest_dialogue_entity.id)
                 self.events.dispatch(event)
 
+    def depth_first_search(self, tree=None, node=None, visited=[]):
+        """Perform a recurse depth-first search for dialogue nodes which can still be reached."""
+        if node not in visited:
+            visited.append(node)
+            if 'input' in tree[node]:
+                for child in tree[node]['input']:
+                    self.depth_first_search(tree, child[1], visited)
+
     def prune_dialog_tree(self, tree=None, node=None):
         """Remove sections of the dialog tree which cannot be reached anymore."""
         result = {}
-        result[node] = tree[node]
-        current_node = node
-        # if there are still sections which we can jump to, add them to the tree
-        if 'input' in current_node:
-            for input in current_node['input']:
-                key = input[1] # 0 = text output, 1 = section to jump to
-                data = tree[key]
-                result[key] = data
+        visited = []
+        self.depth_first_search(tree, node, visited)
+
+        for node_name in visited:
+            result[node_name] = tree[node_name]
+
         return result
 
     def start_dialogue_prompt(self, entity_id=None, responses={}):
@@ -1032,7 +1038,7 @@ class DialogueSystem(System):
     def on_dialogue(self, event=None):
         """Handle a dialogue event."""
         entity = self.entities.find_entity_by_id(event.entity_id)
-
+        # pdb.set_trace()
         # initiate conversation
         if event.entity_id not in self.dialogs:
             logger.debug('Storing dialog tree for entity with uuid %s', event.entity_id)
