@@ -7,7 +7,7 @@ tree:
   explain_magic_tree:
     output:
       text: "We're guarding this *supposedly* magic tree..."
-      input:
+    input:
         [[ "Sounds boring.", end_01], ["What's magic about it?.", explain_fruit]]
   give_directions:
     output:
@@ -15,7 +15,7 @@ tree:
   explain_fruit:
     output:
       text: "This tree only blooms once every thirty years, so the fruit is very rare. The mages think it has magic properties, but so far they came up with zip"
-      input:
+    input:
         [[ "Can I eat one?", end_02], ["Mages, am I right?", end_03]]
   end_01:
     output:
