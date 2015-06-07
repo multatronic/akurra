@@ -993,9 +993,12 @@ class DialogueSystem(System):
     def prune_dialog_tree(self, tree=None, node=None):
         """Remove sections of the dialog tree which cannot be reached anymore."""
         result = {}
+
+        # find all dialogue nodes which can be reached through DFS graph-search
         visited = []
         self.depth_first_search(tree, node, visited)
 
+        # loop over reachable dialog nodes and fetch their content
         for node_name in visited:
             result[node_name] = tree[node_name]
 
@@ -1021,12 +1024,13 @@ class DialogueSystem(System):
 
     def close_dialogue_prompt(self, entity_id=None):
         """Close a dialogue prompt."""
-        logger.debug('closing dialog prompt for entity %s', entity_id)
-        self.dialogue_prompt.entity_id = None
-        self.dialogue_prompt.active = False
-        self.dialogue_prompt.selected_index = None
-        self.keyboard.add_action_listener('start_dialog', self.handle_keyboard)
-        self.keyboard.remove_action_listener(self.select_dialog_option)
+        if self.dialogue_prompt.entity_id == entity_id:
+            logger.debug('closing dialog prompt for entity %s', entity_id)
+            self.dialogue_prompt.entity_id = None
+            self.dialogue_prompt.active = False
+            self.dialogue_prompt.selected_index = None
+            self.keyboard.add_action_listener('start_dialog', self.handle_keyboard)
+            self.keyboard.remove_action_listener(self.select_dialog_option)
 
     def end_dialogue(self, entity_id=None):
         """Shut down a dialogue."""
@@ -1038,7 +1042,6 @@ class DialogueSystem(System):
     def on_dialogue(self, event=None):
         """Handle a dialogue event."""
         entity = self.entities.find_entity_by_id(event.entity_id)
-        # pdb.set_trace()
         # initiate conversation
         if event.entity_id not in self.dialogs:
             logger.debug('Storing dialog tree for entity with uuid %s', event.entity_id)
@@ -1053,9 +1056,6 @@ class DialogueSystem(System):
                 self.current_nodes[entity.id] = next_node
                 logger.debug('Dialogue response sent: %s', event.response)
                 self.close_dialogue_prompt(entity.id)
-            # else:
-            #     self.end_dialogue(entity.id)
-            #     pdb.set_trace()
 
         # start dialog prompt if required
         current_node = self.dialogs[entity.id][self.current_nodes[entity.id]]
