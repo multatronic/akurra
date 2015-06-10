@@ -8,7 +8,7 @@ tree:
     output:
       text: "We're guarding this *supposedly* magic tree..."
     input:
-        [[ "Sounds boring.", end_01], ["What's magic about it?.", explain_fruit]]
+        [[ "Sounds boring.", end_01], ["What's magic about it?", explain_fruit]]
   give_directions:
     output:
       text: "Depends on what you're looking for. Walk south toward the town center, you'll find some shops there"

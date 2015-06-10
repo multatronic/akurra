@@ -195,14 +195,18 @@ class KeyboardManager(Module):
 
         """
         for listeners in self.action_listeners[event.action]:
+            propagation_stopped = False
             if listeners:
                 for listener in listeners:
                     if listener and listener(event) is False:
+                        propagation_stopped = True
                         break
+            if propagation_stopped:
+                break
 
         logger.insane('Handled key action "%s"', event.action)
 
-    def add_action_listener(self, action, listener, priority=10):
+    def add_action_listener(self, action, listener, priority=15):
         """
         Register a listener for an action.
 

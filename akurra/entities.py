@@ -968,6 +968,7 @@ class DialogueSystem(System):
                 event = EntityDialogueEvent(entity_id=self.dialogue_prompt.entity_id,
                                             response=self.dialogue_prompt.text_buffer[self.dialogue_prompt.selected_index])
                 self.events.dispatch(event)
+            return False
 
     def handle_keyboard(self, keyboard_action=None):
         """Respond to keyboard input to initialize a dialog event."""
@@ -1018,9 +1019,9 @@ class DialogueSystem(System):
 
         # do not engage in new dialogues, make prompt listen to input instead
         self.keyboard.remove_action_listener(self.handle_keyboard)
-        self.keyboard.add_action_listener('move_up', self.select_dialog_option)
-        self.keyboard.add_action_listener('move_down', self.select_dialog_option)
-        self.keyboard.add_action_listener('start_dialog', self.select_dialog_option)
+        self.keyboard.add_action_listener('move_up', self.select_dialog_option, 10)
+        self.keyboard.add_action_listener('move_down', self.select_dialog_option, 10)
+        self.keyboard.add_action_listener('start_dialog', self.select_dialog_option, 10)
 
     def close_dialogue_prompt(self, entity_id=None):
         """Close a dialogue prompt."""
