@@ -1064,7 +1064,10 @@ class DialogueSystem(System):
             self.start_dialogue_prompt(entity.id, current_node['input'])
 
         # if this is the final dialog node, remove it after a while
-        if len(self.dialogs[entity.id]) == 1:
+        # mark the fact the we are deleting this in the future (otherwise it might get put on the timer several times
+        # and shutdown or newly started conversation or throw key errors)
+        if len(self.dialogs[entity.id]) == 1 and 'marked' not in self.dialogs[entity.id]:
+            self.dialogs[entity.id]['marked'] = True
             from threading import Timer
             tmr = Timer(5, self.end_dialogue, [entity.id])
             tmr.start()
