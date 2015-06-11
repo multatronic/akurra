@@ -1,7 +1,6 @@
 """Entities module."""
 import logging
 import pygame
-import pdb
 from uuid import uuid4
 from enum import Enum
 from pkg_resources import iter_entry_points
@@ -890,6 +889,7 @@ class DialogueSystem(System):
         # @TODO Use an EntityDisplayLayer instead
         self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=110)
         self.font = pygame.font.Font('freesansbold.ttf', 24)
+        self.dialogue_color = (255, 255, 0)
 
         # self.dialog_box = self.entities.create_entity_from_template('dialogue_box')
         self.dialogue_prompt = self.entities.create_entity_from_template('dialogue_prompt')
@@ -917,6 +917,17 @@ class DialogueSystem(System):
         self.layer.surface.fill([0, 0, 0, 0])
         super().on_event(event)
 
+    def render_dialogue(self, text, position):
+        """Render dialogue."""
+        # split the string if necessary
+        fragments = self.split_dialogue_on_word_count(text, 6)
+        for fragment in fragments:
+            surface = self.font.render(fragment, True, self.dialogue_color)
+            text_size = self.font.size(fragment)
+            self.layer.surface.blit(surface, position)
+            # render the lines under each other
+            position[1] += text_size[1]
+
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         # If the dialogue isn't active, do nothing
@@ -933,10 +944,8 @@ class DialogueSystem(System):
 
         # render the text for the currently selected text node
         current_node = self.current_nodes[entity.id]
-        text_surface = self.font.render(self.dialogs[entity.id][current_node]['output']['text'], True, [0, 0, 128])
-        self.layer.surface.blit(text_surface, [entity.components['position'].position[x] - offset[x]
-                                for x in [0, 1]])
-
+        self.render_dialogue(self.dialogs[entity.id][current_node]['output']['text'], [entity.components['position'].position[x] - offset[x]
+                             for x in [0, 1]])
         # draw responses onscreen
         if self.dialogue_prompt.active and self.dialogue_prompt.entity_id == entity.id:
             position = self.dialogue_prompt.components['position'].position.copy()
@@ -947,7 +956,7 @@ class DialogueSystem(System):
                     response_text = '   ' + response[0]
                 else:
                     response_text = '>> ' + response[0]
-                text_surface = self.font.render(response_text, True, [0, 0, 128])
+                text_surface = self.font.render(response_text, True, self.dialogue_color)
                 self.layer.surface.blit(text_surface, position)
                 # position[0] += self.font.size(response)[0]
                 position[1] += 5 + self.font.size(response_text)[1]
@@ -982,6 +991,16 @@ class DialogueSystem(System):
             if closest_dialogue_entity is not None:
                 event = EntityDialogueEvent(entity_id=closest_dialogue_entity.id)
                 self.events.dispatch(event)
+
+    def split_dialogue_on_word_count(self, string, word_count):
+        """Split a long string into several strings based on max words per line."""
+        words = string.split(' ')
+        seperator = ' '
+        for index in range(0, len(words), word_count):
+            fragment = words[index:index+word_count]
+            yield seperator.join(fragment)
+
+
 
     def depth_first_search(self, tree=None, node=None, visited=[]):
         """Perform a recurse depth-first search for dialogue nodes which can still be reached."""
@@ -1067,6 +1086,7 @@ class DialogueSystem(System):
         # mark the fact the we are deleting this in the future (otherwise it might get put on the timer several times
         # and shutdown or newly started conversation or throw key errors)
         if len(self.dialogs[entity.id]) == 1 and 'marked' not in self.dialogs[entity.id]:
+            logger.debug('Preparing to end dialogue with entity %s', entity.id)
             self.dialogs[entity.id]['marked'] = True
             from threading import Timer
             tmr = Timer(5, self.end_dialogue, [entity.id])
