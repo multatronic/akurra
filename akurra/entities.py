@@ -11,7 +11,7 @@ from .assets import SpriteAnimation
 from .keyboard import KeyboardManager
 from .events import TickEvent, EntityMoveEvent, EventManager
 from .audio import AudioManager
-from .utils import ContainerAware
+from .utils import ContainerAware, map_point_to_screen
 from .assets import AssetManager
 
 logger = logging.getLogger(__name__)
@@ -355,19 +355,53 @@ class PositionComponent(Component):
     type = 'position'
 
     @property
-    def position(self):
-        """Set position."""
-        return self._position
+    def primary_position(self):
+        """Return primary position."""
+        return getattr(self, self.primary + '_position')
 
-    @position.setter
-    def position(self, value):
-        """Return position."""
-        self._position = list(value)
+    @primary_position.setter
+    def primary_position(self, value):
+        """Set primary position."""
+        setattr(self, self.primary + '_position', value)
 
-    def __init__(self, position=[0, 0], **kwargs):
+    @property
+    def screen_position(self):
+        """Return screen position."""
+        return self._screen_position
+
+    @screen_position.setter
+    def screen_position(self, value):
+        """Set screen position."""
+        self._screen_position = list(value)
+
+    @property
+    def layer_position(self):
+        """Return layer position."""
+        return self._layer_position
+
+    @layer_position.setter
+    def layer_position(self, value):
+        """Set layer position."""
+        self._layer_position = list(value)
+
+    @property
+    def map_position(self):
+        """Return map position."""
+        return self._map_position
+
+    @map_position.setter
+    def map_position(self, value):
+        """Set map position."""
+        self._map_position = list(value)
+
+    def __init__(self, screen_position=[0, 0], layer_position=[0, 0], map_position=[0, 0], primary='layer', **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
-        self.position = position
+        self.screen_position = screen_position
+        self.layer_position = layer_position
+        self.map_position = map_position
+
+        self.primary = primary
         self.old = None
 
 
@@ -516,10 +550,9 @@ class MapLayerComponent(Component):
 
     type = 'map_layer'
 
-    def __init__(self, location=[0, 0], **kwargs):
+    def __init__(self, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
-        self.location = location
 
 
 class System(ContainerAware):
@@ -570,10 +603,10 @@ class SpriteRectPositionCorrectionSystem(System):
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         if not entity.components['position'].old:
-            entity.components['position'].old = list(entity.components['position'].position)
+            entity.components['position'].old = list(entity.components['position'].primary_position)
 
         # pygame.sprite.Sprite logic
-        entity.components['sprite'].rect.topleft = list(entity.components['position'].position)
+        entity.components['sprite'].rect.topleft = list(entity.components['position'].primary_position)
 
 
 class PlayerInputSystem(System):
@@ -668,7 +701,7 @@ class DialogSystem(System):
             color_blue = (0, 0, 128)
             font = pygame.font.Font('freesansbold.ttf', 32)
             text_surface = font.render(entity.components['dialog'].text, True, color_blue)
-            entity.ui_layer.surface.blit(text_surface, entity.components['position'].position)
+            entity.ui_layer.surface.blit(text_surface, entity.components['position'].primary_position)
             # dialog = self.container.get(EntityManager).create_entity_from_template('dialog')
             # dialog.components['position'] = entity.components['position']
             # entity.components['layer'].layer.add_entity(dialog)
@@ -700,10 +733,12 @@ class MovementSystem(System):
         if not entity.components['velocity'].velocity[0] and not entity.components['velocity'].velocity[1]:
             return
 
-        entity.components['position'].old = list(entity.components['position'].position)
+        entity.components['position'].old = list(entity.components['position'].primary_position)
 
-        entity.components['position'].position[0] += entity.components['velocity'].velocity[0] * event.delta_time
-        entity.components['position'].position[1] += entity.components['velocity'].velocity[1] * event.delta_time
+        entity.components['position'].primary_position[0] += entity.components['velocity'].velocity[0] * \
+            event.delta_time
+        entity.components['position'].primary_position[1] += entity.components['velocity'].velocity[1] * \
+            event.delta_time
 
         # Calculate and set direction
         direction = EntityDirection.NORTH.value if entity.components['velocity'].velocity[1] < 0 \
@@ -721,26 +756,37 @@ class MovementSystem(System):
         self.events.dispatch(EntityMoveEvent(entity.id))
 
 
-class MapLocationSystem(System):
+class PositioningSystem(System):
 
-    """Map location system."""
+    """Positioning system."""
 
     requirements = [
-        'map_layer',
+        'position',
         'layer',
-        'physics',
+        'map_layer',
+        'physics'
     ]
 
     event_handlers = {
         EntityMoveEvent: ['on_event', 10]
     }
 
+    # def on_event(self, event):
+    #     """Handle an event."""
+    #     self.update(self.entities.find_entity_by_id(event.entity_id), event)
+
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        entity.components['map_layer'].location[0] = entity.components['physics'].collision_core.center[0] / \
-            entity.components['layer'].layer.map_data.tilewidth
-        entity.components['map_layer'].location[1] = entity.components['physics'].collision_core.center[1] / \
-            entity.components['layer'].layer.map_data.tileheight
+        position = entity.components['position']
+        map = entity.components['layer'].layer.map_layer
+        core_center = entity.components['physics'].collision_core.center
+
+        if position.primary != 'map':
+            position.map_position[0] = core_center[0] / map.data.tilewidth
+            position.map_position[1] = core_center[1] / map.data.tileheight
+
+        if position.primary != 'screen':
+            position.screen_position = map_point_to_screen(map, core_center)
 
 
 class RenderingSystem(System):
@@ -788,13 +834,8 @@ class SpriteRenderOrderingSystem(System):
             # self.update(entity, event)
             entity.components['layer'].layer.group._spritelist = sorted(
                 entity.components['layer'].layer.group._spritelist,
-                key=lambda x: x.components['position'].position[1])
+                key=lambda x: x.components['position'].layer_position[1])
             break
-
-    def update(self, entity, event=None):
-        """Have an entity updated by the system."""
-        # entity.components['map_layer'].layer.group._spritelist = sorted(
-        #   entity.components['map_layer'].layer.group._spritelist, key=lambda x: x.components['position'].position[1])
 
 
 class CollisionSystem(System):
@@ -832,8 +873,8 @@ class CollisionSystem(System):
         collisions = entity.components['physics'].collision_core.collidelist(collision_rects)
 
         if collisions > -1:
-            entity.components['position'].position = entity.components['position'].old
-            entity.components['sprite'].rect.topleft = list(entity.components['position'].position)
+            entity.components['position'].primary_position = entity.components['position'].old
+            entity.components['sprite'].rect.topleft = list(entity.components['position'].primary_position)
             entity.components['physics'].collision_core.center = entity.components['sprite'].rect.center
 
             entity.components['physics'].collision_core.centerx += \
@@ -848,6 +889,7 @@ class PlayerTerrainSoundSystem(System):
 
     requirements = [
         'player',
+        'position',
         'map_layer',
         'layer'
     ]
@@ -864,7 +906,7 @@ class PlayerTerrainSoundSystem(System):
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         # Fetch the current tile the player is walking on, based on the current map location
-        coords = [int(x) for x in entity.components['map_layer'].location]
+        coords = [int(x) for x in entity.components['position'].map_position]
 
         for l in range(0, len(list(entity.components['layer'].layer.map_data.tmx.visible_layers))):
             try:

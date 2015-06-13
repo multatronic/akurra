@@ -8,6 +8,7 @@ from .display import DisplayManager, DisplayLayer
 from .entities import EntityManager
 from .events import TickEvent, EventManager
 from .modules import Module
+from .utils import map_point_to_screen
 
 
 logger = logging.getLogger(__name__)
@@ -69,24 +70,13 @@ class DebugModule(Module):
         entity_rects = []
 
         # Loop through all entities which have collision detection enabled, that are linked to the map
-        for entity in self.entities.find_entities_by_components(['map_layer', 'physics']):
+        for entity in self.entities.find_entities_by_components(['position', 'layer', 'map_layer', 'physics']):
             layer = entity.components['layer'].layer
 
             rect = entity.components['physics'].collision_core
             entity_rects.append(rect)
 
-            offset = [
-                layer.map_layer.xoffset + layer.map_layer.view.left * layer.map_layer.data.tilewidth,
-                layer.map_layer.yoffset + layer.map_layer.view.top * layer.map_layer.data.tileheight,
-            ]
-
-            rect = [
-                rect.x - offset[0],
-                rect.y - offset[1],
-                rect.width,
-                rect.height
-            ]
-
+            rect = [map_point_to_screen(layer.map_layer, [rect.x, rect.y]), [rect.width, rect.height]]
             self.layer.surface.fill([128, 0, 128, 150], rect)
 
             # Track the collision rectangles of this layer
@@ -100,18 +90,7 @@ class DebugModule(Module):
                 if rect in entity_rects:
                     continue
 
-                offset = [
-                    layer.map_layer.xoffset + (layer.map_layer.view.left * layer.map_layer.data.tilewidth),
-                    layer.map_layer.yoffset + (layer.map_layer.view.top * layer.map_layer.data.tileheight),
-                ]
-
-                rect = [
-                    rect.x - offset[0],
-                    rect.y - offset[1],
-                    rect.width,
-                    rect.height
-                ]
-
+                rect = [map_point_to_screen(layer.map_layer, [rect.x, rect.y]), [rect.width, rect.height]]
                 self.layer.surface.fill([0, 128, 0, 150], rect)
 
         self.layer.surface.fill([10, 10, 10, 200], [5, 5, 300, 190])
