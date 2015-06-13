@@ -191,7 +191,7 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
     def remove_entity(self, entity):
         """Remove an entity from the layer."""
         super().remove_entity(entity)
-        entity.remove_component(MapLayerComponent())
+        entity.remove_component(MapLayerComponent)
         self.group.remove(entity)
 
         # If this entity supports collision detection, remove its collision core from our collision map

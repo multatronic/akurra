@@ -402,11 +402,10 @@ class DialogComponent(Component):
 
     type = 'dialog'
 
-    def __init__(self, text='', position=(0, 0), **kwargs):
+    def __init__(self, text='', **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
         self.text = text
-        self.position = position
 
 
 class SpriteComponent(Component):
