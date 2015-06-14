@@ -55,13 +55,13 @@ def distance_between(point_1, point_2):
 
 
 def map_point_to_screen(map_layer, point):
-    """Converts a pair of coordinates from a map projection to screen projection."""
+    """Convert a pair of coordinates from a map projection to screen projection."""
     return [point[0] - (map_layer.xoffset + (map_layer.view.left * map_layer.data.tilewidth)),
             point[1] - (map_layer.yoffset + (map_layer.view.top * map_layer.data.tileheight))]
 
 
 def layer_point_to_map(map_layer, point):
-    """Converts a pair of coordinates from layer projection map projection."""
+    """Convert a pair of coordinates from layer projection map projection."""
     return [point[0] / map_layer.data.tilewidth,
             point[1] / map_layer.data.tileheight]
 

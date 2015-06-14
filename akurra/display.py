@@ -9,7 +9,7 @@ from pyscroll.util import PyscrollGroup
 from .locals import *  # noqa
 from .events import Event, TickEvent, EventManager
 from .entities import LayerComponent, EntityManager, MapLayerComponent
-from .utils import ContainerAware, hr_event_type, map_point_to_screen, layer_point_to_map
+from .utils import ContainerAware, hr_event_type
 
 
 logger = logging.getLogger(__name__)

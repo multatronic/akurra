@@ -2,7 +2,7 @@
 import pygame
 import logging
 from .assets import AssetManager
-from .display import (DisplayManager, EntityDisplayLayer, ScrollingMapEntityDisplayLayer,
+from .display import (DisplayManager, ScrollingMapEntityDisplayLayer,
                       FrameRenderCompletedEvent, DisplayLayer)
 from .events import EventManager, InitDialogEvent
 from .entities import EntityManager
