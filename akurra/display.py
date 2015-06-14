@@ -133,16 +133,16 @@ class EntityDisplayLayer(DisplayLayer):
             target_entity = self.em.find_entity_by_id(entity_id)
             if target_entity is not None and 'position' in target_entity.components:
                 eligible_entities = self.em.find_entities_by_components(criteria)
-                entity_position = target_entity.components['position'].position
+                entity_position = target_entity.components['position'].primary_position
 
                 try:
                     # sort by distance to player to find the closest entity with dialogue component
                     if len(eligible_entities) > 1:
                         eligible_entities.sort(key=lambda entity:
                                                math.sqrt(
-                                                (entity.components['position'].position[0] - entity_position[0]) ** 2
+                                                (entity.components['position'].primary_position[0] - entity_position[0]) ** 2
                                                 +
-                                                (entity.components['position'].position[1] - entity_position[1]) ** 2
+                                                (entity.components['position'].primary_position[1] - entity_position[1]) ** 2
                                                 ))
                     return eligible_entities[0]
                 except KeyError:

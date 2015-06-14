@@ -58,7 +58,6 @@ setup(
             'movement = akurra.entities:MovementSystem',
             'collision = akurra.entities:CollisionSystem',
             'rendering = akurra.entities:RenderingSystem',
-            'map_location = akurra.entities:MapLocationSystem',
             'dialogue = akurra.entities:DialogueSystem',
             'player_terrain_sound = akurra.entities:PlayerTerrainSoundSystem',
             'sprite_rect_position_correction = akurra.entities:SpriteRectPositionCorrectionSystem',

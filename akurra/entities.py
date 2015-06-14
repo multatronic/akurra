@@ -987,11 +987,11 @@ class DialogueSystem(System):
 
         # render the text for the currently selected text node
         current_node = self.current_nodes[entity.id]
-        self.render_dialogue(self.dialogs[entity.id][current_node]['output']['text'], [entity.components['position'].position[x] - offset[x]
+        self.render_dialogue(self.dialogs[entity.id][current_node]['output']['text'], [entity.components['position'].primary_position[x] - offset[x]
                              for x in [0, 1]])
         # draw responses onscreen
         if self.dialogue_prompt.active and self.dialogue_prompt.entity_id == entity.id:
-            position = self.dialogue_prompt.components['position'].position.copy()
+            position = self.dialogue_prompt.components['position'].primary_position.copy()
             # render the responses, putting a marker in front of the text that is currently selected
             current_index = 0
             for response in self.dialogue_prompt.text_buffer:
@@ -1076,8 +1076,8 @@ class DialogueSystem(System):
 
         # position dialogue prompt
         resolution = self.display.screen.get_size()
-        self.dialogue_prompt.components['position'].position[0] = resolution[0] - self.dialogue_prompt.image.get_size()[0] - 400
-        self.dialogue_prompt.components['position'].position[1] = 0
+        self.dialogue_prompt.components['position'].primary_position[0] = resolution[0] - self.dialogue_prompt.image.get_size()[0] - 400
+        self.dialogue_prompt.components['position'].primary_position[1] = 0
 
         # do not engage in new dialogues, make prompt listen to input instead
         self.keyboard.remove_action_listener(self.handle_keyboard)
