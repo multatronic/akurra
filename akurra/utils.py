@@ -1,5 +1,6 @@
 """Utils module."""
 import os
+import math
 import pygame
 import collections
 
@@ -46,6 +47,23 @@ def flatten(d, parent_key='', sep='_'):
         else:
             items.append((new_key, v))
     return dict(items)
+
+
+def distance_between(point_1, point_2):
+    """Return the distance between two points."""
+    return math.sqrt(math.pow(point_2[0] - point_1[0], 2) + math.pow(point_2[1] - point_1[1], 2))
+
+
+def map_point_to_screen(map_layer, point):
+    """Converts a pair of coordinates from a map projection to screen projection."""
+    return [point[0] - (map_layer.xoffset + (map_layer.view.left * map_layer.data.tilewidth)),
+            point[1] - (map_layer.yoffset + (map_layer.view.top * map_layer.data.tileheight))]
+
+
+def layer_point_to_map(map_layer, point):
+    """Converts a pair of coordinates from layer projection map projection."""
+    return [point[0] / map_layer.data.tilewidth,
+            point[1] / map_layer.data.tileheight]
 
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))

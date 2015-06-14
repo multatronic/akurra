@@ -40,7 +40,6 @@ setup(
         'akurra.entities.components': [
             'health = akurra.entities:HealthComponent',
             'input = akurra.entities:InputComponent',
-            'position = akurra.entities:PositionComponent',
             'velocity = akurra.entities:VelocityComponent',
             'character = akurra.entities:CharacterComponent',
             'player = akurra.entities:PlayerComponent',
@@ -50,6 +49,7 @@ setup(
             'dialogue = akurra.entities:DialogueComponent',
             'sprite = akurra.entities:SpriteComponent',
             'physics = akurra.entities:PhysicsComponent',
+            'position = akurra.entities:PositionComponent'
         ],
 
         'akurra.entities.systems': [
@@ -62,7 +62,8 @@ setup(
             'dialogue = akurra.entities:DialogueSystem',
             'player_terrain_sound = akurra.entities:PlayerTerrainSoundSystem',
             'sprite_rect_position_correction = akurra.entities:SpriteRectPositionCorrectionSystem',
-            'sprite_render_ordering = akurra.entities:SpriteRenderOrderingSystem'
+            'sprite_render_ordering = akurra.entities:SpriteRenderOrderingSystem',
+            'positioning = akurra.entities:PositioningSystem'
         ]
     },
 

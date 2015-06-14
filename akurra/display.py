@@ -11,7 +11,7 @@ from .locals import *  # noqa
 from .events import Event, TickEvent, EventManager
 from .assets import AssetManager
 from .entities import LayerComponent, EntityManager, MapLayerComponent
-from .utils import ContainerAware
+from .utils import ContainerAware, hr_event_type, map_point_to_screen, layer_point_to_map
 
 
 logger = logging.getLogger(__name__)
@@ -122,7 +122,7 @@ class EntityDisplayLayer(DisplayLayer):
 
         for entity_id in self.entities:
             self.surface.blit(self.entities[entity_id].components['sprite'].image,
-                              self.entities[entity_id].components['position'].position)
+                              self.entities[entity_id].components['position'].primary_position)
 
         super().draw(surface)
 
@@ -149,6 +149,48 @@ class EntityDisplayLayer(DisplayLayer):
                     return None
         return None
 
+    def find_entities_at(self, position, ignore_ids=[], position_type='primary', radius=None, limit=None):
+        """
+        Find and return a list of entities in a given radius around the given position.
+
+        :param position: Coordinate where entity lookup should start.
+        :param radius: Radius of the search.
+        :param ignore_ids: List of entity IDs to ignore when searching.
+        :param limit: Maximum amount of results to return.
+        :param position_type: Position type to perform comparisons with.
+
+        """
+        for entity_id in self.entities:
+            if entity_id in ignore_ids:
+                continue
+
+            entity = self.entities[entity_id]
+            target = getattr(entity.components['position'], position_type + '_position')
+
+            target_rect = entity.components['sprite'].rect.copy()
+            # target_rect = entity.components['physics'].collision_core.copy()
+            target_rect.center = target
+
+            if ((not radius) and (target_rect.collidepoint(position))) or \
+                    ((radius) and distance_between(position, target) <= radius):
+                yield entity
+
+                if limit:
+                    limit -= 1
+
+                    if not limit:
+                        break
+
+    def on_entity_mouse(self, entity, event):
+        """
+        Handle a mouse event as the cursor is focused on a certain entity.
+
+        :param entity: Entity that is currently focused by the cursor.
+        :param event: Mouse event to handle.
+
+        """
+        logger.warning('Dected event "%s" on "%s".', hr_event_type(event.type), entity.components['character'].name)
+
 
 class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
 
@@ -163,6 +205,8 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
         """Constructor."""
         super().__init__(**kwargs)
 
+        self.em = self.container.get(EntityManager)
+        self.events = self.container.get(EventManager)
         # Create data source
         self.map_data = pyscroll.data.TiledMapData(tmx_data)
         self.map_layer = pyscroll.BufferedRenderer(self.map_data, self.size, clamp_camera=True)
@@ -193,10 +237,17 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
                 for i in range(0, o.properties.get('spawn_count', 1)):
                     template = random.choice(templates)
                     entity = self.em.create_entity_from_template(template)
-                    if 'position' in entity.components:
-                        entity.components['position'].position = pygame.Rect(o.x, o.y, o.width, o.height).center
+
                     if 'dialogue' in entity.components:
                         entity.components['dialogue'].tree = assets.get_dialogue_tree(dialogue_tree)
+
+                    if 'position' in entity.components:
+                        target = pygame.Rect(o.x, o.y, o.width, o.height).center
+
+                        entity.components['position'].layer_position = target
+                        # entity.components['position'].map_position = layer_point_to_map(self.map_layer, target)
+                        # entity.components['position'].screen_position = \
+                        #     map_point_to_screen(self.map_layer, entity.components['position'].map_position)
 
                     self.add_entity(entity)
 
@@ -218,7 +269,7 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
     def remove_entity(self, entity):
         """Remove an entity from the layer."""
         super().remove_entity(entity)
-        entity.remove_component(MapLayerComponent())
+        entity.remove_component(MapLayerComponent)
         self.group.remove(entity)
 
         # If this entity supports collision detection, remove its collision core from our collision map
