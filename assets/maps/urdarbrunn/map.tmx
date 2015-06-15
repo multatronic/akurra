@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<<<<<<< HEAD
-<map version="1.0" orientation="orthogonal" width="32" height="32" tilewidth="32" tileheight="32">
-=======
 <map version="1.0" orientation="orthogonal" renderorder="right-down" width="128" height="128" tilewidth="32" tileheight="32">
->>>>>>> master
  <tileset firstgid="1" name="magecity" tilewidth="32" tileheight="32">
   <image source="../../tiles/mage_city_arcanos/magecity.png" width="256" height="1450"/>
   <tile id="0">
