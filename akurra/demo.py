@@ -2,8 +2,9 @@
 import pygame
 import logging
 from .assets import AssetManager
-from .display import DisplayManager, ScrollingMapEntityDisplayLayer, FrameRenderCompletedEvent, DisplayLayer
-from .events import EventManager, EntityDialogueEvent
+from .display import (DisplayManager, ScrollingMapEntityDisplayLayer,
+                      FrameRenderCompletedEvent, DisplayLayer)
+from .events import EventManager
 from .entities import EntityManager
 from .session import SessionManager
 from .keyboard import KeyboardManager
