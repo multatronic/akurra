@@ -1,6 +1,7 @@
 """Entities module."""
 import logging
 import pygame
+import pdb
 from uuid import uuid4
 from enum import Enum
 from pkg_resources import iter_entry_points
@@ -934,13 +935,18 @@ class DialogueSystem(System):
         self.font = pygame.font.Font('freesansbold.ttf', 24)
         self.dialogue_color = (255, 255, 0)
 
-        # self.dialog_box = self.entities.create_entity_from_template('dialogue_box')
+        self.dialog_box = self.entities.create_entity_from_template('dialogue_box')
+
         self.dialogue_prompt = self.entities.create_entity_from_template('dialogue_prompt')
         self.dialogue_prompt.active = False
         self.dialogue_prompt.selected_index = None
 
         self.dialogs = {}
-        self.current_nodes = {}
+        self.currently_selected_nodes = {}
+
+
+        # TEST CODE
+        self.current_message_box = 0
 
     def start(self):
         """Start the system."""
@@ -962,14 +968,32 @@ class DialogueSystem(System):
 
     def render_dialogue(self, text, position):
         """Render dialogue."""
-        # split the string if necessary
-        fragments = self.split_dialogue_on_word_count(text, 6)
-        for fragment in fragments:
-            surface = self.font.render(fragment, True, self.dialogue_color)
-            text_size = self.font.size(fragment)
-            self.layer.surface.blit(surface, position)
-            # render the lines under each other
-            position[1] += text_size[1]
+        # split the string if necessary (first by word count, then by fragment)
+        if len(text) > self.current_message_box:
+            # render message box
+            self.layer.surface.blit(self.dialog_box.image, position)
+            for line in text[self.current_message_box]:
+                surface = self.font.render(line, True, self.dialogue_color)
+                text_size = self.font.size(line)
+                self.layer.surface.blit(surface, position)
+                # render the lines under each other
+                position[1] += text_size[1]
+
+    def render_dialogue_prompt(self):
+        # draw responses onscreen
+        position = self.dialogue_prompt.components['position'].primary_position.copy()
+        # render the responses, putting a marker in front of the text that is currently selected
+        current_index = 0
+        for response in self.dialogue_prompt.text_buffer:
+            if current_index != self.dialogue_prompt.selected_index:
+                response_text = '   ' + response[0]
+            else:
+                response_text = '>> ' + response[0]
+            text_surface = self.font.render(response_text, True, self.dialogue_color)
+            self.layer.surface.blit(text_surface, position)
+            # position[0] += self.font.size(response)[0]
+            position[1] += 5 + self.font.size(response_text)[1]
+            current_index = current_index + 1
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
@@ -986,24 +1010,19 @@ class DialogueSystem(System):
         ]
 
         # render the text for the currently selected text node
-        current_node = self.current_nodes[entity.id]
-        self.render_dialogue(self.dialogs[entity.id][current_node]['output']['text'], [entity.components['position'].primary_position[x] - offset[x]
+        # grab the current node of the dialogue tree
+        current_node = self.dialogs[entity.id][self.currently_selected_nodes[entity.id]]
+        # grab a fragment so that the text fits into a dialogue box
+        text_output = current_node['output']['text']
+
+        # render the dialog output
+        self.render_dialogue(text_output, [entity.components['position'].primary_position[x] - offset[x]
                              for x in [0, 1]])
-        # draw responses onscreen
+
+        # render the dialogue prompt if applicable
         if self.dialogue_prompt.active and self.dialogue_prompt.entity_id == entity.id:
-            position = self.dialogue_prompt.components['position'].primary_position.copy()
-            # render the responses, putting a marker in front of the text that is currently selected
-            current_index = 0
-            for response in self.dialogue_prompt.text_buffer:
-                if current_index != self.dialogue_prompt.selected_index:
-                    response_text = '   ' + response[0]
-                else:
-                    response_text = '>> ' + response[0]
-                text_surface = self.font.render(response_text, True, self.dialogue_color)
-                self.layer.surface.blit(text_surface, position)
-                # position[0] += self.font.size(response)[0]
-                position[1] += 5 + self.font.size(response_text)[1]
-                current_index = current_index + 1
+            self.render_dialogue_prompt()
+
 
     def select_dialog_option(self, keyboard_action=None):
         """Respond to keyboard input to select text from a dialog prompt."""
@@ -1035,14 +1054,62 @@ class DialogueSystem(System):
                 event = EntityDialogueEvent(entity_id=closest_dialogue_entity.id)
                 self.events.dispatch(event)
 
-    def split_dialogue_on_word_count(self, string, word_count):
-        """Split a long string into several strings based on max words per line."""
-        words = string.split(' ')
-        seperator = ' '
-        for index in range(0, len(words), word_count):
-            fragment = words[index:index+word_count]
-            yield seperator.join(fragment)
+    def split_dialogue_into_message_boxes(self, dialog):
+        """Split a dialog up so it fits into several message boxes."""
+        box_width = self.dialog_box.image.get_width()
+        box_height = self.dialog_box.image.get_height()
+        words = dialog.split(' ')
 
+        # first pass, split into sentences which fit into the box
+        lines = []
+        space_width = self.font.size(' ')[0]
+        vspace_left = box_width
+        current_line = 0
+
+        for word in words:
+            word_size = self.font.size(word)[0] + space_width
+            # start new line if need be
+            if word_size > vspace_left:
+                vspace_left = box_width
+                current_line += 1
+
+            # append the word
+            if len(lines) <= current_line:
+                lines.append([word])
+            else:
+                lines[current_line].append(word)
+            # adjust vspace_left
+            vspace_left -= word_size
+
+        # collapse word list into string
+        seperator = ' '
+        index = 0
+        for line in lines:
+            collapsed = seperator.join(line)
+            lines[index] = collapsed
+            index = index + 1
+
+        # second pass, split into message boxes (taking box height into account)
+        boxes = []
+        hspace_left = box_height
+        current_box = 0
+
+        for line in lines:
+            line_size = self.font.size(line)[1]
+
+            # new box: reset horizontal space
+            if line_size > hspace_left:
+                hspace_left = box_height
+                current_box += 1
+
+            if len(boxes) <= current_box:
+                boxes.append([line])
+            else:
+                boxes[current_box].append(line)
+
+            hspace_left -= line_size
+
+        return boxes
 
 
     def depth_first_search(self, tree=None, node=None, visited=[]):
@@ -1099,30 +1166,50 @@ class DialogueSystem(System):
         """Shut down a dialogue."""
         logger.debug('Ending dialog tree for entity %s', entity_id)
         self.dialogs.pop(entity_id)
-        self.current_nodes.pop(entity_id)
+        self.currently_selected_nodes.pop(entity_id)
         self.close_dialogue_prompt(entity_id)
+
+    def init_dialogue(self, entity):
+        """Start a conversation with an entity."""
+        logger.debug('Storing dialog tree for entity with uuid %s', entity.id)
+        self.dialogs[entity.id] = entity.components['dialogue'].tree
+        self.currently_selected_nodes[entity.id] = 'main'
+        self.current_message_box = 0
+
+    def handle_response(self, entity, response):
+        # find name of next node in conversation tree and prune the dialog tree
+        next_node = response[1]
+        self.dialogs[entity.id] = self.prune_dialog_tree(self.dialogs[entity.id], next_node)
+        self.currently_selected_nodes[entity.id] = next_node
+        logger.debug('Dialogue response sent: %s', response)
+        self.close_dialogue_prompt(entity.id)
 
     def on_dialogue(self, event=None):
         """Handle a dialogue event."""
         entity = self.entities.find_entity_by_id(event.entity_id)
         # initiate conversation
         if event.entity_id not in self.dialogs:
-            logger.debug('Storing dialog tree for entity with uuid %s', event.entity_id)
-            self.dialogs[entity.id] = entity.components['dialogue'].tree
-            self.current_nodes[entity.id] = 'main'
+            self.init_dialogue(entity)
         # continue/close conversation
         else:
             if event.response is not None:
-                # find name of next node in conversation tree and prune the dialog tree
-                next_node = event.response[1]
-                self.dialogs[entity.id] = self.prune_dialog_tree(self.dialogs[entity.id], next_node)
-                self.current_nodes[entity.id] = next_node
-                logger.debug('Dialogue response sent: %s', event.response)
-                self.close_dialogue_prompt(entity.id)
+                self.handle_response(entity, event.response)
+            else:
+                self.current_message_box += 1
+                # pdb.set_trace()
 
         # start dialog prompt if required
-        current_node = self.dialogs[entity.id][self.current_nodes[entity.id]]
-        if 'input' in current_node and (not hasattr(self.dialogue_prompt, 'entity_id') or entity.id != self.dialogue_prompt.entity_id):
+        current_node = self.dialogs[entity.id][self.currently_selected_nodes[entity.id]]
+
+        # TODO: REFACTOR THIS CODE
+        # split output into several message boxes
+        if 'output' in current_node and not isinstance(current_node['output']['text'], list):
+            current_node['output']['text'] = self.split_dialogue_into_message_boxes(current_node['output']['text'])
+
+        # only show input on last output box (for long dialogues)
+        last_box = self.current_message_box == len(current_node['output']['text']) - 1
+
+        if last_box and 'input' in current_node and (not hasattr(self.dialogue_prompt, 'entity_id') or entity.id != self.dialogue_prompt.entity_id):
             self.start_dialogue_prompt(entity.id, current_node['input'])
 
         # if this is the final dialog node, remove it after a while
@@ -1131,6 +1218,7 @@ class DialogueSystem(System):
         if len(self.dialogs[entity.id]) == 1 and 'marked' not in self.dialogs[entity.id]:
             logger.debug('Preparing to end dialogue with entity %s', entity.id)
             self.dialogs[entity.id]['marked'] = True
+            self.current_message_box = 0
             from threading import Timer
             tmr = Timer(5, self.end_dialogue, [entity.id])
             tmr.start()

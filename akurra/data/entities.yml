@@ -86,7 +86,7 @@ akurra:
         text_buffer: ~
         components:
           sprite:
-            image: sprites/ui/dialogue_box.png
+            image: graphics/ui/dialogue/test_box.png
 
       dialogue_prompt:
         parent: dialogue_box

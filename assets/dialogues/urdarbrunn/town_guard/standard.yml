@@ -1,7 +1,7 @@
 tree:
   main:
     output:
-      text: hello wanderer
+      text: 'Hello wanderer. Feel free to look around.'
     input:
       [ [ Greetings friend, end_friendly], [ Mind yer own!, end_hostile] ]
   end_friendly:

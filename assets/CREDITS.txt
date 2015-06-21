@@ -33,3 +33,8 @@
 * _Author:_ Daniel Cook
 * _Source:_ http://opengameart.org/content/iron-plague-pointercursor
 * _License:_ CC-BY 3.0
+
+### assets/graphics/ui/dialogue/{messages_boxes, test_box}.png
+* _Auther:_ Charles Gabriel
+* _Source:_ http://opengameart.org/content/10-basic-message-boxes
+* _License:_ CC-BY 3.0
