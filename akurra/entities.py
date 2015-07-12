@@ -403,6 +403,7 @@ class PositionComponent(Component):
 
         self.primary = primary
         self.old = None
+        self.initialized = False
 
 
 class VelocityComponent(Component):
@@ -753,10 +754,6 @@ class PositioningSystem(System):
         EntityMoveEvent: ['on_event', 10]
     }
 
-    # def on_event(self, event):
-    #     """Handle an event."""
-    #     self.update(self.entities.find_entity_by_id(event.entity_id), event)
-
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         position = entity.components['position']
@@ -769,6 +766,7 @@ class PositioningSystem(System):
 
         if position.primary != 'screen':
             position.screen_position = map_point_to_screen(map, core_center)
+
 
 
 class RenderingSystem(System):
@@ -932,10 +930,10 @@ class DialogueSystem(System):
 
         # @TODO Use an EntityDisplayLayer instead
         self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=110)
-        self.font = pygame.font.Font('freesansbold.ttf', 24)
+        self.font = pygame.font.Font('freesansbold.ttf', 22)
         self.dialogue_color = (255, 255, 0)
 
-        self.dialog_box = self.entities.create_entity_from_template('dialogue_box')
+        self.dialogue_box = self.entities.create_entity_from_template('dialogue_box')
 
         self.dialogue_prompt = self.entities.create_entity_from_template('dialogue_prompt')
         self.dialogue_prompt.active = False
@@ -947,6 +945,7 @@ class DialogueSystem(System):
 
         # TEST CODE
         self.current_message_box = 0
+        self.text_padding = 10
 
     def start(self):
         """Start the system."""
@@ -968,14 +967,14 @@ class DialogueSystem(System):
 
     def render_dialogue(self, text, position):
         """Render dialogue."""
-        # split the string if necessary (first by word count, then by fragment)
+        # check that we won't go out of bounds(len(text) == number of message boxes needed for this dialogue)
         if len(text) > self.current_message_box:
             # render message box
-            self.layer.surface.blit(self.dialog_box.image, position)
+            self.layer.surface.blit(self.dialogue_box.image, position)
             for line in text[self.current_message_box]:
                 surface = self.font.render(line, True, self.dialogue_color)
                 text_size = self.font.size(line)
-                self.layer.surface.blit(surface, position)
+                self.layer.surface.blit(surface, (position[0] + self.text_padding, position[1] + self.text_padding))
                 # render the lines under each other
                 position[1] += text_size[1]
 
@@ -1001,14 +1000,13 @@ class DialogueSystem(System):
         if entity.id not in self.dialogs:
             return
 
-        # Align text box with the entity it belongs to
-        map_layer = entity.components['layer'].layer.map_layer
+        # make sure the entity position component is fully initialized by emitting a move event
+        # TODO: don't emit this even on every frame, find a better way to initialize when appropriate
+        self.events.dispatch(EntityMoveEvent(entity.id))
 
-        offset = [
-            map_layer.xoffset + map_layer.view.left * map_layer.data.tilewidth,
-            map_layer.yoffset + map_layer.view.top * map_layer.data.tileheight,
-        ]
-
+        # TODO: find a better way to calculate this offset
+        offset = (self.dialogue_box.image.get_width() / 2, self.dialogue_box.image.get_height() + 50)
+        #offset = [0,0]
         # render the text for the currently selected text node
         # grab the current node of the dialogue tree
         current_node = self.dialogs[entity.id][self.currently_selected_nodes[entity.id]]
@@ -1016,7 +1014,11 @@ class DialogueSystem(System):
         text_output = current_node['output']['text']
 
         # render the dialog output
-        self.render_dialogue(text_output, [entity.components['position'].primary_position[x] - offset[x]
+        logger.info(entity.components['position'].screen_position)
+        preferred_position = entity.components['position'].screen_position
+
+
+        self.render_dialogue(text_output, [preferred_position[x] - offset[x]
                              for x in [0, 1]])
 
         # render the dialogue prompt if applicable
@@ -1056,8 +1058,8 @@ class DialogueSystem(System):
 
     def split_dialogue_into_message_boxes(self, dialog):
         """Split a dialog up so it fits into several message boxes."""
-        box_width = self.dialog_box.image.get_width()
-        box_height = self.dialog_box.image.get_height()
+        box_width = self.dialogue_box.image.get_width() - (self.text_padding * 2)
+        box_height = self.dialogue_box.image.get_height() - (self.text_padding * 2)
         words = dialog.split(' ')
 
         # first pass, split into sentences which fit into the box
@@ -1196,7 +1198,6 @@ class DialogueSystem(System):
                 self.handle_response(entity, event.response)
             else:
                 self.current_message_box += 1
-                # pdb.set_trace()
 
         # start dialog prompt if required
         current_node = self.dialogs[entity.id][self.currently_selected_nodes[entity.id]]
