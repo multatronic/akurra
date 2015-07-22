@@ -39,6 +39,7 @@ setup(
 
         'akurra.entities.components': [
             'health = akurra.entities:HealthComponent',
+            'mana = akurra.entities:ManaComponent',
             'input = akurra.entities:InputComponent',
             'velocity = akurra.entities:VelocityComponent',
             'character = akurra.entities:CharacterComponent',

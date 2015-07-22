@@ -348,6 +348,28 @@ class HealthComponent(Component):
         self.health = health
 
 
+class ManaComponent(Component):
+
+    """Mana component."""
+
+    type = 'mana'
+
+    def __init__(self, mana={}, max=10, **kwargs):
+        """
+        Constructor.
+
+        :param mana: Dictionary representing current mana stores, indexed by type.
+                     The value for a type should never exceed the value for the same
+                     type in `max` if max is a dict, or simply `max` if max is an
+                     integer.
+        :param max: Maximum mana that can be gathered, either passed as a Dictionary
+                    with values indexed by mana type, or as an integer value.
+        """
+        super().__init__(**kwargs)
+        self.mana = mana
+        self.max = max
+
+
 class PositionComponent(Component):
 
     """Position component."""

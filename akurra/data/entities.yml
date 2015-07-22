@@ -50,6 +50,7 @@ akurra:
           position: ~
           velocity: ~
           health: ~
+          mana: ~
           input: ~
           physics:
             core_offset: [0, 20]
