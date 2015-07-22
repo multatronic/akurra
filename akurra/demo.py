@@ -109,8 +109,13 @@ class DemoGameState(GameState):
         self.display.add_layer(self.ui_layer)
         self.display.add_layer(self.layer)
 
-        self.player = self.entities.find_entities_by_components(['player'])[0]
-        self.layer.center = self.player
+        player = self.session.get('player')
+
+        if not player:
+            player = self.entities.find_entities_by_components(['player'])[0]
+            self.session.set('player', player)
+
+        self.layer.center = player
 
         self.events.dispatch(InitDialogEvent())
         # Load audio files

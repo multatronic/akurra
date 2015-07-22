@@ -8,6 +8,7 @@ from .display import DisplayManager, DisplayLayer
 from .entities import EntityManager
 from .events import TickEvent, EventManager
 from .modules import Module
+from .session import SessionManager
 from .utils import map_point_to_screen
 
 
@@ -30,6 +31,7 @@ class DebugModule(Module):
         self.events = self.container.get(EventManager)
         self.entities = self.container.get(EntityManager)
         self.display = self.container.get(DisplayManager)
+        self.session = self.container.get(SessionManager)
 
         self.clock = self.container.get(DisplayClock)
         self.font = pygame.font.SysFont('monospace', 14)
@@ -95,22 +97,43 @@ class DebugModule(Module):
 
         self.layer.surface.fill([10, 10, 10, 200], [5, 5, 300, 190])
 
-        info = pygame.display.Info()
+        # info = pygame.display.Info()
+
+        # text = [
+        #     "Akurra DEV",
+        #     "FPS: %d" % self.clock.get_fps(),
+        #     "Driver: %s" % pygame.display.get_driver(),
+        #     "HW accel: %s" % info.hw,
+        #     "Windowed support: %s" % info.wm,
+        #     "Video mem: %s mb" % info.video_mem,
+        #     "HW surface blit accel: %s" % info.blit_hw,
+        #     "HW surface colorkey blit accel: %s" % info.blit_hw_CC,
+        #     "HW surface pixel alpha blit accel: %s" % info.blit_hw_A,
+        #     "SW surface blit accel: %s" % info.blit_sw,
+        #     "SW surface colorkey blit accel: %s" % info.blit_sw_CC,
+        #     "SW surface pixel alpha blit accel: %s" % info.blit_sw_A
+        # ]
 
         text = [
             "Akurra DEV",
-            "FPS: %d" % self.clock.get_fps(),
-            "Driver: %s" % pygame.display.get_driver(),
-            "HW accel: %s" % info.hw,
-            "Windowed support: %s" % info.wm,
-            "Video mem: %s mb" % info.video_mem,
-            "HW surface blit accel: %s" % info.blit_hw,
-            "HW surface colorkey blit accel: %s" % info.blit_hw_CC,
-            "HW surface pixel alpha blit accel: %s" % info.blit_hw_A,
-            "SW surface blit accel: %s" % info.blit_sw,
-            "SW surface colorkey blit accel: %s" % info.blit_sw_CC,
-            "SW surface pixel alpha blit accel: %s" % info.blit_sw_A
+            "FPS: %.2f" % self.clock.get_fps()
         ]
+
+        player = self.session.get('player')
+
+        if player:
+            text += [
+                "",
+                "S. pos.: %.2f, %.2f" % tuple(player.components['position'].screen_position),
+                "L. pos.: %.2f, %.2f" % tuple(player.components['position'].layer_position),
+                "M. pos.: %.2f, %.2f" % tuple(player.components['position'].map_position),
+                "",
+                "Vel.: %04d, %04d" % tuple(player.components['velocity'].velocity),
+                "Dir.: %s" % player.components['sprite'].direction.name,
+                "State: %s" % player.components['sprite'].state.name,
+                "",
+                "HP: %06d/%06d" % (player.components['health'].hp, player.components['health'].max)
+            ]
 
         offset_x = 10
         offset_y = 10

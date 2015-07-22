@@ -49,6 +49,7 @@ akurra:
             name: The Hero
           position: ~
           velocity: ~
+          health: ~
           input: ~
           physics:
             core_offset: [0, 20]
