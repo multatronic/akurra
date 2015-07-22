@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="128" height="128" tilewidth="32" tileheight="32">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="128" height="128" tilewidth="32" tileheight="32" nextobjectid="13">
  <tileset firstgid="1" name="magecity" tilewidth="32" tileheight="32">
   <image source="../../tiles/mage_city_arcanos/magecity.png" width="256" height="1450"/>
   <tile id="0">
    <properties>
+    <property name="mana_regeneration_rate" value="1"/>
+    <property name="mana_types" value="earth:2:2;water;air:1"/>
     <property name="terrain_type" value="grass"/>
    </properties>
   </tile>
@@ -169,21 +171,29 @@
   </tile>
   <tile id="290">
    <properties>
+    <property name="mana_regeneration_rate" value="1"/>
+    <property name="mana_types" value="earth:2:2;water;air:1"/>
     <property name="terrain_type" value="grass"/>
    </properties>
   </tile>
   <tile id="291">
    <properties>
+    <property name="mana_regeneration_rate" value="1"/>
+    <property name="mana_types" value="earth:2:2;water;air:1"/>
     <property name="terrain_type" value="grass"/>
    </properties>
   </tile>
   <tile id="292">
    <properties>
+    <property name="mana_regeneration_rate" value="1"/>
+    <property name="mana_types" value="earth:2:2;water;air:1"/>
     <property name="terrain_type" value="grass"/>
    </properties>
   </tile>
   <tile id="293">
    <properties>
+    <property name="mana_regeneration_rate" value="1"/>
+    <property name="mana_types" value="earth:2:2;water;air:1"/>
     <property name="terrain_type" value="grass"/>
    </properties>
   </tile>
@@ -259,65 +269,65 @@
   </data>
  </layer>
  <objectgroup name="collision" visible="0">
-  <object x="4" y="34" width="1015" height="89">
+  <object id="1" x="4" y="34" width="1015" height="89">
    <properties>
     <property name="collision" value="true"/>
    </properties>
   </object>
-  <object x="3" y="965" width="187" height="56">
+  <object id="2" x="3" y="965" width="187" height="56">
    <properties>
     <property name="collision" value="true"/>
    </properties>
   </object>
-  <object x="324" y="965" width="696" height="55">
+  <object id="3" x="324" y="965" width="696" height="55">
    <properties>
     <property name="collision" value="true"/>
    </properties>
   </object>
-  <object x="995" y="122" width="26" height="851">
+  <object id="4" x="995" y="122" width="26" height="851">
    <properties>
     <property name="collision" value="true"/>
    </properties>
   </object>
-  <object x="3" y="120" width="26" height="851">
+  <object id="5" x="3" y="120" width="26" height="851">
    <properties>
     <property name="collision" value="true"/>
    </properties>
   </object>
-  <object x="226" y="575" width="64" height="60">
+  <object id="6" x="226" y="575" width="64" height="60">
    <properties>
     <property name="collision" value="true"/>
    </properties>
   </object>
-  <object x="4" y="1020" width="20" height="3069">
+  <object id="7" x="4" y="1020" width="20" height="3069">
    <properties>
     <property name="collision" value="true"/>
    </properties>
   </object>
-  <object x="14" y="4072" width="4076" height="20">
+  <object id="8" x="14" y="4072" width="4076" height="20">
    <properties>
     <property name="collision" value="true"/>
    </properties>
   </object>
-  <object x="4071" y="3" width="20" height="4084">
+  <object id="9" x="4071" y="3" width="20" height="4084">
    <properties>
     <property name="collision" value="true"/>
    </properties>
   </object>
-  <object x="1024" y="8" width="3062" height="49">
+  <object id="10" x="1024" y="8" width="3062" height="49">
    <properties>
     <property name="collision" value="true"/>
    </properties>
   </object>
  </objectgroup>
  <objectgroup name="spawns" visible="0">
-  <object name="guard_spawn" x="592" y="325.333" width="38" height="37">
+  <object id="11" name="guard_spawn" x="592" y="325.333" width="38" height="37">
    <properties>
     <property name="spawn" value="true"/>
     <property name="spawn_templates" value="town_guard"/>
    </properties>
   </object>
-  <object name="player_spawn" x="513.333" y="694.667" width="54" height="49">
+  <object id="12" name="player_spawn" x="513.333" y="694.667" width="54" height="49">
    <properties>
     <property name="spawn" value="true"/>
     <property name="spawn_templates" value="player"/>

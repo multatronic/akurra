@@ -163,7 +163,7 @@ class EntityDisplayLayer(DisplayLayer):
         :param event: Mouse event to handle.
 
         """
-        logger.warning('Dected event "%s" on "%s".', hr_event_type(event.type), entity.components['character'].name)
+        logger.warning('Detected event "%s" on "%s".', hr_event_type(event.type), entity.components['character'].name)
 
 
 class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
