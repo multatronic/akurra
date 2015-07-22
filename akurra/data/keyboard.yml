@@ -7,3 +7,4 @@ akurra:
             move_down: K_DOWN
             move_left: K_LEFT
             move_right: K_RIGHT
+            mana_gather: K_m

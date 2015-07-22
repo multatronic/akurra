@@ -59,6 +59,7 @@ setup(
             'collision = akurra.entities:CollisionSystem',
             'rendering = akurra.entities:RenderingSystem',
             'dialog = akurra.entities:DialogSystem',
+            'mana_gathering = akurra.entities:ManaGatheringSystem',
             'player_terrain_sound = akurra.entities:PlayerTerrainSoundSystem',
             'sprite_rect_position_correction = akurra.entities:SpriteRectPositionCorrectionSystem',
             'sprite_render_ordering = akurra.entities:SpriteRenderOrderingSystem',

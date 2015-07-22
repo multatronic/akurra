@@ -88,3 +88,9 @@ akurra:
       cursor:
         components:
           position: ~
+    systems:
+      mana_gathering:
+        default_regeneration_rate: 1
+        default_gather_amount: 1
+        minimum_gather_amount: 1
+        default_gather_radius: 1

@@ -131,8 +131,8 @@ class DebugModule(Module):
                 "Vel.: %04d, %04d" % tuple(player.components['velocity'].velocity),
                 "Dir.: %s" % player.components['sprite'].direction.name,
                 "State: %s" % player.components['sprite'].state.name,
-                "",
-                "HP: %06d/%06d" % (player.components['health'].health, player.components['health'].max)
+                "Health: %06d/%06d" % (player.components['health'].health, player.components['health'].max),
+                "Mana: %s" % ";".join(["%s:%s" % (x[:2].upper(), y) for x, y in player.components['mana'].mana.items()])
             ]
 
         offset_x = 10

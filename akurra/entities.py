@@ -48,6 +48,7 @@ class EntityInput(Enum):
     MOVE_DOWN = 1
     MOVE_LEFT = 2
     MOVE_RIGHT = 3
+    MANA_GATHER = 4
 
 
 class SystemStatus(Enum):
@@ -354,7 +355,7 @@ class ManaComponent(Component):
 
     type = 'mana'
 
-    def __init__(self, mana={}, max=10, **kwargs):
+    def __init__(self, mana={}, max=100, **kwargs):
         """
         Constructor.
 
@@ -530,7 +531,8 @@ class InputComponent(Component):
             EntityInput.MOVE_UP: False,
             EntityInput.MOVE_DOWN: False,
             EntityInput.MOVE_LEFT: False,
-            EntityInput.MOVE_RIGHT: False
+            EntityInput.MOVE_RIGHT: False,
+            EntityInput.MANA_GATHER: False
         }
 
 
@@ -644,7 +646,8 @@ class PlayerInputSystem(System):
         'move_up': EntityInput.MOVE_UP,
         'move_down': EntityInput.MOVE_DOWN,
         'move_left': EntityInput.MOVE_LEFT,
-        'move_right': EntityInput.MOVE_RIGHT
+        'move_right': EntityInput.MOVE_RIGHT,
+        'mana_gather': EntityInput.MANA_GATHER
     }
 
     def __init__(self):
@@ -930,12 +933,91 @@ class PlayerTerrainSoundSystem(System):
         # Fetch the current tile the player is walking on, based on the current map location
         coords = [int(x) for x in entity.components['position'].map_position]
 
-        for l in range(0, len(list(entity.components['layer'].layer.map_data.tmx.visible_layers))):
-            try:
-                tile = entity.components['layer'].layer.map_data.tmx.get_tile_properties(coords[0], coords[1], l)
+        for i, l in enumerate(entity.components['layer'].layer.map_data.tmx.visible_layers):
+            if l.properties.get('terrain', 'false') == 'true':
+                try:
+                    tile = entity.components['layer'].layer.map_data.tmx.get_tile_properties(coords[0], coords[1], i)
 
-                if tile and tile.get('terrain_type'):
-                    self.audio.play_sound('terrain_%s' % tile.get('terrain_type'), channel='terrain', queue=False)
-            except KeyError:
-                # If no tile was found on this layer, that's too bad but we can continue regardless
-                pass
+                    if tile and tile.get('terrain_type'):
+                        self.audio.play_sound('terrain_%s' % tile.get('terrain_type'), channel='terrain', queue=False)
+                except KeyError:
+                    # If no tile was found on this layer, that's too bad but we can continue regardless
+                    pass
+
+
+class ManaGatheringSystem(System):
+
+    """Mana gathering system."""
+
+    requirements = [
+        'input',
+        'mana',
+        'position',
+        'layer',
+        'map_layer'
+    ]
+
+    event_handlers = {
+        TickEvent: ['on_event', 10]
+    }
+
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
+        self.cfg = self.container.get(Configuration)
+
+        self.default_gather_radius = self.cfg.get('akurra.entities.systems.mana_gathering.default_gather_radius', 1)
+        self.default_gather_amount = self.cfg.get('akurra.entities.systems.mana_gathering.default_gather_amount', 1)
+        self.minimum_gather_amount = self.cfg.get('akurra.entities.systems.mana_gathering.minimum_gather_amount', 1)
+
+    def update(self, entity, event=None):
+        """Have an entity updated by the system."""
+        if entity.components['input'].input[EntityInput.MANA_GATHER]:
+            # Fetch the current tile the player is walking on, based on the current map location
+            coords = [int(x) for x in entity.components['position'].map_position]
+
+            layer = entity.components['layer'].layer
+            mana = entity.components['mana'].mana
+
+            gather_radius = self.default_gather_radius
+            gather_amount = self.default_gather_amount
+            gather_amount_min = self.minimum_gather_amount
+            amount_max = entity.components['mana'].max
+
+            tile_matrix = [
+                list(range(coords[0] - gather_radius, coords[0] + gather_radius + 1)),
+                list(range(coords[1] - gather_radius, coords[1] + gather_radius + 1))
+            ]
+
+            for i, l in enumerate(layer.map_data.tmx.visible_layers):
+                # Only continue for terrain layers
+                if l.properties.get('terrain', 'false') == 'true':
+                    for x in tile_matrix[0]:
+                        for y in tile_matrix[1]:
+                            try:
+                                # Attempt to lower amount of mana for tile in tile map  by mana_gather_amount,
+                                # and add it to the entity's reserves
+                                for type, mana_data in layer.mana_map[i][x][y].items():
+                                    # If we have at least the required amount of mana
+                                    if mana_data[0] >= gather_amount_min:
+                                        # Remove the mana from the terrain
+                                        mana_data[0] -= gather_amount
+
+                                        # If removing would result in negatives, only give the entity as much as we can
+                                        if mana_data[0] < 0:
+                                            mana[type] = mana.get(type, 0) + (gather_amount + mana_data[0])
+                                            mana_data[0] = 0
+                                        # If we have an excess of nothing left, just give the entire amount
+                                        else:
+                                            mana[type] = mana.get(type, 0) + gather_amount
+
+                                        # If we were to exceed the maximum amount of this type we can carry, subtract
+                                        # the difference
+                                        if mana[type] > amount_max:
+                                            mana_data[0] += amount_max - mana[type]
+                                            mana[type] = amount_max
+
+                            except KeyError:
+                                pass
+                            except ValueError:
+                                pass

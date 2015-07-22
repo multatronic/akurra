@@ -190,22 +190,64 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
         self.group = PyscrollGroup(map_layer=self.map_layer, default_layer=default_layer)
 
         self.build_collision_map()
+        self.build_mana_map()
         self.spawn_entities()
 
         self.center = None
 
     def build_collision_map(self):
         """Build a collision map based on map data."""
+        logger.debug('Building collision map [map=%s]', self.map_data.tmx.filename)
         self.collision_map = []
 
         for o in self.map_data.tmx.objects:
-            if o.properties.get('collision', False):
+            if o.properties.get('collision', 'false') == 'true':
                 self.collision_map.append(pygame.Rect(o.x, o.y, o.width, o.height))
+
+    def build_mana_map(self):
+        """Build a mana map based on map data."""
+        logger.debug('Building mana map [map=%s]', self.map_data.tmx.filename)
+        self.mana_map = {}
+
+        # Loop through all vibible layers
+        for i, l in enumerate(self.map_data.tmx.visible_layers):
+            # Only continue for terrain layers
+            if l.properties.get('terrain', 'false') == 'true':
+                # Iterate over all tiles
+                for x in range(0, l.width):
+                    for y in range(0, l.height):
+                        tile = self.map_data.tmx.get_tile_properties(x, y, i)
+
+                        # Only continue if the current tile has mana types
+                        if tile and tile.get('mana_types'):
+                            # Initialize dicts if needed
+                            if not self.mana_map.get(i):
+                                self.mana_map[i] = {}
+
+                            if not self.mana_map[i].get(x):
+                                self.mana_map[i][x] = {}
+
+                            if not self.mana_map[i][x].get(y):
+                                self.mana_map[i][x][y] = {}
+
+                            # Parse mana type data
+                            mana_types = tile['mana_types'].split(';')
+                            mana_types = [x.split(':') for x in mana_types]
+
+                            # Index mana types by type, and use defaults
+                            for mana in mana_types:
+                                # .. = [<current_stores>, <regeneration_modifier>]
+                                self.mana_map[i][x][y][mana[0]] = [
+                                    float(mana[1]) if len(mana) > 1 else 1,
+                                    float(mana[2]) if len(mana) > 2 else 1
+                                ]
 
     def spawn_entities(self):
         """Spawn entities on the map based on map data."""
+        logger.debug('Spawning entities [map=%s]', self.map_data.tmx.filename)
+
         for o in self.map_data.tmx.objects:
-            if o.properties.get('spawn', False):
+            if o.properties.get('spawn', 'false') == 'true':
                 templates = o.properties['spawn_templates'].split(';')
 
                 for i in range(0, o.properties.get('spawn_count', 1)):
