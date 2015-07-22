@@ -132,7 +132,7 @@ class DebugModule(Module):
                 "Dir.: %s" % player.components['sprite'].direction.name,
                 "State: %s" % player.components['sprite'].state.name,
                 "",
-                "HP: %06d/%06d" % (player.components['health'].hp, player.components['health'].max)
+                "HP: %06d/%06d" % (player.components['health'].health, player.components['health'].max)
             ]
 
         offset_x = 10

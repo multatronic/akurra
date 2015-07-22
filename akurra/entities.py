@@ -340,12 +340,12 @@ class HealthComponent(Component):
 
     type = 'health'
 
-    def __init__(self, min=0, max=100, hp=1, **kwargs):
+    def __init__(self, min=0, max=100, health=1, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
         self.min = min
         self.max = max
-        self.hp = hp
+        self.health = health
 
 
 class PositionComponent(Component):
