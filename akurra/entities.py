@@ -980,7 +980,7 @@ class ManaGatheringSystem(System):
             mana = entity.components['mana'].mana
 
             gather_radius = self.default_gather_radius
-            gather_amount = self.default_gather_amount
+            gather_amount = self.default_gather_amount * event.delta_time
             gather_amount_min = self.minimum_gather_amount
             amount_max = entity.components['mana'].max
 
