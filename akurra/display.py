@@ -208,6 +208,7 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
         """Build a mana map based on map data."""
         logger.debug('Building mana map [map=%s]', self.map_data.tmx.filename)
         self.mana_map = {}
+        self.mana_replenishment_map = []
 
         # Loop through all vibible layers
         for i, l in enumerate(self.map_data.tmx.visible_layers):
@@ -236,10 +237,10 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
 
                             # Index mana types by type, and use defaults
                             for mana in mana_types:
-                                # .. = [<current_stores>, <regeneration_modifier>]
+                                # .. = [<current_stores>, <max_stores>]
                                 self.mana_map[i][x][y][mana[0]] = [
                                     float(mana[1]) if len(mana) > 1 else 1,
-                                    float(mana[2]) if len(mana) > 2 else 1
+                                    float(mana[2]) if len(mana) > 2 else (float(mana[1] if len(mana) > 1 else 1))
                                 ]
 
     def spawn_entities(self):

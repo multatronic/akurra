@@ -1017,7 +1017,51 @@ class ManaGatheringSystem(System):
                                             mana_data[0] += amount_max - mana[type]
                                             mana[type] = amount_max
 
+                                        # Add this tile to the mana replenishment map just in case
+                                        layer.mana_replenishment_map.append([i, x, y, type])
+
                             except KeyError:
                                 pass
                             except ValueError:
                                 pass
+
+
+class ManaReplenishmentSystem(System):
+
+    """Mana replenishment system."""
+
+    requirements = [
+        'layer',
+        'map_layer',
+        'player'
+    ]
+
+    event_handlers = {
+        TickEvent: ['on_event', 10]
+    }
+
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
+        self.cfg = self.container.get(Configuration)
+        self.default_replenishment_amount = \
+            self.cfg.get('akurra.entities.systems.mana_replenishment.default_replenishment_amount', 1)
+
+    def update(self, entity, event=None):
+        """Have an entity updated by the system."""
+        layer = entity.components['layer'].layer
+        replenishment_amount = self.default_replenishment_amount * event.delta_time
+
+        print(replenishment_amount)
+
+        # Loop over all tiles which require replenishment, and replenish them
+        for tile_mana in layer.mana_replenishment_map:
+            mana_data = layer.mana_map[tile_mana[0]][tile_mana[1]][tile_mana[2]][tile_mana[3]]
+            mana_data[0] += replenishment_amount
+
+            # If adding would result in exceeding the max amount, only give the tile as much as we can
+            if mana_data[0] >= mana_data[1]:
+                mana_data[0] = mana_data[1]
+
+                # Remove this tile from the replenishment map since we've replenished it
+                layer.mana_replenishment_map.remove(tile_mana)

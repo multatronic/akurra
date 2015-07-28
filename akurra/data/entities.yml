@@ -95,3 +95,6 @@ akurra:
         default_gather_amount: 1
         minimum_gather_amount: 0.1
         default_gather_radius: 1
+
+      mana_replenishment:
+        default_replenishment_amount: 0.01
