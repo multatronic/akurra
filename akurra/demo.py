@@ -7,7 +7,7 @@ from .display import (DisplayManager, ScrollingMapEntityDisplayLayer,
 from .events import EventManager, InitDialogEvent
 from .entities import EntityManager
 from .session import SessionManager
-from .keyboard import KeyboardManager
+from .keyboard import KeyboardModule
 from .states import GameState, StateManager
 from .audio import AudioManager
 from .locals import *  # noqa
@@ -25,7 +25,7 @@ class DemoIntroScreen(GameState):
         super().__init__()
 
         self.display = self.container.get(DisplayManager)
-        self.keyboard = self.container.get(KeyboardManager)
+        self.keyboard = self.container.get(KeyboardModule)
         self.events = self.container.get(EventManager)
         self.states = self.container.get(StateManager)
         self.font = pygame.font.SysFont('monospace', 14)
@@ -84,7 +84,7 @@ class DemoGameState(GameState):
         self.assets = self.container.get(AssetManager)
         self.entities = self.container.get(EntityManager)
         self.session = self.container.get(SessionManager)
-        self.keyboard = self.container.get(KeyboardManager)
+        self.keyboard = self.container.get(KeyboardModule)
         self.shutdown = self.container.get(ShutdownFlag)
 
     def on_quit(self, event):

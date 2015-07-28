@@ -33,8 +33,9 @@ setup(
 
         'akurra.modules': [
             'debug = akurra.debug:DebugModule',
-            'keyboard = akurra.keyboard:KeyboardManager',
-            'mouse = akurra.mouse:MouseManager',
+            'keyboard = akurra.keyboard:KeyboardModule',
+            'mouse = akurra.mouse:MouseModule',
+            'UI = akurra.ui:UIModule'
         ],
 
         'akurra.entities.components': [
@@ -64,7 +65,8 @@ setup(
             'player_terrain_sound = akurra.entities:PlayerTerrainSoundSystem',
             'sprite_rect_position_correction = akurra.entities:SpriteRectPositionCorrectionSystem',
             'sprite_render_ordering = akurra.entities:SpriteRenderOrderingSystem',
-            'positioning = akurra.entities:PositioningSystem'
+            'positioning = akurra.entities:PositioningSystem',
+            'health_regeneration = akurra.entities:HealthRegenerationSystem'
         ]
     },
 

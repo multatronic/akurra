@@ -25,12 +25,12 @@ class KeyboardActionEvent(Event):
         self.original_event['type'] = original_event.type
 
 
-class KeyboardManager(Module):
+class KeyboardModule(Module):
 
     """
-    Keyboard manager.
+    Keyboard module.
 
-    The keyboard manager is in charge of managing key bindings and acting upon
+    The keyboard module is in charge of managing key bindings and acting upon
     key presses or releases.
 
     """

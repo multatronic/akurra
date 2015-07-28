@@ -4,7 +4,7 @@ import logging
 import math
 
 from .locals import *  # noqa
-from .keyboard import KeyboardManager
+from .keyboard import KeyboardModule
 from .display import DisplayManager, DisplayLayer
 from .entities import EntityManager
 from .events import TickEvent, EventManager
@@ -28,7 +28,7 @@ class DebugModule(Module):
 
         self.debug = self.container.get(DebugFlag)
 
-        self.keyboard = self.container.get(KeyboardManager)
+        self.keyboard = self.container.get(KeyboardModule)
         self.events = self.container.get(EventManager)
         self.entities = self.container.get(EntityManager)
         self.display = self.container.get(DisplayManager)

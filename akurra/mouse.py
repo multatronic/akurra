@@ -14,12 +14,12 @@ from .locals import *  # noqa
 logger = logging.getLogger(__name__)
 
 
-class MouseManager(Module):
+class MouseModule(Module):
 
     """
-    Mouse manager.
+    Mouse module.
 
-    The mouse manager is in charge of managing button bindings and acting upon
+    The mouse module is in charge of managing button bindings and acting upon
     mouse clicks or hovers.
 
     """

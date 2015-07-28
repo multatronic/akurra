@@ -8,7 +8,7 @@ from injector import inject
 
 from .locals import *  # noqa
 from .assets import SpriteAnimation
-from .keyboard import KeyboardManager
+from .keyboard import KeyboardModule
 from .events import TickEvent, EntityMoveEvent, EventManager
 from .audio import AudioManager
 from .utils import ContainerAware, map_point_to_screen
@@ -654,7 +654,7 @@ class PlayerInputSystem(System):
         """Constructor."""
         super().__init__()
 
-        self.keyboard = self.container.get(KeyboardManager)
+        self.keyboard = self.container.get(KeyboardModule)
 
     def start(self):
         """Start the system."""
@@ -1052,8 +1052,6 @@ class ManaReplenishmentSystem(System):
         layer = entity.components['layer'].layer
         replenishment_amount = self.default_replenishment_amount * event.delta_time
 
-        print(replenishment_amount)
-
         # Loop over all tiles which require replenishment, and replenish them
         for tile_mana in layer.mana_replenishment_map:
             mana_data = layer.mana_map[tile_mana[0]][tile_mana[1]][tile_mana[2]][tile_mana[3]]
@@ -1065,3 +1063,40 @@ class ManaReplenishmentSystem(System):
 
                 # Remove this tile from the replenishment map since we've replenished it
                 layer.mana_replenishment_map.remove(tile_mana)
+
+
+class HealthRegenerationSystem(System):
+
+    """Health replenishment system."""
+
+    requirements = [
+        'layer',
+        'map_layer',
+        'health'
+    ]
+
+    event_handlers = {
+        TickEvent: ['on_event', 10]
+    }
+
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
+        self.cfg = self.container.get(Configuration)
+        self.default_regeneration_amount = \
+            self.cfg.get('akurra.entities.systems.health_regeneration.default_regeneration_amount', 1)
+
+    def update(self, entity, event=None):
+        """Have an entity updated by the system."""
+        health_component = entity.components['health']
+
+        # Skip this entity if we're at full health
+        if health_component.health == health_component.max:
+            return
+
+        regeneration_amount = self.default_regeneration_amount * event.delta_time
+        health_component.health += regeneration_amount
+
+        # If adding would result in exceeding the max amount, only give the entity as much as we can
+        if health_component.health >= health_component.max:
+            health_component.health = health_component.max

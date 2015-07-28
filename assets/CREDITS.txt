@@ -33,3 +33,9 @@
 * _Author:_ Daniel Cook
 * _Source:_ http://opengameart.org/content/iron-plague-pointercursor
 * _License:_ CC-BY 3.0
+
+### assets/graphics/ui/portrait/*.{png,psd}
+
+* _Author:_ Jorge Avila
+* _Source:_ http://opengameart.org/content/moderna-graphical-interface
+* _License:_ CC-BY 3.0, LGPL 2.1, LGPL 3.0
