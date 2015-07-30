@@ -1,4 +1,4 @@
-"""Debugging module."""
+"""UI module."""
 import pygame
 import logging
 import math
@@ -35,11 +35,16 @@ class UIModule(Module):
         self.surfaces['portrait_main'] = self.assets.get_image('graphics/ui/portrait/main.png', alpha=True)
         self.surfaces['portrait_health_bar'] = self.assets.get_image('graphics/ui/portrait/health_bar.png', alpha=True)
 
+        for type, color in {'earth': 'green', 'water': 'blue', 'air': 'grey', 'fire': 'red'}.items():
+            surface = self.assets.get_image('graphics/ui/portrait/magic_buttons/%s.png' % color, alpha=True)
+            self.surfaces['portrait_mana_orb_%s' % type] = pygame.transform.smoothscale(surface, [30, 30])
+
         self.offsets = {}
         self.offsets['portrait'] = [20, 20]
         self.offsets['portrait_health_bar'] = [103, 33]
         self.offsets['portrait_health_text'] = [115, 32]
-        self.offsets['portrait_mana_text'] = [115, 47]
+        self.offsets['portrait_mana_orb'] = [105, 70]
+        self.offsets['portrait_mana_orb_text'] = [119, 80]
 
     def start(self):
         """Start the module."""
@@ -73,5 +78,15 @@ class UIModule(Module):
                                        [225, 225, 225])
         self.layer.surface.blit(health_text, self.offsets['portrait_health_text'])
 
-        mana_text = self.font.render('00000', 1, [200, 200, 200])
-        self.layer.surface.blit(mana_text, self.offsets['portrait_mana_text'])
+        portrait_mana_orb_offset = list(self.offsets['portrait_mana_orb'])
+        portrait_mana_orb_text_offset = list(self.offsets['portrait_mana_orb_text'])
+
+        for mana_type, mana_amount in player.components['mana'].mana.items():
+            if mana_amount > 0:
+                self.layer.surface.blit(self.surfaces['portrait_mana_orb_%s' % mana_type], portrait_mana_orb_offset)
+                portrait_mana_orb_offset[0] += 35
+
+                mana_text = self.font.render('%s' % math.floor(mana_amount), 1, [102, 0, 102])
+                self.layer.surface.blit(mana_text, [portrait_mana_orb_text_offset[0] - (mana_text.get_width() / 2),
+                                                    portrait_mana_orb_text_offset[1]])
+                portrait_mana_orb_text_offset[0] += 35

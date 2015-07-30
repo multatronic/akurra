@@ -39,3 +39,9 @@
 * _Author:_ Jorge Avila
 * _Source:_ http://opengameart.org/content/moderna-graphical-interface
 * _License:_ CC-BY 3.0, LGPL 2.1, LGPL 3.0
+
+### assets/graphicS/ui/portrait/magic_buttons/*.png
+
+* _Author:_ Dakal
+* _Source:_ http://opengameart.org/content/magic-buttons
+* _License:_ CC-BY 3.0
