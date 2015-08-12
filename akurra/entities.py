@@ -914,7 +914,7 @@ class DialogueSystem(System):
 
     event_handlers = {
         TickEvent: ['on_event', 10],
-        EntityDialogueEvent: ['on_dialogue', 10]
+        EntityDialogueEvent: ['on_dialogue_event', 10]
     }
 
     def __init__(self):
@@ -1004,9 +1004,8 @@ class DialogueSystem(System):
         # TODO: don't emit this even on every frame, find a better way to initialize when appropriate
         self.events.dispatch(EntityMoveEvent(entity.id))
 
-        # TODO: find a better way to calculate this offset
         offset = (self.dialogue_box.image.get_width() / 2, self.dialogue_box.image.get_height() + 50)
-        #offset = [0,0]
+
         # render the text for the currently selected text node
         # grab the current node of the dialogue tree
         current_node = self.dialogs[entity.id][self.currently_selected_nodes[entity.id]]
@@ -1014,9 +1013,7 @@ class DialogueSystem(System):
         text_output = current_node['output']['text']
 
         # render the dialog output
-        logger.info(entity.components['position'].screen_position)
         preferred_position = entity.components['position'].screen_position
-
 
         self.render_dialogue(text_output, [preferred_position[x] - offset[x]
                              for x in [0, 1]])
@@ -1024,7 +1021,6 @@ class DialogueSystem(System):
         # render the dialogue prompt if applicable
         if self.dialogue_prompt.active and self.dialogue_prompt.entity_id == entity.id:
             self.render_dialogue_prompt()
-
 
     def select_dialog_option(self, keyboard_action=None):
         """Respond to keyboard input to select text from a dialog prompt."""
@@ -1186,7 +1182,7 @@ class DialogueSystem(System):
         logger.debug('Dialogue response sent: %s', response)
         self.close_dialogue_prompt(entity.id)
 
-    def on_dialogue(self, event=None):
+    def on_dialogue_event(self, event=None):
         """Handle a dialogue event."""
         entity = self.entities.find_entity_by_id(event.entity_id)
         # initiate conversation
@@ -1203,7 +1199,7 @@ class DialogueSystem(System):
         current_node = self.dialogs[entity.id][self.currently_selected_nodes[entity.id]]
 
         # TODO: REFACTOR THIS CODE
-        # split output into several message boxes
+        # split output into several message boxes if required
         if 'output' in current_node and not isinstance(current_node['output']['text'], list):
             current_node['output']['text'] = self.split_dialogue_into_message_boxes(current_node['output']['text'])
 
