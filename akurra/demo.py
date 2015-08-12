@@ -4,7 +4,7 @@ import logging
 from .assets import AssetManager
 from .display import (DisplayManager, ScrollingMapEntityDisplayLayer,
                       FrameRenderCompletedEvent, DisplayLayer)
-from .events import EventManager, InitDialogEvent
+from .events import EventManager
 from .entities import EntityManager
 from .session import SessionManager
 from .keyboard import KeyboardModule
@@ -101,10 +101,6 @@ class DemoGameState(GameState):
         self.layer = ScrollingMapEntityDisplayLayer(self.tmx_data, default_layer=2)
 
         self.ui_layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=101)
-        # TODO find a better way to make the UI layer accessible!
-        dialogEntities = self.entities.find_entities_by_components(['dialog'])
-        for entity in dialogEntities:
-            entity.ui_layer = self.ui_layer
 
         self.display.add_layer(self.ui_layer)
         self.display.add_layer(self.layer)
@@ -117,7 +113,6 @@ class DemoGameState(GameState):
 
         self.layer.center = player
 
-        self.events.dispatch(InitDialogEvent())
         # Load audio files
         # music
         self.audio.add_music("audio/music/magical_theme.ogg", "world01")

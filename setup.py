@@ -47,7 +47,6 @@ setup(
             'player = akurra.entities:PlayerComponent',
             'layer = akurra.entities:LayerComponent',
             'map_layer = akurra.entities:MapLayerComponent',
-            'dialog = akurra.entities:DialogComponent',
             'sprite = akurra.entities:SpriteComponent',
             'physics = akurra.entities:PhysicsComponent',
             'position = akurra.entities:PositionComponent'
@@ -59,7 +58,6 @@ setup(
             'movement = akurra.entities:MovementSystem',
             'collision = akurra.entities:CollisionSystem',
             'rendering = akurra.entities:RenderingSystem',
-            'dialog = akurra.entities:DialogSystem',
             'mana_gathering = akurra.entities:ManaGatheringSystem',
             'mana_replenishment = akurra.entities:ManaReplenishmentSystem',
             'player_terrain_sound = akurra.entities:PlayerTerrainSoundSystem',

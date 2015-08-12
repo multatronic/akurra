@@ -453,18 +453,6 @@ class CharacterComponent(Component):
         self.name = name
 
 
-class DialogComponent(Component):
-
-    """Dialog component."""
-
-    type = 'dialog'
-
-    def __init__(self, text='', **kwargs):
-        """Constructor."""
-        super().__init__(**kwargs)
-        self.text = text
-
-
 class SpriteComponent(Component):
 
     """Sprite component."""
@@ -703,36 +691,6 @@ class VelocitySystem(System):
                 return
 
         entity.components['velocity'].velocity = [0, 0]
-
-
-class DialogSystem(System):
-
-    """Dialog system."""
-
-    requirements = [
-        'dialog',
-        'layer',
-        'map_layer',
-        'position'
-    ]
-
-    event_handlers = {
-        TickEvent: ['on_event', 10]
-    }
-
-    def on_event(self, event):
-        """Handle an event."""
-        for entity in self.entities.find_entities_by_components(self.requirements):
-            color_blue = (0, 0, 128)
-            font = pygame.font.Font('freesansbold.ttf', 32)
-            text_surface = font.render(entity.components['dialog'].text, True, color_blue)
-            entity.ui_layer.surface.blit(text_surface, entity.components['position'].primary_position)
-            # dialog = self.container.get(EntityManager).create_entity_from_template('dialog')
-            # dialog.components['position'] = entity.components['position']
-            # entity.components['layer'].layer.add_entity(dialog)
-
-    def update(self, entity, event=None):
-        """Placeholder function."""
 
 
 class MovementSystem(System):

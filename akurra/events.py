@@ -29,15 +29,6 @@ class TickEvent(Event):
         self.delta_time = delta_time
 
 
-class InitDialogEvent(Event):
-
-    """Initialize dialog event."""
-
-    def __init__(self, delta_time=0):
-        """Constructor."""
-        super().__init__()
-
-
 class EntityMoveEvent(Event):
 
     """Entity move event."""
