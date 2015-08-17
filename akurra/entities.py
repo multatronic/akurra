@@ -976,8 +976,7 @@ class ManaGatheringSystem(System):
                                             mana[type] = amount_max
 
                                         # Add this tile to the mana replenishment map just in case
-                                        layer.mana_replenishment_map.append([i, x, y, type])
-
+                                        layer.mana_replenishment_map['%s-%s-%s-%s' % (i, x, y, type)] = [i, x, y, type]
                             except KeyError:
                                 pass
                             except ValueError:
@@ -1011,7 +1010,7 @@ class ManaReplenishmentSystem(System):
         replenishment_amount = self.default_replenishment_amount * event.delta_time
 
         # Loop over all tiles which require replenishment, and replenish them
-        for tile_mana in layer.mana_replenishment_map:
+        for key, tile_mana in layer.mana_replenishment_map.items():
             mana_data = layer.mana_map[tile_mana[0]][tile_mana[1]][tile_mana[2]][tile_mana[3]]
             mana_data[0] += replenishment_amount
 
@@ -1020,7 +1019,7 @@ class ManaReplenishmentSystem(System):
                 mana_data[0] = mana_data[1]
 
                 # Remove this tile from the replenishment map since we've replenished it
-                layer.mana_replenishment_map.remove(tile_mana)
+                layer.mana_replenishment_map.pop(tile_mana, None)
 
 
 class HealthRegenerationSystem(System):

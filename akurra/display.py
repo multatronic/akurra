@@ -208,7 +208,7 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
         """Build a mana map based on map data."""
         logger.debug('Building mana map [map=%s]', self.map_data.tmx.filename)
         self.mana_map = {}
-        self.mana_replenishment_map = []
+        self.mana_replenishment_map = {}
 
         # Loop through all vibible layers
         for i, l in enumerate(self.map_data.tmx.visible_layers):

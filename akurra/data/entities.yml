@@ -96,3 +96,6 @@ akurra:
 
       mana_replenishment:
         default_replenishment_amount: 0.01
+
+      health_regeneration:
+        default_regeneration_amount: 1
