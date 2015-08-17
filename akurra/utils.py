@@ -49,6 +49,16 @@ def flatten(d, parent_key='', sep='_'):
     return dict(items)
 
 
+def vector_between(source, destination, unit=False):
+    """Return the vector starting from source to destination."""
+    vector = [destination[0] - source[0], destination[1] - source[0]]
+    if unit:
+        length = distance_between(destination, source)
+        vector[0] /= length
+        vector[1] /= length
+    return vector
+
+
 def distance_between(point_1, point_2):
     """Return the distance between two points."""
     return math.sqrt(math.pow(point_2[0] - point_1[0], 2) + math.pow(point_2[1] - point_1[1], 2))
