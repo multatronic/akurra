@@ -20,7 +20,7 @@ from .modules import ModuleManager
 from .logger import configure_logging
 
 from .display import DisplayManager
-from .states import StateManager
+from .states import StateManager, SplashScreen
 from .assets import AssetManager
 from .entities import EntityManager
 from .session import SessionManager
@@ -136,10 +136,12 @@ class Akurra:
         # create states, set introscreen as initial state
         game_realm = self.container.get(DemoGameState)
         intro_screen = self.container.get(DemoIntroScreen)
-
+        splash_screen = SplashScreen(image='graphics/logos/multatronic.png', next=intro_screen)
+        self.states.add(splash_screen)
         self.states.add(intro_screen)
         self.states.add(game_realm)
-        self.states.set_active(intro_screen)
+
+        self.states.set_active(splash_screen)
 
         while not self.shutdown.is_set():
             self.events.poll()
