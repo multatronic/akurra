@@ -1019,7 +1019,7 @@ class ManaReplenishmentSystem(System):
                 mana_data[0] = mana_data[1]
 
                 # Remove this tile from the replenishment map since we've replenished it
-                layer.mana_replenishment_map.pop(tile_mana, None)
+                layer.mana_replenishment_map.pop(key, None)
 
 
 class HealthRegenerationSystem(System):
