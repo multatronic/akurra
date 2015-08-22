@@ -40,6 +40,17 @@ class EntityMoveEvent(Event):
         self.entity_id = entity_id
 
 
+class CastSpellEvent(Event):
+
+    """Cast spell event."""
+
+    def __init__(self, entity_id, origin, target):
+        """Constructor."""
+        super().__init__()
+        self.origin = origin
+        self.target = target
+        self.entity_id = entity_id
+
 class EventManager:
 
     """Event manager."""

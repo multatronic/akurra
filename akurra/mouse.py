@@ -87,7 +87,7 @@ class MouseModule(Module):
         if not self.listeners[event_type][button_id][priority]:
             self.listeners[event_type][button_id][priority] = []
 
-        self.listeners[event_type][button_id][listener][priority].append(listener)
+        self.listeners[event_type][button_id][priority].append(listener)
         logger.debug('Registered listener for button "%s" [event=%s, priority=%s]', hr_button_id(button_id),
                      hr_event_type(event_type), priority)
 
@@ -140,7 +140,7 @@ class MouseModule(Module):
                         layer.on_entity_mouse(e, event)
 
         try:
-            for listener in self.listeners[event.type][event.button].copy():
+            for listeners in self.listeners[event.type][event.button].copy():
                 if listeners:
                     for listener in listeners.copy():
                         if listener and listener(event) is False:
