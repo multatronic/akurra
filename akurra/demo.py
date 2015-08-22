@@ -89,12 +89,11 @@ class DemoGameState(GameState):
 
     def on_quit(self, event):
         """Handle quitting."""
-        logger.debug("Escape pressed during demo! Setting shutdown flag...")
         self.shutdown.set()
 
     def enable(self):
         """Initialize the gamestate."""
-        self.keyboard.add_action_listener('quit', self.on_quit)
+        self.keyboard.add_action_listener('game_quit', self.on_quit)
 
         # self.tmx_data = self.assets.get_tmx_data('pyscroll_demo/grasslands.tmx')
         self.tmx_data = self.assets.get_tmx_data('maps/urdarbrunn/map.tmx')

@@ -96,12 +96,15 @@ class SplashScreen(GameState):
         :param show_duration: Duration (in seconds) during which the image should be shown, after fading.
 
         """
+        from .keyboard import KeyboardModule
+
         super().__init__()
 
         self.events = self.container.get(EventManager)
         self.display = self.container.get(DisplayManager)
         self.assets = self.container.get(AssetManager)
         self.states = self.container.get(StateManager)
+        self.keyboard = self.container.get(KeyboardModule)
 
         self.layer = DisplayLayer(flags=pygame.SRCALPHA)
         self.image = self.assets.get_image(image, alpha=False)
@@ -119,11 +122,17 @@ class SplashScreen(GameState):
 
         self.display.add_layer(self.layer)
         self.events.register(TickEvent, self.on_tick)
+        self.keyboard.add_action_listener('splash_screen_skip', self.next_state)
 
     def disable(self):
         """Disable the game state."""
+        self.keyboard.remove_action_listener(self.next_state)
         self.events.unregister(self.on_tick)
         self.display.remove_layer(self.layer)
+
+    def next_state(self, *args):
+        """Continue onward to the next game state."""
+        self.states.set_active(self.next)
 
     def on_tick(self, event):
         """Handle a tick event."""
@@ -138,7 +147,7 @@ class SplashScreen(GameState):
             self.fade_counter += event.delta_time
 
         if self.fade_counter > (2 * self.fade_duration):
-            self.states.set_active(self.next)
+            self.next_state()
 
         surface = self.layer.surface
         surface.fill(self.background_color)
