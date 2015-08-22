@@ -152,7 +152,7 @@ class KeyboardModule(Module):
 
             self.add_action_binding(action, getattr(pygame, binding[0]), mods=binding[1])
 
-    def add_action_binding(self, action, key_id, mods=0, event_type=pygame.KEYDOWN, priority=10):
+    def add_action_binding(self, action, key_id, mods=0, priority=10):
         """
         Register an action to be triggered on a press, hold or release of a key.
 
