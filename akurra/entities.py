@@ -8,8 +8,7 @@ from injector import inject
 
 from .locals import *  # noqa
 from .assets import SpriteAnimation
-from .keyboard import KeyboardModule
-from .events import TickEvent, EntityMoveEvent, EventManager, CastSpellEvent
+from .events import TickEvent, EntityMoveEvent, EventManager, EntitySpellCastEvent
 from .audio import AudioManager
 from .utils import ContainerAware, map_point_to_screen, vector_between
 from .assets import AssetManager
@@ -49,7 +48,7 @@ class EntityInput(Enum):
     MOVE_LEFT = 2
     MOVE_RIGHT = 3
     MANA_GATHER = 4
-    LEFT_MOUSE_BUTTON = 5
+    ATTACK = 5
 
 
 class SystemStatus(Enum):
@@ -640,7 +639,7 @@ class PlayerInputSystem(System):
             'mana_gather': EntityInput.MANA_GATHER
         },
         'mouse': {
-            1: EntityInput.LEFT_MOUSE_BUTTON
+            'attack': EntityInput.ATTACK
         }
     }
 
@@ -650,32 +649,30 @@ class PlayerInputSystem(System):
 
         # imported here to prevent circular dependency stuff
         from .mouse import MouseModule
+        from .keyboard import KeyboardModule
         self.keyboard = self.container.get(KeyboardModule)
         self.mouse = self.container.get(MouseModule)
 
     def start(self):
         """Start the system."""
-        # for key in pygame.KEYDOWN, pygame.KEYUP:
-        #     [self.keyboard.register(x, self.on_event, event_type=key) for x in self.action_inputs.keys()]
         [self.keyboard.add_action_listener(x, self.on_event) for x in self.action_inputs['keyboard'].keys()]
-
-        # TODO: add mouse actions instead of just key bindings
-        [self.mouse.add_listener(x, self.on_event) for x in self.action_inputs['mouse'].keys()]
+        [self.mouse.add_action_listener(x, self.on_event) for x in self.action_inputs['mouse'].keys()]
 
     def stop(self):
         """Stop the system."""
+        self.mouse.remove_action_listener(self.on_event)
         self.keyboard.remove_action_listener(self.on_event)
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        # TODO: first check was added because mouse actions haven't been implemented yet
-        # so get rid of this later
-        if hasattr(event, 'action') and event.action in self.action_inputs['keyboard']:
+        if event.type == 'akurra.keyboard.KeyboardActionEvent':
             entity.components['input'].input[self.action_inputs['keyboard'][event.action]] = \
                 event.original_event['type'] == pygame.KEYDOWN
         else:
-            self.events.dispatch(CastSpellEvent(entity.id, entity.components['position'].primary_position, event.pos))
-
+            entity.components['input'].input[self.action_inputs['mouse'][event.action]] = \
+                event.original_event['type'] == pygame.MOUSEBUTTONDOWN
+            self.events.dispatch(EntitySpellCastEvent(entity.id, entity.components['position'].primary_position,
+                                 event.original_event['pos']))
 
 
 class VelocitySystem(System):
@@ -923,7 +920,6 @@ class PlayerTerrainSoundSystem(System):
 class SpellCastingSystem(System):
 
     """Fire a spell."""
-    # TODO: use spellCast events instead of just relying on input (enemies will cast spells too)
 
     requirements = [
         'input',
@@ -931,7 +927,7 @@ class SpellCastingSystem(System):
     ]
 
     event_handlers = {
-        CastSpellEvent: ['on_event', 10]
+        EntitySpellCastEvent: ['on_event', 10]
     }
 
     def update(self, entity, event=None):
