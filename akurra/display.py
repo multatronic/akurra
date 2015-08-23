@@ -2,13 +2,15 @@
 import logging
 import pygame
 import random
-from injector import inject
+import functools
 import pyscroll
 from pyscroll.util import PyscrollGroup
 
 from .locals import *  # noqa
+from .keyboard import KeyboardModule
 from .events import Event, TickEvent, EventManager
 from .entities import LayerComponent, EntityManager, MapLayerComponent
+from .modules import Module
 from .utils import ContainerAware, hr_event_type
 
 
@@ -307,9 +309,45 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
         super().resize(size)
 
 
-class DisplayManager:
+class DisplayModule(Module):
 
-    """Display controller."""
+    """Display module."""
+
+    dependencies = [
+        'keyboard'
+    ]
+
+    def __init__(self):
+        """Constructor."""
+        self.configuration = self.container.get(Configuration)
+        self.events = self.container.get(EventManager)
+        self.keyboard = self.container.get(KeyboardModule)
+
+        self.resolution = self.configuration.get('akurra.display.resolution', [0, 0])
+        self.flags = self.configuration.get('akurra.display.')
+        self.caption = self.configuration.get('akurra.display.caption', 'Akurra DEV')
+
+        self.flags = self.configuration.get('akurra.display.flags', ['DOUBLEBUF', 'HWSURFACE', 'RESIZABLE'])
+        self.flags = functools.reduce(lambda x, y: x | y, [getattr(pygame, x) for x in self.flags])
+
+        self.screen = self.create_screen()
+
+        self.layers = {}
+        self.layer_z_indexes = []
+
+    def start(self):
+        """Start the module."""
+        self.events.register(TickEvent, self.on_tick)
+        self.events.register(pygame.VIDEORESIZE, self.on_video_resize)
+
+        self.keyboard.add_action_listener('fullscreen_toggle', self.toggle_fullscreen)
+
+    def stop(self):
+        """Stop the module."""
+        self.keyboard.remove_action_listener(self.toggle_fullscreen)
+
+        self.events.unregister(self.on_video_resize)
+        self.events.unregister(self.on_tick)
 
     def add_layer(self, layer):
         """Add a layer to the display."""
@@ -379,19 +417,12 @@ class DisplayManager:
 
         return screen
 
-    @inject(events=EventManager, resolution=DisplayResolution, flags=DisplayFlags, caption=DisplayCaption)
-    def __init__(self, events, resolution=[0, 0], flags=0, caption='akurra'):
-        """Constructor."""
-        logger.debug('Initializing DisplayManager')
+    def toggle_fullscreen(self, event):
+        """Toggle fullscreen mode."""
+        if event.original_event['type'] is not pygame.KEYDOWN:
+            return
 
-        self.events = events
-        self.events.register(TickEvent, self.on_tick)
-        self.events.register(pygame.VIDEORESIZE, self.on_video_resize)
-
-        self.resolution = resolution
-        self.flags = flags
-        self.caption = caption
-        self.screen = self.create_screen()
-
-        self.layers = {}
-        self.layer_z_indexes = []
+        if self.flags & pygame.FULLSCREEN:
+            self.flags ^= pygame.FULLSCREEN
+        else:
+            self.flags |= pygame.FULLSCREEN

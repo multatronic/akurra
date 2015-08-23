@@ -4,7 +4,6 @@ import sys
 import pygame
 import signal
 import logging
-import functools
 import argparse
 
 from threading import Event
@@ -19,7 +18,6 @@ from .events import EventManager, TickEvent
 from .modules import ModuleManager
 from .logger import configure_logging
 
-from .display import DisplayManager
 from .states import StateManager, SplashScreen
 from .assets import AssetManager
 from .entities import EntityManager
@@ -75,15 +73,8 @@ def build_container(binder):
     binder.bind(ModuleEntryPointGroup, to=cfg.get('akurra.modules.entry_point_group', 'akurra.modules'))
 
     # Display
-    binder.bind(DisplayManager, scope=singleton)
-    binder.bind(DisplayResolution, to=cfg.get('akurra.display.resolution', [0, 0]))
     binder.bind(DisplayMaxFPS, to=cfg.get('akurra.display.max_fps', 60))
-    binder.bind(DisplayCaption, to=cfg.get('akurra.display.caption', 'Akurra DEV'))
     binder.bind(DisplayClock, to=pygame.time.Clock, scope=singleton)
-
-    flags = cfg.get('akurra.display.flags', ['DOUBLEBUF', 'HWSURFACE', 'RESIZABLE'])
-    flags = functools.reduce(lambda x, y: x | y, [getattr(pygame, x) for x in flags])
-    binder.bind(DisplayFlags, to=flags)
 
     # Events
     binder.bind(EventManager, scope=singleton)
@@ -169,12 +160,12 @@ class Akurra:
         logger.debug('Received signal, setting shutdown flag [signal=%s]', signum)
         self.shutdown.set()
 
-    @inject(modules=ModuleManager, events=EventManager, display=DisplayManager,
+    @inject(modules=ModuleManager, events=EventManager,
             states=StateManager,
             entities=EntityManager, log_level=ArgLogLevel,
             clock=DisplayClock, max_fps=DisplayMaxFPS,
             shutdown=ShutdownFlag)
-    def __init__(self, modules, events, display, states, entities, clock, max_fps, shutdown,
+    def __init__(self, modules, events, states, entities, clock, max_fps, shutdown,
                  log_level):
         """Constructor."""
         configure_logging(log_level=log_level)

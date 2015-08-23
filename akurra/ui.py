@@ -4,7 +4,7 @@ import logging
 import math
 
 from .locals import *  # noqa
-from .display import DisplayManager, DisplayLayer
+from .display import DisplayModule, DisplayLayer
 from .events import TickEvent, EventManager
 from .assets import AssetManager
 from .modules import Module
@@ -18,12 +18,16 @@ class UIModule(Module):
 
     """UI module."""
 
+    dependencies = [
+        'display'
+    ]
+
     def __init__(self):
         """Constructor."""
         super().__init__()
 
         self.events = self.container.get(EventManager)
-        self.display = self.container.get(DisplayManager)
+        self.display = self.container.get(DisplayModule)
         self.session = self.container.get(SessionManager)
         self.assets = self.container.get(AssetManager)
 

@@ -2,6 +2,7 @@ akurra:
     keyboard:
         action_bindings:
             debug_toggle: [K_F11, [KMOD_LCTRL]]
+            fullscreen_toggle: K_F12
             game_quit: K_ESCAPE
             splash_screen_skip: K_SPACE
             move_up: K_UP

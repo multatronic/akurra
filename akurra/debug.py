@@ -5,7 +5,7 @@ import math
 
 from .locals import *  # noqa
 from .keyboard import KeyboardModule
-from .display import DisplayManager, DisplayLayer
+from .display import DisplayModule, DisplayLayer
 from .entities import EntityManager
 from .events import TickEvent, EventManager
 from .modules import Module
@@ -20,7 +20,10 @@ class DebugModule(Module):
 
     """Debugging module."""
 
-    dependencies = ['keyboard']
+    dependencies = [
+        'keyboard',
+        'display'
+    ]
 
     def __init__(self):
         """Constructor."""
@@ -31,7 +34,7 @@ class DebugModule(Module):
         self.keyboard = self.container.get(KeyboardModule)
         self.events = self.container.get(EventManager)
         self.entities = self.container.get(EntityManager)
-        self.display = self.container.get(DisplayManager)
+        self.display = self.container.get(DisplayModule)
         self.session = self.container.get(SessionManager)
 
         self.clock = self.container.get(DisplayClock)

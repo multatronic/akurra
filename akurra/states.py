@@ -2,7 +2,7 @@
 import logging
 import pygame
 
-from .display import DisplayLayer, DisplayManager
+from .display import DisplayLayer, DisplayModule
 from .events import EventManager, TickEvent
 from .assets import AssetManager
 from .utils import fqcn, ContainerAware
@@ -101,7 +101,7 @@ class SplashScreen(GameState):
         super().__init__()
 
         self.events = self.container.get(EventManager)
-        self.display = self.container.get(DisplayManager)
+        self.display = self.container.get(DisplayModule)
         self.assets = self.container.get(AssetManager)
         self.states = self.container.get(StateManager)
         self.keyboard = self.container.get(KeyboardModule)

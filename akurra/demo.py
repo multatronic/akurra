@@ -2,8 +2,8 @@
 import pygame
 import logging
 from .assets import AssetManager
-from .display import (DisplayManager, ScrollingMapEntityDisplayLayer,
-                      FrameRenderCompletedEvent, DisplayLayer)
+from .display import (ScrollingMapEntityDisplayLayer,
+                      FrameRenderCompletedEvent, DisplayModule, DisplayLayer)
 from .events import EventManager
 from .entities import EntityManager
 from .session import SessionManager
@@ -24,7 +24,7 @@ class DemoIntroScreen(GameState):
         """Constructor."""
         super().__init__()
 
-        self.display = self.container.get(DisplayManager)
+        self.display = self.container.get(DisplayModule)
         self.keyboard = self.container.get(KeyboardModule)
         self.events = self.container.get(EventManager)
         self.states = self.container.get(StateManager)
@@ -79,7 +79,7 @@ class DemoGameState(GameState):
         super().__init__()
 
         self.events = self.container.get(EventManager)
-        self.display = self.container.get(DisplayManager)
+        self.display = self.container.get(DisplayModule)
         self.audio = self.container.get(AudioManager)
         self.assets = self.container.get(AssetManager)
         self.entities = self.container.get(EntityManager)

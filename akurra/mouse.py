@@ -4,7 +4,7 @@ import pygame
 
 from .modules import Module
 from .assets import AssetManager
-from .display import EntityDisplayLayer, DisplayManager
+from .display import EntityDisplayLayer, DisplayModule
 from .events import EventManager, Event
 from .entities import EntityManager, SpriteComponent
 from .utils import hr_button_id, hr_event_type, fqcn
@@ -37,6 +37,10 @@ class MouseModule(Module):
 
     """
 
+    dependencies = [
+        'display'
+    ]
+
     def __init__(self):
         """Constructor."""
         super().__init__()
@@ -47,7 +51,7 @@ class MouseModule(Module):
         self.configuration = self.container.get(Configuration)
         self.events = self.container.get(EventManager)
         self.assets = self.container.get(AssetManager)
-        self.display = self.container.get(DisplayManager)
+        self.display = self.container.get(DisplayModule)
         self.entities = self.container.get(EntityManager)
 
         self.cursor_layer = EntityDisplayLayer(z_index=102, flags=pygame.SRCALPHA)
