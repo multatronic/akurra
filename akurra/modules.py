@@ -2,7 +2,6 @@
 import sys
 import logging
 from pkg_resources import iter_entry_points
-from injector import inject
 
 from .utils import ContainerAware
 from .locals import *  # noqa
@@ -33,6 +32,14 @@ class Module(ContainerAware):
 class ModuleManager(ContainerAware):
 
     """The ModuleManager manages the loading, unloading, etc. of modules."""
+
+    def __init__(self):
+        """Constructor."""
+        logger.debug('Initializing ModuleManager')
+
+        self.configuration = self.container.get(Configuration)
+        self.group = self.configuration.get('akurra.modules.entry_point.group', 'akurra.modules')
+        self.modules = {}
 
     def load_single(self, name):
         """
@@ -123,16 +130,3 @@ class ModuleManager(ContainerAware):
         """Stop all modules."""
         logger.debug('Stopping all modules')
         [self.stop_single(x) for x in self.modules.keys()]
-
-    @inject(group=ModuleEntryPointGroup)
-    def __init__(self, group='akurra.modules'):
-        """
-        Constructor.
-
-        :param group: The entry point group to load modules from.
-
-        """
-        logger.debug('Initializing ModuleManager [group=%s]', group)
-
-        self.group = group
-        self.modules = {}

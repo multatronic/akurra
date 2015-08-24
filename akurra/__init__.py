@@ -21,7 +21,6 @@ from .states import StateManager, SplashScreen
 from .assets import AssetManager
 from .entities import EntityManager
 from .session import SessionManager
-from .items import ItemManager
 from .utils import get_data_path
 
 from .demo import DemoIntroScreen, DemoGameState
@@ -45,12 +44,13 @@ def build_container(binder):
 
     binder.bind(ArgLogLevel, to=args.log_level)
 
-    # Overlord
+    # Core
     binder.bind(Akurra, scope=singleton)
 
-    # General
+    # General flags and shared objects
     binder.bind(ShutdownFlag, to=Event())
     binder.bind(DebugFlag, to=Value('B', args.debug))
+    binder.bind(DisplayClock, to=pygame.time.Clock, scope=singleton)
 
     # Configuration
     CFG_FILES = [
@@ -67,16 +67,12 @@ def build_container(binder):
     cfg = ConfigurationManager.load(CFG_FILES + [get_data_path('*.yml')])
     binder.bind(Configuration, to=cfg)
 
-    # Modules
+    # Core components
     binder.bind(ModuleManager, scope=singleton)
-    binder.bind(ModuleEntryPointGroup, to=cfg.get('akurra.modules.entry_point_group', 'akurra.modules'))
-
-    # Display
-    binder.bind(DisplayClock, to=pygame.time.Clock, scope=singleton)
-
-    # Events
     binder.bind(EventManager, scope=singleton)
 
+    # @TODO Anything under this line may or may not require a module
+    # ----
     # State manager
     binder.bind(StateManager, scope=singleton)
 
@@ -96,9 +92,6 @@ def build_container(binder):
                                                            'akurra.entities.components'))
     binder.bind(EntityTemplates, to=cfg.get('akurra.entities.templates', {}))
 
-    # Items
-    binder.bind(ItemManager, scope=singleton)
-
     # Demo
     binder.bind(DemoIntroScreen)
     binder.bind(DemoGameState)
@@ -112,15 +105,12 @@ class Akurra:
         """Start."""
         logger.debug('Starting..')
 
-        self.configuration = self.container.get(Configuration)
-        self.loop_wait_millis = self.configuration.get('akurra.core.loop_wait_millis', 5)
-        self.max_fps = self.configuration.get('akurra.display.max_fps', 60)
-
         self.modules.load()
         self.entities.start()
         self.modules.start()
 
         # create states, set introscreen as initial state
+        # @TODO Turn these babies into modules and somesuch
         game_realm = self.container.get(DemoGameState)
         intro_screen = self.container.get(DemoIntroScreen)
         splash_screen = SplashScreen(image='graphics/logos/multatronic.png', next=intro_screen)
@@ -131,11 +121,16 @@ class Akurra:
         self.states.set_active(splash_screen)
 
         while not self.shutdown.is_set():
+            # Pump/handle events (both pygame and akurra)
             self.events.poll()
 
+            # Calculate time (in seconds) that has passed since last tick
             delta_time = self.clock.tick(self.max_fps) / 1000
+
+            # Dispatch tick
             self.events.dispatch(TickEvent(delta_time=delta_time))
 
+            # Wait a bit to lower CPU usage
             pygame.time.wait(self.loop_wait_millis)
 
         self.stop()
@@ -156,21 +151,24 @@ class Akurra:
         logger.debug('Received signal, setting shutdown flag [signal=%s]', signum)
         self.shutdown.set()
 
-    @inject(modules=ModuleManager, events=EventManager, states=StateManager,
+    @inject(configuration=Configuration, modules=ModuleManager, events=EventManager, states=StateManager,
             entities=EntityManager, log_level=ArgLogLevel, clock=DisplayClock, shutdown=ShutdownFlag)
-    def __init__(self, modules, events, states, entities, clock, shutdown, log_level):
+    def __init__(self, log_level, configuration, shutdown, clock, modules, events, states, entities):
         """Constructor."""
         configure_logging(log_level=log_level)
         logger.info('Initializing..')
 
+        self.configuration = configuration
         self.shutdown = shutdown
+        self.clock = clock
 
         self.modules = modules
         self.events = events
         self.entities = entities
         self.states = states
 
-        self.clock = clock
+        self.loop_wait_millis = self.configuration.get('akurra.core.loop_wait_millis', 5)
+        self.max_fps = self.configuration.get('akurra.display.max_fps', 60)
 
         # Handle shutdown signals properly
         signal.signal(signal.SIGINT, self.handle_signal)

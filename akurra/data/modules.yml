@@ -1,0 +1,3 @@
+akurra:
+    modules:
+        entry_point_group: akurra.modules
