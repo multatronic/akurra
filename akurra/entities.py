@@ -930,9 +930,27 @@ class SpellCastingSystem(System):
         EntitySpellCastEvent: ['on_event', 10]
     }
 
+    def __init__(self):
+        """Constructor."""
+        from .display import DisplayModule, EntityDisplayLayer
+
+        super().__init__()
+        self.display = self.container.get(DisplayModule)
+        self.layer = EntityDisplayLayer(flags=pygame.SRCALPHA, z_index=109)
+
+
+    def start(self):
+        """Start the system."""
+        super().start()
+        self.display.add_layer(self.layer)
+
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        logger.debug('spell vector: %s', vector_between(event.origin, event.target))
+        logger.debug('spawning fireball with vector: %s', vector_between(event.origin, event.target))
+        fireball = self.entities.create_entity_from_template('projectile')
+        fireball.components['position'].layer_position = event.origin
+        self.layer.add_entity(fireball)
+
 
 
 class ManaGatheringSystem(System):

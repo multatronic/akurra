@@ -83,6 +83,12 @@ akurra:
                 frame_offset: 1
                 loop: true
 
+      projectile:
+        components:
+          position: ~
+          sprite:
+            image: sprites/projectiles/test_projectile.png
+
       cursor:
         components:
           position: ~
