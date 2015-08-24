@@ -34,6 +34,7 @@ setup(
         'akurra.modules': [
             'display = akurra.display:DisplayModule',
             'debug = akurra.debug:DebugModule',
+            'audio = akurra.audio:AudioModule',
             'keyboard = akurra.keyboard:KeyboardModule',
             'mouse = akurra.mouse:MouseModule',
             'UI = akurra.ui:UIModule'

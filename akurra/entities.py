@@ -9,7 +9,7 @@ from injector import inject
 from .locals import *  # noqa
 from .assets import SpriteAnimation
 from .events import TickEvent, EntityMoveEvent, EventManager, EntitySpellCastEvent
-from .audio import AudioManager
+from .audio import AudioModule
 from .utils import ContainerAware, map_point_to_screen, vector_between
 from .assets import AssetManager
 
@@ -898,7 +898,7 @@ class PlayerTerrainSoundSystem(System):
     def __init__(self):
         """Constructor."""
         super().__init__()
-        self.audio = self.container.get(AudioManager)
+        self.audio = self.container.get(AudioModule)
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""

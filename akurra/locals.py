@@ -19,7 +19,6 @@ ModuleEntryPointGroup = Key('ModuleEntryPointGroup')
 
 # Display
 DisplayClock = Key('DisplayClock')
-DisplayMaxFPS = Key('DisplayMaxFPS')
 
 # Events
 EventPollTimeout = Key('EventPollTimeout')
@@ -34,8 +33,3 @@ EntityTemplates = Key('EntityTemplates')
 
 # Session
 SessionFilePath = Key('SessionFilePath')
-
-# Audio
-AudioMasterVolume = Key('AudioMasterVolume')
-AudioBackgroundMusicVolume = Key('AudioBackgroundMusicVolume')
-AudioSpecialEffectsVolume = Key('AudioSpecialEffectsVolume')

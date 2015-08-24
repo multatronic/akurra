@@ -23,7 +23,6 @@ from .assets import AssetManager
 from .entities import EntityManager
 from .session import SessionManager
 from .items import ItemManager
-from .audio import AudioManager
 from .utils import get_data_path
 
 from .demo import DemoIntroScreen, DemoGameState
@@ -73,7 +72,6 @@ def build_container(binder):
     binder.bind(ModuleEntryPointGroup, to=cfg.get('akurra.modules.entry_point_group', 'akurra.modules'))
 
     # Display
-    binder.bind(DisplayMaxFPS, to=cfg.get('akurra.display.max_fps', 60))
     binder.bind(DisplayClock, to=pygame.time.Clock, scope=singleton)
 
     # Events
@@ -98,12 +96,6 @@ def build_container(binder):
                                                            'akurra.entities.components'))
     binder.bind(EntityTemplates, to=cfg.get('akurra.entities.templates', {}))
 
-    # Audio
-    binder.bind(AudioManager, scope=singleton)
-    binder.bind(AudioMasterVolume, to=cfg.get('akurra.audio.master.volume', 0.75))
-    binder.bind(AudioBackgroundMusicVolume, to=cfg.get('akurra.audio.background_music.volume', 1.0))
-    binder.bind(AudioSpecialEffectsVolume, to=cfg.get('akurra.audio.special_effects.volume', 1.0))
-
     # Items
     binder.bind(ItemManager, scope=singleton)
 
@@ -119,6 +111,10 @@ class Akurra:
     def start(self):
         """Start."""
         logger.debug('Starting..')
+
+        self.configuration = self.container.get(Configuration)
+        self.loop_wait_millis = self.configuration.get('akurra.core.loop_wait_millis', 5)
+        self.max_fps = self.configuration.get('akurra.display.max_fps', 60)
 
         self.modules.load()
         self.entities.start()
@@ -140,7 +136,7 @@ class Akurra:
             delta_time = self.clock.tick(self.max_fps) / 1000
             self.events.dispatch(TickEvent(delta_time=delta_time))
 
-            pygame.time.wait(5)
+            pygame.time.wait(self.loop_wait_millis)
 
         self.stop()
 
@@ -163,10 +159,8 @@ class Akurra:
     @inject(modules=ModuleManager, events=EventManager,
             states=StateManager,
             entities=EntityManager, log_level=ArgLogLevel,
-            clock=DisplayClock, max_fps=DisplayMaxFPS,
-            shutdown=ShutdownFlag)
-    def __init__(self, modules, events, states, entities, clock, max_fps, shutdown,
-                 log_level):
+            clock=DisplayClock, shutdown=ShutdownFlag)
+    def __init__(self, modules, events, states, entities, clock, shutdown, log_level):
         """Constructor."""
         configure_logging(log_level=log_level)
         logger.info('Initializing..')
@@ -179,7 +173,6 @@ class Akurra:
         self.states = states
 
         self.clock = clock
-        self.max_fps = max_fps
 
         # Handle shutdown signals properly
         signal.signal(signal.SIGINT, self.handle_signal)
