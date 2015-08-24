@@ -1,6 +1,5 @@
 """Main module."""
 import os
-import sys
 import pygame
 import signal
 import logging
@@ -28,7 +27,6 @@ from .utils import get_data_path
 from .demo import DemoIntroScreen, DemoGameState
 
 
-DEBUG = 'debug' in sys.argv
 os.chdir(os.path.dirname(os.path.dirname(__file__)))
 logger = logging.getLogger(__name__)
 
@@ -39,8 +37,10 @@ def build_container(binder):
     """Build a service container by binding dependencies to an injector."""
     # Parse command-line arguments and set required variables
     parser = argparse.ArgumentParser(description='Run the Akurra game engine.')
-    parser.add_argument('--log-level', type=str, choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'INSANE'],
-                        default='INFO')
+    parser.add_argument('-l', '--log-level', type=str,
+                        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'INSANE'],
+                        default='INFO', help='set the log level')
+    parser.add_argument('-d', '--debug', action='store_true', help='toggle debugging')
     args = parser.parse_args()
 
     binder.bind(ArgLogLevel, to=args.log_level)
@@ -50,7 +50,7 @@ def build_container(binder):
 
     # General
     binder.bind(ShutdownFlag, to=Event())
-    binder.bind(DebugFlag, to=Value('B', DEBUG))
+    binder.bind(DebugFlag, to=Value('B', args.debug))
 
     # Configuration
     CFG_FILES = [
@@ -156,10 +156,8 @@ class Akurra:
         logger.debug('Received signal, setting shutdown flag [signal=%s]', signum)
         self.shutdown.set()
 
-    @inject(modules=ModuleManager, events=EventManager,
-            states=StateManager,
-            entities=EntityManager, log_level=ArgLogLevel,
-            clock=DisplayClock, shutdown=ShutdownFlag)
+    @inject(modules=ModuleManager, events=EventManager, states=StateManager,
+            entities=EntityManager, log_level=ArgLogLevel, clock=DisplayClock, shutdown=ShutdownFlag)
     def __init__(self, modules, events, states, entities, clock, shutdown, log_level):
         """Constructor."""
         configure_logging(log_level=log_level)
