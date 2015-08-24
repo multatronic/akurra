@@ -324,7 +324,6 @@ class DisplayModule(Module):
         self.keyboard = self.container.get(KeyboardModule)
 
         self.resolution = self.configuration.get('akurra.display.resolution', [0, 0])
-        self.flags = self.configuration.get('akurra.display.')
         self.caption = self.configuration.get('akurra.display.caption', 'Akurra DEV')
 
         self.flags = self.configuration.get('akurra.display.flags', ['DOUBLEBUF', 'HWSURFACE', 'RESIZABLE'])
