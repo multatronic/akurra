@@ -4,24 +4,13 @@ from injector import Key
 # Args
 ArgLogLevel = Key('ArgLogLevel')
 
-# General
+# General shared flags and objects
 ShutdownFlag = Key('ShutdownFlag')
-
-# Debug
 DebugFlag = Key('DebugFlag')
-DebugToggleKey = Key('DebugToggleKey')
+DisplayClock = Key('DisplayClock')
 
 # Configuration
 Configuration = Key('Configuration')
-
-# Modules
-ModuleEntryPointGroup = Key('ModuleEntryPointGroup')
-
-# Display
-DisplayClock = Key('DisplayClock')
-
-# Events
-EventPollTimeout = Key('EventPollTimeout')
 
 # Assets
 AssetBasePath = Key('AssetBasePath')
