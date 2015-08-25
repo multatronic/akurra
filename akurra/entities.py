@@ -434,11 +434,11 @@ class VelocityComponent(Component):
 
     type = 'velocity'
 
-    def __init__(self, velocity=[0, 0], max=200, **kwargs):
+    def __init__(self, direction=[0, 0], speed=200, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
-        self.velocity = velocity
-        self.max = max
+        self.direction = direction
+        self.speed = speed
 
 
 class CharacterComponent(Component):
@@ -702,10 +702,10 @@ class VelocitySystem(System):
         """Have an entity updated by the system."""
         for x in self.input_velocities.keys():
             if entity.components['input'].input[x]:
-                entity.components['velocity'].velocity = self.input_velocities[x]
+                entity.components['velocity'].direction = self.input_velocities[x]
                 return
 
-        entity.components['velocity'].velocity = [0, 0]
+        entity.components['velocity'].direction = [0, 0]
 
 
 class MovementSystem(System):
@@ -725,24 +725,24 @@ class MovementSystem(System):
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         entity.components['sprite'].state = EntityState.MOVING if \
-            list(filter(None, entity.components['velocity'].velocity)) else EntityState.STATIONARY
+            list(filter(None, entity.components['velocity'].direction)) else EntityState.STATIONARY
 
         # Do nothing if there is no velocity
-        if not entity.components['velocity'].velocity[0] and not entity.components['velocity'].velocity[1]:
+        if not entity.components['velocity'].direction[0] and not entity.components['velocity'].direction[1]:
             return
 
         entity.components['position'].old = list(entity.components['position'].primary_position)
 
-        entity.components['position'].primary_position[0] += entity.components['velocity'].velocity[0] * \
-            entity.components['velocity'].max * event.delta_time
-        entity.components['position'].primary_position[1] += entity.components['velocity'].velocity[1] * \
-            entity.components['velocity'].max * event.delta_time
+        entity.components['position'].primary_position[0] += entity.components['velocity'].direction[0] * \
+            entity.components['velocity'].speed * event.delta_time
+        entity.components['position'].primary_position[1] += entity.components['velocity'].direction[1] * \
+            entity.components['velocity'].speed * event.delta_time
 
         # Calculate and set direction
-        direction = EntityDirection.NORTH.value if entity.components['velocity'].velocity[1] < 0 \
-            else EntityDirection.SOUTH.value if entity.components['velocity'].velocity[1] else 0
-        direction |= EntityDirection.EAST.value if entity.components['velocity'].velocity[0] > 0 \
-            else EntityDirection.WEST.value if entity.components['velocity'].velocity[0] else 0
+        direction = EntityDirection.NORTH.value if entity.components['velocity'].direction[1] < 0 \
+            else EntityDirection.SOUTH.value if entity.components['velocity'].direction[1] else 0
+        direction |= EntityDirection.EAST.value if entity.components['velocity'].direction[0] > 0 \
+            else EntityDirection.WEST.value if entity.components['velocity'].direction[0] else 0
 
         entity.components['sprite'].direction = EntityDirection(direction)
 
@@ -950,8 +950,8 @@ class SpellCastingSystem(System):
         logger.debug('spawning fireball')
         fireball = self.entities.create_entity_from_template('projectile')
         fireball.components['position'].layer_position = event.origin
-        fireball.components['velocity'].velocity = vector_between(event.origin, event.target, True)
-        fireball.components['velocity'].max = 150
+        fireball.components['velocity'].direction = vector_between(event.origin, event.target, True)
+        fireball.components['velocity'].speed = 150
 
         self.layer.add_entity(fireball)
 
