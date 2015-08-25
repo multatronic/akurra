@@ -702,9 +702,7 @@ class VelocitySystem(System):
         """Have an entity updated by the system."""
         for x in self.input_velocities.keys():
             if entity.components['input'].input[x]:
-                entity.components['velocity'].velocity =  \
-                    [y * entity.components['velocity'].max for y in self.input_velocities[x]]
-
+                entity.components['velocity'].velocity = self.input_velocities[x]
                 return
 
         entity.components['velocity'].velocity = [0, 0]
@@ -736,9 +734,9 @@ class MovementSystem(System):
         entity.components['position'].old = list(entity.components['position'].primary_position)
 
         entity.components['position'].primary_position[0] += entity.components['velocity'].velocity[0] * \
-            event.delta_time
+            entity.components['velocity'].max * event.delta_time
         entity.components['position'].primary_position[1] += entity.components['velocity'].velocity[1] * \
-            event.delta_time
+            entity.components['velocity'].max * event.delta_time
 
         # Calculate and set direction
         direction = EntityDirection.NORTH.value if entity.components['velocity'].velocity[1] < 0 \
@@ -952,7 +950,9 @@ class SpellCastingSystem(System):
         logger.debug('spawning fireball')
         fireball = self.entities.create_entity_from_template('projectile')
         fireball.components['position'].layer_position = event.origin
-        fireball.components['velocity'].velocity = vector_between(event.origin, event.target)
+        fireball.components['velocity'].velocity = vector_between(event.origin, event.target, True)
+        fireball.components['velocity'].max = 150
+
         self.layer.add_entity(fireball)
 
 
