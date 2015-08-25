@@ -671,8 +671,11 @@ class PlayerInputSystem(System):
         else:
             entity.components['input'].input[self.action_inputs['mouse'][event.action]] = \
                 event.original_event['type'] == pygame.MOUSEBUTTONDOWN
-            self.events.dispatch(EntitySpellCastEvent(entity.id, entity.components['position'].primary_position,
-                                 event.original_event['pos']))
+
+            # TODO: get exact player sprite position, preferably using position component
+            # origin = entity.components['position'].primary_position
+            origin = entity.components['sprite'].rect.center
+            self.events.dispatch(EntitySpellCastEvent(entity.id, origin, event.original_event['pos']))
 
 
 class VelocitySystem(System):
@@ -946,9 +949,10 @@ class SpellCastingSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        logger.debug('spawning fireball with vector: %s', vector_between(event.origin, event.target))
+        logger.debug('spawning fireball')
         fireball = self.entities.create_entity_from_template('projectile')
         fireball.components['position'].layer_position = event.origin
+        fireball.components['velocity'].velocity = vector_between(event.origin, event.target)
         self.layer.add_entity(fireball)
 
 

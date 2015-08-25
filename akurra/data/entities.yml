@@ -86,6 +86,7 @@ akurra:
       projectile:
         components:
           position: ~
+          velocity: ~
           sprite:
             image: sprites/projectiles/test_projectile.png
 
