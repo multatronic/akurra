@@ -93,7 +93,12 @@ akurra:
         components:
           position: ~
 
+    components:
+      entry_point_group: akurra.entities.components
+
     systems:
+      entry_point_group: akurra.entities.systems
+
       mana_gathering:
         default_regeneration_rate: 1
         default_gather_amount: 1

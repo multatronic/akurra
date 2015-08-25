@@ -9,7 +9,7 @@ from .entities import EntityManager
 from .session import SessionManager
 from .keyboard import KeyboardModule
 from .states import GameState, StateManager
-from .audio import AudioManager
+from .audio import AudioModule
 from .locals import *  # noqa
 
 
@@ -80,7 +80,7 @@ class DemoGameState(GameState):
 
         self.events = self.container.get(EventManager)
         self.display = self.container.get(DisplayModule)
-        self.audio = self.container.get(AudioManager)
+        self.audio = self.container.get(AudioModule)
         self.assets = self.container.get(AssetManager)
         self.entities = self.container.get(EntityManager)
         self.session = self.container.get(SessionManager)

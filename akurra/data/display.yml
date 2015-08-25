@@ -1,0 +1,9 @@
+akurra:
+    display:
+        max_fps: 60
+        caption: Akurra DEV
+        resolution: [0, 0]
+        flags:
+            - DOUBLEBUF
+            - HWSURFACE
+            - RESIZABLE

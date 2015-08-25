@@ -1,35 +1,33 @@
 """Audio module."""
 import logging
 import pygame
-from injector import inject
 
 from .assets import AssetManager
+from .modules import Module
 from .locals import *  # noqa
 
 
 logger = logging.getLogger(__name__)
 
 
-class AudioManager:
+class AudioModule(Module):
 
     """
-    Audio manager.
+    Audio module.
 
     The audio manager is in charge of playing music and sound.
 
     """
 
-    @inject(assets=AssetManager, master_volume=AudioMasterVolume, bgm_volume=AudioBackgroundMusicVolume,
-            sfx_volume=AudioSpecialEffectsVolume)
-    def __init__(self, assets, master_volume=1.0, bgm_volume=1.0, sfx_volume=1.0):
+    def __init__(self):
         """Constructor."""
-        logger.debug('Initializing AudioManager')
+        self.configuration = self.container.get(Configuration)
+        self.assets = self.container.get(AssetManager)
 
-        self.master_volume = master_volume
-        self.bgm_volume = bgm_volume
-        self.sfx_volume = sfx_volume
+        self.master_volume = self.configuration.get('akurra.audio.master.volume', 1.0)
+        self.bgm_volume = self.configuration.get('akurra.audio.background_music.volume', 1.0)
+        self.sfx_volume = self.configuration.get('akurra.audio.special_effects.volume', 1.0)
 
-        self.assets = assets
         self.channels = [False for x in range(0, 8)]
         self.sounds = {}
         self.music = {}

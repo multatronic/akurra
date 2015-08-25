@@ -1,0 +1,3 @@
+akurra:
+    core:
+        loop_wait_millis: 2

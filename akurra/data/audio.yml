@@ -1,0 +1,10 @@
+akurra:
+    audio:
+        master:
+            volume: 0.75
+
+        background_music:
+            volume: 1.0
+
+        special_effects:
+            volume: 1.0
