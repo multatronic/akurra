@@ -2,25 +2,26 @@
 import logging
 import pickle
 import os
-from injector import inject
 
 from .locals import *  # noqa
+from .utils import ContainerAware
 
 
 logger = logging.getLogger(__name__)
 
 
-class SessionManager:
+class SessionManager(ContainerAware):
 
     """Manager class for handling session variables."""
 
-    @inject(file_path=SessionFilePath)
-    def __init__(self, file_path='~/.config/akurra/session/main.sav'):
+    def __init__(self):
         """Constructor."""
         logger.debug('Initializing SessionManager')
 
+        self.configuration = self.container.get(Configuration)
+        self.file_path = self.configuration.get('akurra.session.file_path', '~/.config/akurra/session/main.sav')
+
         self.data = {}
-        self.file_path = os.path.expanduser(file_path)
 
         if not os.path.isfile(self.file_path):
             os.makedirs(os.path.dirname(self.file_path))

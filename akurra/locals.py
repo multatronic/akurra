@@ -11,6 +11,3 @@ DisplayClock = Key('DisplayClock')
 
 # Configuration
 Configuration = Key('Configuration')
-
-# Session
-SessionFilePath = Key('SessionFilePath')
