@@ -20,6 +20,7 @@ class SessionManager(ContainerAware):
 
         self.configuration = self.container.get(Configuration)
         self.file_path = self.configuration.get('akurra.session.file_path', '~/.config/akurra/session/main.sav')
+        self.file_path = os.path.expanduser(self.file_path)
 
         self.data = {}
 
