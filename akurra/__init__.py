@@ -70,6 +70,8 @@ def build_container(binder):
     # Core components
     binder.bind(ModuleManager, scope=singleton)
     binder.bind(EventManager, scope=singleton)
+    binder.bind(EntityManager, scope=singleton)
+    binder.bind(AssetManager, scope=singleton)
 
     # @TODO Anything under this line may or may not require a module
     # ----
@@ -79,18 +81,6 @@ def build_container(binder):
     # Session
     binder.bind(SessionManager, scope=singleton)
     binder.bind(SessionFilePath, to=cfg.get('akurra.session.file_path', '~/.config/akurra/session/main.sav'))
-
-    # Assets
-    binder.bind(AssetManager, scope=singleton)
-    binder.bind(AssetBasePath, to=cfg.get('akurra.assets.base_path', 'assets'))
-
-    # Entities
-    binder.bind(EntityManager, scope=singleton)
-    binder.bind(EntitySystemEntryPointGroup, to=cfg.get('akurra.entities.systems.entry_point_group',
-                                                        'akurra.entities.systems'))
-    binder.bind(EntityComponentEntryPointGroup, to=cfg.get('akurra.entities.components.entry_point_group',
-                                                           'akurra.entities.components'))
-    binder.bind(EntityTemplates, to=cfg.get('akurra.entities.templates', {}))
 
     # Demo
     binder.bind(DemoIntroScreen)
