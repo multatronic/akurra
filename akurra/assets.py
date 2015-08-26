@@ -4,7 +4,7 @@ import logging
 import pygame
 import pyscroll
 import pytmx
-from injector import inject
+
 from .locals import *  # noqa
 from .utils import ContainerAware
 
@@ -12,9 +12,16 @@ from .utils import ContainerAware
 logger = logging.getLogger(__name__)
 
 
-class AssetManager:
+class AssetManager(ContainerAware):
 
     """Asset manager."""
+
+    def __init__(self):
+        """Constructor."""
+        logger.debug('Initializing AssetManager')
+
+        self.configuration = self.container.get(Configuration)
+        self.base_path = self.configuration.get('akurra.assets.base_path', 'assets')
 
     def get_path(self, asset_path):
         """
@@ -76,13 +83,6 @@ class AssetManager:
         map_data = pyscroll.data.TiledMapData(tmx_data)
 
         return map_data
-
-    @inject(base_path=AssetBasePath)
-    def __init__(self, base_path='assets'):
-        """Constructor."""
-        logger.debug('Initializing AssetManager [base_path=%s]', base_path)
-
-        self.base_path = base_path
 
 
 class SpriteAnimation(ContainerAware):

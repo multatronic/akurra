@@ -4,7 +4,6 @@ import pygame
 from uuid import uuid4
 from enum import Enum
 from pkg_resources import iter_entry_points
-from injector import inject
 
 from .locals import *  # noqa
 from .assets import SpriteAnimation
@@ -128,25 +127,24 @@ class Entity(pygame.sprite.Sprite):
         self.entities.entities_components[component.type].pop(self.id, None)
 
 
-class EntityManager:
+class EntityManager(ContainerAware):
 
     """Entity manager."""
 
-    @inject(components_entry_point_group=EntityComponentEntryPointGroup,
-            systems_entry_point_group=EntitySystemEntryPointGroup,
-            entity_templates=EntityTemplates)
-    def __init__(self, components_entry_point_group='akurra.entities.components',
-                 systems_entry_point_group='akurra.entities.systems',
-                 entity_templates={}):
+    def __init__(self):
         """Constructor."""
-        logger.debug('Initializing EntityManager [components_group=%s, systems_group=%s]',
-                     components_entry_point_group, systems_entry_point_group)
-        self.components_entry_point_group = components_entry_point_group
-        self.systems_entry_point_group = systems_entry_point_group
+        logger.debug('Initializing EntityManager')
+
+        self.configuration = self.container.get(Configuration)
+
+        self.components_entry_point_group = self.configuration.get('akurra.entities.components.entry_point_group',
+                                                                   'akurra.entities.components')
+        self.systems_entry_point_group = self.configuration.get('akurra.entities.systems.entry_point_group',
+                                                                'akurra.entities.systems')
+        self.entity_templates = self.configuration.get('akurra.entities.templates', {})
 
         self.entities = {}
         self.entities_components = {}
-        self.entity_templates = entity_templates
 
         self.components = {}
         self.systems = {}
