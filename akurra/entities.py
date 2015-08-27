@@ -1053,7 +1053,7 @@ class ManaReplenishmentSystem(System):
         replenishment_amount = self.default_replenishment_amount * event.delta_time
 
         # Loop over all tiles which require replenishment, and replenish them
-        for key, tile_mana in layer.mana_replenishment_map.items():
+        for key, tile_mana in layer.mana_replenishment_map.copy().items():
             mana_data = layer.mana_map[tile_mana[0]][tile_mana[1]][tile_mana[2]][tile_mana[3]]
             mana_data[0] += replenishment_amount
 
