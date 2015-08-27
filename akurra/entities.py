@@ -295,6 +295,15 @@ class EntityManager(ContainerAware):
 
         return [self.entities[x] for x in intersection]
 
+    def find_entity_by_id_and_components(self, entity_id, components):
+        """Find an entity by its ID if it is made up of specific components."""
+        entity = self.find_entity_by_id(entity_id)
+
+        if (not components) or (not entity):
+            return None
+
+        return entity if False not in [x in entity.components for x in components] else None
+
     def create_entity_from_template(self, template_name):
         """Create an entity from a template."""
         template = self.entity_templates[template_name]
@@ -592,6 +601,13 @@ class System(ContainerAware):
         for entity in self.entities.find_entities_by_components(self.requirements):
             self.update(entity, event)
 
+    def on_entity_event(self, event):
+        """Handle an event which contains a reference to an entity."""
+        entity = self.entities.find_entity_by_id_and_components(event.entity_id, self.requirements)
+
+        if entity:
+            self.update(entity, event)
+
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         raise NotImplementedError()
@@ -614,6 +630,7 @@ class SpriteRectPositionCorrectionSystem(System):
         """Have an entity updated by the system."""
         if not entity.components['position'].old:
             entity.components['position'].old = list(entity.components['position'].primary_position)
+            self.events.dispatch(EntityMoveEvent(entity.id))
 
         # pygame.sprite.Sprite logic
         entity.components['sprite'].rect.topleft = list(entity.components['position'].primary_position)
@@ -763,12 +780,8 @@ class PositioningSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: ['on_event', 10]
+        EntityMoveEvent: ['on_entity_event', 10]
     }
-
-    # def on_event(self, event):
-    #     """Handle an event."""
-    #     self.update(self.entities.find_entity_by_id(event.entity_id), event)
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
@@ -846,7 +859,7 @@ class CollisionSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: ['on_event', 12]
+        EntityMoveEvent: ['on_entity_event', 12]
     }
 
     def update(self, entity, event=None):
@@ -890,7 +903,7 @@ class PlayerTerrainSoundSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: ['on_event', 13]
+        EntityMoveEvent: ['on_entity_event', 13]
     }
 
     def __init__(self):
@@ -925,7 +938,7 @@ class SpellCastingSystem(System):
     ]
 
     event_handlers = {
-        EntitySpellCastEvent: ['on_event', 10]
+        EntitySpellCastEvent: ['on_entity_event', 10]
     }
 
     def update(self, entity, event=None):
