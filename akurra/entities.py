@@ -104,12 +104,12 @@ class EntityInputChangeEvent(EntityEvent):
 
     """Entity input change event."""
 
-    def __init__(self, entity_id, input, state):
+    def __init__(self, entity_id, input, input_state):
         """Constructor."""
         super().__init__(entity_id)
 
         self.input = input
-        self.state = state
+        self.input_state = input_state
 
 
 class Entity(pygame.sprite.Sprite):
@@ -991,33 +991,36 @@ class SkillUsageSystem(System):
     ]
 
     event_handlers = {
-        TickEvent: ['on_event', 10]
+        EntityInputChangeEvent: ['on_entity_event', 10]
     }
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        # Only proceed if the entity skill usage input is active
-        if entity.components['input'].input[EntityInput.SKILL_USAGE]:
-            fireball = self.entities.create_entity_from_template('projectile')
+        # Only proceed if we're here to use a skill
+        if (event.input != EntityInput.SKILL_USAGE) or (event.input_state is False):
+            return
 
-            layer = entity.components['layer'].layer
+        fireball = self.entities.create_entity_from_template('projectile')
 
-            source = entity.components['physics'].collision_core.center
-            target = screen_point_to_layer(layer.map_layer, entity.components['input'].input[EntityInput.TARGET_POINT])
-            direction = unit_vector_between(source, target)
+        layer = entity.components['layer'].layer
 
-            fireball.components['position'].primary_position = source
-            fireball.components['velocity'].direction = direction
-            fireball.components['velocity'].speed = 150
+        source = entity.components['physics'].collision_core.center
+        target = screen_point_to_layer(layer.map_layer, entity.components['input'].input[EntityInput.TARGET_POINT])
+        direction = unit_vector_between(source, target)
 
-            layer.add_entity(fireball)
+        fireball.components['position'].primary_position = source
+        fireball.components['velocity'].direction = direction
+        fireball.components['velocity'].speed = 150
 
-            # Set the input to false so we don't accidentally use a skill twice
-            # @TODO Remove this, because it sucks
-            entity.components['input'].input[EntityInput.SKILL_USAGE] = False
+        layer.add_entity(fireball)
 
-            # Trigger a skill usage event
-            self.events.dispatch(EntitySkillUsageEvent(entity.id))
+        # Set the input to false so we don't accidentally use a skill twice
+        # @TODO Remove this, because it sucks
+        entity.components['input'].input[EntityInput.SKILL_USAGE] = False
+
+        # Trigger a skill usage event
+        # @TODO Add skill ID and state here
+        self.events.dispatch(EntitySkillUsageEvent(entity.id))
 
 
 class ManaGatheringSystem(System):
