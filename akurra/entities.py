@@ -950,7 +950,6 @@ class SpellCastingSystem(System):
         self.display = self.container.get(DisplayModule)
         self.layer = EntityDisplayLayer(flags=pygame.SRCALPHA, z_index=109)
 
-
     def start(self):
         """Start the system."""
         super().start()
@@ -965,7 +964,6 @@ class SpellCastingSystem(System):
         fireball.components['velocity'].speed = 150
 
         self.layer.add_entity(fireball)
-
 
 
 class ManaGatheringSystem(System):
