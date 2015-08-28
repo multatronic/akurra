@@ -561,7 +561,8 @@ class InputComponent(Component):
             EntityInput.MOVE_DOWN: False,
             EntityInput.MOVE_LEFT: False,
             EntityInput.MOVE_RIGHT: False,
-            EntityInput.MANA_GATHER: False
+            EntityInput.MANA_GATHER: False,
+            EntityInput.SKILL_USAGE: False
         }
 
 
