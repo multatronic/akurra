@@ -117,8 +117,6 @@ class Entity(pygame.sprite.Sprite):
         self.id = id if id else uuid4()
         self.components = {}
 
-        # @DO Have the EntityManager inject the container to avoid overhead?
-        # @DO Maybe use a ContainerComponent with a static container inside?
         from . import container
         self.entities = container.get(EntityManager)
 
@@ -623,6 +621,9 @@ class System(ContainerAware):
         """Constructor."""
         self.events = self.container.get(EventManager)
         self.entities = self.container.get(EntityManager)
+
+        # Order requirements, this makes result caching more efficient
+        self.requirements.sort()
 
     def start(self):
         """Start the system."""
