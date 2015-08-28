@@ -356,6 +356,7 @@ class HealthComponent(Component):
     def __init__(self, min=0, max=100, health=1, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
         self.min = min
         self.max = max
         self.health = health
@@ -379,6 +380,7 @@ class ManaComponent(Component):
                     with values indexed by mana type, or as an integer value.
         """
         super().__init__(**kwargs)
+
         self.mana = mana
         self.max = max
 
@@ -432,6 +434,7 @@ class PositionComponent(Component):
     def __init__(self, screen_position=[0, 0], layer_position=[0, 0], map_position=[0, 0], primary='layer', **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
         self.screen_position = screen_position
         self.layer_position = layer_position
         self.map_position = map_position
@@ -449,6 +452,7 @@ class VelocityComponent(Component):
     def __init__(self, direction=[0, 0], speed=200, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
         self.direction = direction
         self.speed = speed
 
@@ -462,6 +466,7 @@ class CharacterComponent(Component):
     def __init__(self, name, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
         self.name = name
 
 
@@ -488,6 +493,8 @@ class SpriteComponent(Component):
     def __init__(self, image=None, sprite_size=[0, 0], animations={}, direction=EntityDirection.SOUTH,
                  state=EntityState.STATIONARY, **kwargs):
         """Constructor."""
+        super().__init__(**kwargs)
+
         self.direction = direction
         self.state = state
         self.sprite_size = sprite_size
@@ -515,8 +522,6 @@ class SpriteComponent(Component):
 
         self.rect = self.image.get_rect()
 
-        super().__init__(**kwargs)
-
 
 class InputComponent(Component):
 
@@ -527,6 +532,7 @@ class InputComponent(Component):
     def __init__(self, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
         self.input = {
             EntityInput.MOVE_UP: False,
             EntityInput.MOVE_DOWN: False,
@@ -545,6 +551,7 @@ class PhysicsComponent(Component):
     def __init__(self, core_size=[0, 0], core_offset=[0, 0], **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
         self.collision_core = pygame.Rect([0, 0], core_size)
         self.collision_core_offset = core_offset
 
@@ -565,6 +572,7 @@ class LayerComponent(Component):
     def __init__(self, layer=None, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
         self.layer = layer
 
 
