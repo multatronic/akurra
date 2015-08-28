@@ -67,30 +67,13 @@ def build_container(binder):
     cfg = ConfigurationManager.load(CFG_FILES + [get_data_path('*.yml')])
     binder.bind(Configuration, to=cfg)
 
-    # Core components
+    # Core components (@TODO some of these may or may not require modules)
     binder.bind(ModuleManager, scope=singleton)
     binder.bind(EventManager, scope=singleton)
-
-    # @TODO Anything under this line may or may not require a module
-    # ----
-    # State manager
-    binder.bind(StateManager, scope=singleton)
-
-    # Session
-    binder.bind(SessionManager, scope=singleton)
-    binder.bind(SessionFilePath, to=cfg.get('akurra.session.file_path', '~/.config/akurra/session/main.sav'))
-
-    # Assets
-    binder.bind(AssetManager, scope=singleton)
-    binder.bind(AssetBasePath, to=cfg.get('akurra.assets.base_path', 'assets'))
-
-    # Entities
     binder.bind(EntityManager, scope=singleton)
-    binder.bind(EntitySystemEntryPointGroup, to=cfg.get('akurra.entities.systems.entry_point_group',
-                                                        'akurra.entities.systems'))
-    binder.bind(EntityComponentEntryPointGroup, to=cfg.get('akurra.entities.components.entry_point_group',
-                                                           'akurra.entities.components'))
-    binder.bind(EntityTemplates, to=cfg.get('akurra.entities.templates', {}))
+    binder.bind(AssetManager, scope=singleton)
+    binder.bind(SessionManager, scope=singleton)
+    binder.bind(StateManager, scope=singleton)
 
     # Demo
     binder.bind(DemoIntroScreen)
@@ -100,6 +83,29 @@ def build_container(binder):
 class Akurra:
 
     """Base game class."""
+
+    @inject(configuration=Configuration, modules=ModuleManager, events=EventManager, states=StateManager,
+            entities=EntityManager, log_level=ArgLogLevel, clock=DisplayClock, shutdown=ShutdownFlag)
+    def __init__(self, log_level, configuration, shutdown, clock, modules, events, states, entities):
+        """Constructor."""
+        configure_logging(log_level=log_level)
+        logger.info('Initializing..')
+
+        self.configuration = configuration
+        self.shutdown = shutdown
+        self.clock = clock
+
+        self.modules = modules
+        self.events = events
+        self.entities = entities
+        self.states = states
+
+        self.loop_wait_millis = self.configuration.get('akurra.core.loop_wait_millis', 5)
+        self.max_fps = self.configuration.get('akurra.display.max_fps', 60)
+
+        # Handle shutdown signals properly
+        signal.signal(signal.SIGINT, self.handle_signal)
+        signal.signal(signal.SIGTERM, self.handle_signal)
 
     def start(self):
         """Start."""
@@ -150,29 +156,6 @@ class Akurra:
         """Handle a shutdown signal."""
         logger.debug('Received signal, setting shutdown flag [signal=%s]', signum)
         self.shutdown.set()
-
-    @inject(configuration=Configuration, modules=ModuleManager, events=EventManager, states=StateManager,
-            entities=EntityManager, log_level=ArgLogLevel, clock=DisplayClock, shutdown=ShutdownFlag)
-    def __init__(self, log_level, configuration, shutdown, clock, modules, events, states, entities):
-        """Constructor."""
-        configure_logging(log_level=log_level)
-        logger.info('Initializing..')
-
-        self.configuration = configuration
-        self.shutdown = shutdown
-        self.clock = clock
-
-        self.modules = modules
-        self.events = events
-        self.entities = entities
-        self.states = states
-
-        self.loop_wait_millis = self.configuration.get('akurra.core.loop_wait_millis', 5)
-        self.max_fps = self.configuration.get('akurra.display.max_fps', 60)
-
-        # Handle shutdown signals properly
-        signal.signal(signal.SIGINT, self.handle_signal)
-        signal.signal(signal.SIGTERM, self.handle_signal)
 
 
 def main():

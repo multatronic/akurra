@@ -3,8 +3,31 @@ import os
 import math
 import pygame
 import collections
+import functools
 
 
+def memoize(obj):
+    """
+    Decorator which memoizes a given function or method.
+
+    See also: https://wiki.python.org/moin/PythonDecoratorLibrary#Memoize .
+
+    """
+    cache = obj.cache = {}
+
+    @functools.wraps(obj)
+    def memoizer(*args, **kwargs):
+        key = str(args) + str(kwargs)
+
+        if key not in cache:
+            cache[key] = obj(*args, **kwargs)
+
+        return cache[key]
+
+    return memoizer
+
+
+@memoize
 def hr_event_type(event_type):
     """Convert an event type to human readable format."""
     if type(event_type) is int:
@@ -13,6 +36,7 @@ def hr_event_type(event_type):
     return event_type
 
 
+@memoize
 def hr_key_id(key_id):
     """Convert a key identifier to human readable format."""
     if type(key_id) is int:
@@ -21,6 +45,7 @@ def hr_key_id(key_id):
     return key_id
 
 
+@memoize
 def hr_button_id(button_id):
     """Convert a button identifier to human readable format."""
     buttons = {
@@ -32,6 +57,7 @@ def hr_button_id(button_id):
     return buttons[button_id]
 
 
+@memoize
 def fqcn(cls):
     """Return the fully qualified class name of a class."""
     return '%s.%s' % (cls.__module__, cls.__name__)
@@ -49,6 +75,7 @@ def flatten(d, parent_key='', sep='_'):
     return dict(items)
 
 
+@memoize
 def vector_between(source, destination, unit=False):
     """Return the vector starting from source to destination."""
     vector = [destination[0] - source[0], destination[1] - source[0]]
@@ -59,6 +86,7 @@ def vector_between(source, destination, unit=False):
     return vector
 
 
+@memoize
 def distance_between(point_1, point_2):
     """Return the distance between two points."""
     return math.sqrt(math.pow(point_2[0] - point_1[0], 2) + math.pow(point_2[1] - point_1[1], 2))

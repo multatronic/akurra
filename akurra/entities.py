@@ -4,7 +4,6 @@ import pygame
 from uuid import uuid4
 from enum import Enum
 from pkg_resources import iter_entry_points
-from injector import inject
 
 from .locals import *  # noqa
 from .assets import SpriteAnimation
@@ -128,25 +127,24 @@ class Entity(pygame.sprite.Sprite):
         self.entities.entities_components[component.type].pop(self.id, None)
 
 
-class EntityManager:
+class EntityManager(ContainerAware):
 
     """Entity manager."""
 
-    @inject(components_entry_point_group=EntityComponentEntryPointGroup,
-            systems_entry_point_group=EntitySystemEntryPointGroup,
-            entity_templates=EntityTemplates)
-    def __init__(self, components_entry_point_group='akurra.entities.components',
-                 systems_entry_point_group='akurra.entities.systems',
-                 entity_templates={}):
+    def __init__(self):
         """Constructor."""
-        logger.debug('Initializing EntityManager [components_group=%s, systems_group=%s]',
-                     components_entry_point_group, systems_entry_point_group)
-        self.components_entry_point_group = components_entry_point_group
-        self.systems_entry_point_group = systems_entry_point_group
+        logger.debug('Initializing EntityManager')
+
+        self.configuration = self.container.get(Configuration)
+
+        self.components_entry_point_group = self.configuration.get('akurra.entities.components.entry_point_group',
+                                                                   'akurra.entities.components')
+        self.systems_entry_point_group = self.configuration.get('akurra.entities.systems.entry_point_group',
+                                                                'akurra.entities.systems')
+        self.entity_templates = self.configuration.get('akurra.entities.templates', {})
 
         self.entities = {}
         self.entities_components = {}
-        self.entity_templates = entity_templates
 
         self.components = {}
         self.systems = {}
@@ -296,6 +294,15 @@ class EntityManager:
         intersection = set(keys[0]).intersection(*keys)
 
         return [self.entities[x] for x in intersection]
+
+    def find_entity_by_id_and_components(self, entity_id, components):
+        """Find an entity by its ID if it is made up of specific components."""
+        entity = self.find_entity_by_id(entity_id)
+
+        if (not components) or (not entity):
+            return None
+
+        return entity if False not in [x in entity.components for x in components] else None
 
     def create_entity_from_template(self, template_name):
         """Create an entity from a template."""
@@ -594,6 +601,13 @@ class System(ContainerAware):
         for entity in self.entities.find_entities_by_components(self.requirements):
             self.update(entity, event)
 
+    def on_entity_event(self, event):
+        """Handle an event which contains a reference to an entity."""
+        entity = self.entities.find_entity_by_id_and_components(event.entity_id, self.requirements)
+
+        if entity:
+            self.update(entity, event)
+
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         raise NotImplementedError()
@@ -616,6 +630,7 @@ class SpriteRectPositionCorrectionSystem(System):
         """Have an entity updated by the system."""
         if not entity.components['position'].old:
             entity.components['position'].old = list(entity.components['position'].primary_position)
+            self.events.dispatch(EntityMoveEvent(entity.id))
 
         # pygame.sprite.Sprite logic
         entity.components['sprite'].rect.topleft = list(entity.components['position'].primary_position)
@@ -766,12 +781,8 @@ class PositioningSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: ['on_event', 10]
+        EntityMoveEvent: ['on_entity_event', 10]
     }
-
-    # def on_event(self, event):
-    #     """Handle an event."""
-    #     self.update(self.entities.find_entity_by_id(event.entity_id), event)
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
@@ -849,7 +860,7 @@ class CollisionSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: ['on_event', 12]
+        EntityMoveEvent: ['on_entity_event', 12]
     }
 
     def update(self, entity, event=None):
@@ -893,7 +904,7 @@ class PlayerTerrainSoundSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: ['on_event', 13]
+        EntityMoveEvent: ['on_entity_event', 13]
     }
 
     def __init__(self):
@@ -928,7 +939,7 @@ class SpellCastingSystem(System):
     ]
 
     event_handlers = {
-        EntitySpellCastEvent: ['on_event', 10]
+        EntitySpellCastEvent: ['on_entity_event', 10]
     }
 
     def __init__(self):
@@ -1064,7 +1075,7 @@ class ManaReplenishmentSystem(System):
         replenishment_amount = self.default_replenishment_amount * event.delta_time
 
         # Loop over all tiles which require replenishment, and replenish them
-        for key, tile_mana in layer.mana_replenishment_map.items():
+        for key, tile_mana in layer.mana_replenishment_map.copy().items():
             mana_data = layer.mana_map[tile_mana[0]][tile_mana[1]][tile_mana[2]][tile_mana[3]]
             mana_data[0] += replenishment_amount
 

@@ -11,14 +11,3 @@ DisplayClock = Key('DisplayClock')
 
 # Configuration
 Configuration = Key('Configuration')
-
-# Assets
-AssetBasePath = Key('AssetBasePath')
-
-# Entities
-EntityComponentEntryPointGroup = Key('EntityComponentEntryPointGroup')
-EntitySystemEntryPointGroup = Key('EntitySystemEntryPointGroup')
-EntityTemplates = Key('EntityTemplates')
-
-# Session
-SessionFilePath = Key('SessionFilePath')
