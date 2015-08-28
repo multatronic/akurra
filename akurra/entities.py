@@ -9,7 +9,7 @@ from .locals import *  # noqa
 from .assets import SpriteAnimation
 from .events import Event, TickEvent, EventManager
 from .audio import AudioModule
-from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, unit_vector_between
+from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, unit_vector_between, memoize
 from .assets import AssetManager
 
 logger = logging.getLogger(__name__)
@@ -130,16 +130,16 @@ class Entity(pygame.sprite.Sprite):
         self.components[component.type] = component
         component.entity = self
 
-        # Add entity to component dict in entitymanager
-        self.entities.entities_components[component.type][self.id] = self
+        # Register entity component in entitymanager
+        self.entities.add_entity_component(self, component)
 
     def remove_component(self, component):
         """Remove a component from the entity."""
         self.components.pop(component.type, None)
         component.entity = None
 
-        # Remove entity from component dict in entitymanager
-        self.entities.entities_components[component.type].pop(self.id, None)
+        # Unregister entity component in entitymanager
+        self.entities.remove_entity_component(self, component)
 
 
 class EntityManager(ContainerAware):
@@ -287,22 +287,36 @@ class EntityManager(ContainerAware):
         else:
             self.stop_system(name)
 
+    def clear_cache(self):
+        """Clear various caches."""
+        self.__class__.find_entities_by_components.cache.clear()
+        self.__class__.find_entity_by_id_and_components.cache.clear()
+
     def add_entity(self, entity):
         """Add an entity to the manager."""
         self.entities[entity.id] = entity
-
-        for key in entity.components:
-            self.entities_components[key][entity.id] = entity
+        [self.add_entity_component(entity, entity.components[x]) for x in entity.components]
 
     def remove_entity(self, entity):
         """Remove an entity from the manager."""
+        [self.remove_entity_component(entity, entity.components[x]) for x in entity.components]
         self.entities.pop(entity.id, None)
-        [self.entities_components[x].pop(entity.id, None) for x in self.entities_components]
+
+    def add_entity_component(self, entity, component):
+        """Add a component to an entity, adding it to the manager."""
+        self.entities_components[component.type][entity.id] = entity
+        self.__class__.find_entities_by_components.cache.clear()
+
+    def remove_entity_component(self, entity, component):
+        """Remove a component from an entity, removing it from the manager."""
+        self.entities_components[component.type].pop(entity.id, None)
+        self.__class__.find_entities_by_components.cache.clear()
 
     def find_entity_by_id(self, entity_id):
         """Find an entity by its ID."""
         return self.entities.get(entity_id, None)
 
+    @memoize
     def find_entities_by_components(self, components):
         """Find entities which are made up of specific components."""
         keys = [list(self.entities_components[x].keys()) for x in components]
@@ -310,6 +324,7 @@ class EntityManager(ContainerAware):
 
         return [self.entities[x] for x in intersection]
 
+    @memoize
     def find_entity_by_id_and_components(self, entity_id, components):
         """Find an entity by its ID if it is made up of specific components."""
         entity = self.find_entity_by_id(entity_id)
