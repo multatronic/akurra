@@ -9,7 +9,7 @@ from .locals import *  # noqa
 from .assets import SpriteAnimation
 from .events import Event, TickEvent, EventManager
 from .audio import AudioModule
-from .utils import ContainerAware, map_point_to_screen, vector_between
+from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, unit_vector_between
 from .assets import AssetManager
 
 logger = logging.getLogger(__name__)
@@ -46,8 +46,12 @@ class EntityInput(Enum):
     MOVE_DOWN = 1
     MOVE_LEFT = 2
     MOVE_RIGHT = 3
+
     MANA_GATHER = 4
-    ATTACK = 5
+    SKILL_USAGE = 5
+
+    TARGET_ENTITY = 6
+    TARGET_POINT = 7
 
 
 class SystemStatus(Enum):
@@ -78,16 +82,22 @@ class EntityMoveEvent(EntityEvent):
         super().__init__(entity_id)
 
 
-class EntitySkillUsageEvent(EntityEvent):
+class EntityCollisionEvent(EntityEvent):
 
-    """Entity spell casting event."""
+    """Entity collision event."""
 
-    def __init__(self, entity_id, origin, target):
+    def __init__(self, entity_id):
         """Constructor."""
         super().__init__(entity_id)
 
-        self.origin = origin
-        self.target = target
+
+class EntitySkillUsageEvent(EntityEvent):
+
+    """Entity skill usage event."""
+
+    def __init__(self, entity_id):
+        """Constructor."""
+        super().__init__(entity_id)
 
 
 class Entity(pygame.sprite.Sprite):
@@ -667,7 +677,7 @@ class PlayerInputSystem(System):
             'mana_gather': EntityInput.MANA_GATHER
         },
         'mouse': {
-            'attack': EntityInput.ATTACK
+            'skill_usage': EntityInput.SKILL_USAGE
         }
     }
 
@@ -675,9 +685,9 @@ class PlayerInputSystem(System):
         """Constructor."""
         super().__init__()
 
-        # imported here to prevent circular dependency stuff
         from .mouse import MouseModule
         from .keyboard import KeyboardModule
+
         self.keyboard = self.container.get(KeyboardModule)
         self.mouse = self.container.get(MouseModule)
 
@@ -700,10 +710,9 @@ class PlayerInputSystem(System):
             entity.components['input'].input[self.action_inputs['mouse'][event.action]] = \
                 event.original_event['type'] == pygame.MOUSEBUTTONDOWN
 
-            # TODO: get exact player sprite position, preferably using position component
-            # origin = entity.components['position'].primary_position
-            origin = entity.components['sprite'].rect.center
-            self.events.dispatch(EntitySkillUsageEvent(entity.id, origin, event.original_event['pos']))
+            # If we're handling a mouse event, also update the current target of our entity
+            # @TODO Find a better way to handle this?
+            entity.components['input'].input[EntityInput.TARGET_POINT] = event.original_event['pos']
 
 
 class VelocitySystem(System):
@@ -904,6 +913,9 @@ class CollisionSystem(System):
             entity.components['physics'].collision_core.centery += \
                 entity.components['physics'].collision_core_offset[1]
 
+            # Trigger a collision event
+            self.events.dispatch(EntityCollisionEvent(entity.id))
+
 
 class PlayerTerrainSoundSystem(System):
 
@@ -950,23 +962,34 @@ class SkillUsageSystem(System):
         'input',
         'position',
         'map_layer',
-        'layer'
+        'layer',
+        'physics'  # @TODO This needs to go
     ]
 
     event_handlers = {
-        EntitySkillUsageEvent: ['on_entity_event', 10]
+        TickEvent: ['on_event', 10]
     }
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        logger.debug('spawning fireball')
-        fireball = self.entities.create_entity_from_template('projectile')
+        # Only proceed if the entity skill usage input is active
+        if entity.components['input'].input[EntityInput.SKILL_USAGE]:
+            fireball = self.entities.create_entity_from_template('projectile')
 
-        fireball.components['position'].layer_position = event.origin
-        fireball.components['velocity'].direction = vector_between(event.origin, event.target, True)
-        fireball.components['velocity'].speed = 150
+            layer = entity.components['layer'].layer
 
-        entity.components['layer'].layer.add_entity(fireball)
+            source = entity.components['physics'].collision_core.center
+            target = screen_point_to_layer(layer.map_layer, entity.components['input'].input[EntityInput.TARGET_POINT])
+            direction = unit_vector_between(source, target)
+
+            fireball.components['position'].primary_position = source
+            fireball.components['velocity'].direction = direction
+            fireball.components['velocity'].speed = 150
+
+            layer.add_entity(fireball)
+
+            # Trigger a skill usage event
+            self.events.dispatch(EntitySkillUsageEvent(entity.id))
 
 
 class ManaGatheringSystem(System):

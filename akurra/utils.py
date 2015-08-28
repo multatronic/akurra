@@ -76,20 +76,26 @@ def flatten(d, parent_key='', sep='_'):
 
 
 @memoize
-def vector_between(source, destination, unit=False):
-    """Return the vector starting from source to destination."""
-    vector = [destination[0] - source[0], destination[1] - source[0]]
-    if unit:
-        length = distance_between(destination, source)
-        vector[0] /= length
-        vector[1] /= length
-    return vector
+def distance_vector_between(point_1, point_2):
+    """Compute and return the vector distance between two points."""
+    return [point_2[0] - point_1[0], point_2[1] - point_1[1]]
 
 
 @memoize
 def distance_between(point_1, point_2):
-    """Return the distance between two points."""
-    return math.sqrt(math.pow(point_2[0] - point_1[0], 2) + math.pow(point_2[1] - point_1[1], 2))
+    """Compute the distance between two points and return it as a float."""
+    distance_vector = distance_vector_between(point_1, point_2)
+
+    return math.sqrt(distance_vector[0] ** 2 + distance_vector[1] ** 2)
+
+
+@memoize
+def unit_vector_between(point_1, point_2):
+    """Compute and return the normalized unit vector between two points."""
+    distance_vector = distance_vector_between(point_1, point_2)
+    distance = distance_between(point_1, point_2)
+
+    return [distance_vector[0] / distance, distance_vector[1] / distance]
 
 
 def map_point_to_screen(map_layer, point):
@@ -102,6 +108,12 @@ def layer_point_to_map(map_layer, point):
     """Convert a pair of coordinates from layer projection map projection."""
     return [point[0] / map_layer.data.tilewidth,
             point[1] / map_layer.data.tileheight]
+
+
+def screen_point_to_layer(map_layer, point):
+    """Convert a pair of coordinates from a screen projection to layer projection."""
+    return [point[0] + (map_layer.xoffset + (map_layer.view.left * map_layer.data.tilewidth)),
+            point[1] + (map_layer.yoffset + (map_layer.view.top * map_layer.data.tileheight))]
 
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
