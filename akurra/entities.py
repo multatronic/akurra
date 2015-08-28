@@ -493,8 +493,6 @@ class SpriteComponent(Component):
     def __init__(self, image=None, sprite_size=[0, 0], animations={}, direction=EntityDirection.SOUTH,
                  state=EntityState.STATIONARY, **kwargs):
         """Constructor."""
-        super().__init__(**kwargs)
-
         self.direction = direction
         self.state = state
         self.sprite_size = sprite_size
@@ -521,6 +519,8 @@ class SpriteComponent(Component):
                 self.animations[state].append(animation)
 
         self.rect = self.image.get_rect()
+
+        super().__init__(**kwargs)
 
 
 class InputComponent(Component):
