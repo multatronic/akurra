@@ -7,7 +7,7 @@ from pkg_resources import iter_entry_points
 
 from .locals import *  # noqa
 from .assets import SpriteAnimation
-from .events import TickEvent, EntityMoveEvent, EventManager, EntitySpellCastEvent
+from .events import Event, TickEvent, EventManager
 from .audio import AudioModule
 from .utils import ContainerAware, map_point_to_screen, vector_between
 from .assets import AssetManager
@@ -56,6 +56,38 @@ class SystemStatus(Enum):
 
     STOPPED = 0
     STARTED = 1
+
+
+class EntityEvent(Event):
+
+    """Base entity event."""
+
+    def __init__(self, entity_id):
+        """Constructor."""
+        super().__init__()
+
+        self.entity_id = entity_id
+
+
+class EntityMoveEvent(EntityEvent):
+
+    """Entity movement event."""
+
+    def __init__(self, entity_id):
+        """Constructor."""
+        super().__init__(entity_id)
+
+
+class EntitySkillUsageEvent(EntityEvent):
+
+    """Entity spell casting event."""
+
+    def __init__(self, entity_id, origin, target):
+        """Constructor."""
+        super().__init__(entity_id)
+
+        self.origin = origin
+        self.target = target
 
 
 # class EquipmentSlot(Enum):
@@ -690,7 +722,7 @@ class PlayerInputSystem(System):
             # TODO: get exact player sprite position, preferably using position component
             # origin = entity.components['position'].primary_position
             origin = entity.components['sprite'].rect.center
-            self.events.dispatch(EntitySpellCastEvent(entity.id, origin, event.original_event['pos']))
+            self.events.dispatch(EntitySkillUsageEvent(entity.id, origin, event.original_event['pos']))
 
 
 class VelocitySystem(System):
@@ -929,41 +961,31 @@ class PlayerTerrainSoundSystem(System):
                     pass
 
 
-class SpellCastingSystem(System):
+class SkillUsageSystem(System):
 
-    """Fire a spell."""
+    """System for handling skill usage."""
 
     requirements = [
         'input',
-        'position'
+        'position',
+        'map_layer',
+        'layer'
     ]
 
     event_handlers = {
-        EntitySpellCastEvent: ['on_entity_event', 10]
+        EntitySkillUsageEvent: ['on_entity_event', 10]
     }
-
-    def __init__(self):
-        """Constructor."""
-        from .display import DisplayModule, EntityDisplayLayer
-
-        super().__init__()
-        self.display = self.container.get(DisplayModule)
-        self.layer = EntityDisplayLayer(flags=pygame.SRCALPHA, z_index=109)
-
-    def start(self):
-        """Start the system."""
-        super().start()
-        self.display.add_layer(self.layer)
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         logger.debug('spawning fireball')
         fireball = self.entities.create_entity_from_template('projectile')
+
         fireball.components['position'].layer_position = event.origin
         fireball.components['velocity'].direction = vector_between(event.origin, event.target, True)
         fireball.components['velocity'].speed = 150
 
-        self.layer.add_entity(fireball)
+        entity.components['layer'].layer.add_entity(fireball)
 
 
 class ManaGatheringSystem(System):

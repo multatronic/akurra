@@ -29,30 +29,6 @@ class TickEvent(Event):
         self.delta_time = delta_time
 
 
-class EntityMoveEvent(Event):
-
-    """Entity move event."""
-
-    def __init__(self, entity_id):
-        """Constructor."""
-        super().__init__()
-
-        self.entity_id = entity_id
-
-
-class EntitySpellCastEvent(Event):
-
-    """Entity spell casting event."""
-
-    def __init__(self, entity_id, origin, target):
-        """Constructor."""
-        super().__init__()
-
-        self.entity_id = entity_id
-        self.origin = origin
-        self.target = target
-
-
 class EventManager:
 
     """Event manager."""
