@@ -988,6 +988,10 @@ class SkillUsageSystem(System):
 
             layer.add_entity(fireball)
 
+            # Set the input to false so we don't accidentally use a skill twice
+            # @TODO Remove this, because it sucks
+            entity.components['input'].input[EntityInput.SKILL_USAGE] = False
+
             # Trigger a skill usage event
             self.events.dispatch(EntitySkillUsageEvent(entity.id))
 
