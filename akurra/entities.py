@@ -90,33 +90,6 @@ class EntitySkillUsageEvent(EntityEvent):
         self.target = target
 
 
-# class EquipmentSlot(Enum):
-
-#     """Equipment slot enum."""
-
-#     HEAD = 0
-#     SHOULDERS = 1
-#     CHEST = 2
-#     WAIST = 3
-#     LEGS = 4
-#     FEET = 5
-#     ARMS = 6
-#     LEFT_HAND = 7
-#     RIGHT_HAND = 8
-#     NECK = 9
-#     CLOAK = 10
-#     FINGER_1 = 11
-#     FINGER_2 = 12
-#     FINGER_3 = 13
-#     FINGER_4 = 14
-#     FINGER_5 = 15
-#     FINGER_6 = 16
-#     FINGER_7 = 17
-#     FINGER_8 = 18
-#     FINGER_9 = 19
-#     FINGER_10 = 20
-
-
 class Entity(pygame.sprite.Sprite):
 
     """
