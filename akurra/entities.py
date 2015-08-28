@@ -100,6 +100,18 @@ class EntitySkillUsageEvent(EntityEvent):
         super().__init__(entity_id)
 
 
+class EntityInputChangeEvent(EntityEvent):
+
+    """Entity input change event."""
+
+    def __init__(self, entity_id, input, state):
+        """Constructor."""
+        super().__init__(entity_id)
+
+        self.input = input
+        self.state = state
+
+
 class Entity(pygame.sprite.Sprite):
 
     """
@@ -686,16 +698,12 @@ class PlayerInputSystem(System):
     ]
 
     action_inputs = {
-        'keyboard': {
-            'move_up': EntityInput.MOVE_UP,
-            'move_down': EntityInput.MOVE_DOWN,
-            'move_left': EntityInput.MOVE_LEFT,
-            'move_right': EntityInput.MOVE_RIGHT,
-            'mana_gather': EntityInput.MANA_GATHER
-        },
-        'mouse': {
-            'skill_usage': EntityInput.SKILL_USAGE
-        }
+        'move_up': EntityInput.MOVE_UP,
+        'move_down': EntityInput.MOVE_DOWN,
+        'move_left': EntityInput.MOVE_LEFT,
+        'move_right': EntityInput.MOVE_RIGHT,
+        'mana_gather': EntityInput.MANA_GATHER,
+        'skill_usage': EntityInput.SKILL_USAGE
     }
 
     def __init__(self):
@@ -710,8 +718,8 @@ class PlayerInputSystem(System):
 
     def start(self):
         """Start the system."""
-        [self.keyboard.add_action_listener(x, self.on_event) for x in self.action_inputs['keyboard'].keys()]
-        [self.mouse.add_action_listener(x, self.on_event) for x in self.action_inputs['mouse'].keys()]
+        [self.keyboard.add_action_listener(x, self.on_event) for x in self.action_inputs.keys()]
+        [self.mouse.add_action_listener(x, self.on_event) for x in self.action_inputs.keys()]
 
     def stop(self):
         """Stop the system."""
@@ -720,16 +728,16 @@ class PlayerInputSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        if event.type == 'akurra.keyboard.KeyboardActionEvent':
-            entity.components['input'].input[self.action_inputs['keyboard'][event.action]] = \
-                event.original_event['type'] == pygame.KEYDOWN
-        else:
-            entity.components['input'].input[self.action_inputs['mouse'][event.action]] = \
-                event.original_event['type'] == pygame.MOUSEBUTTONDOWN
+        input = self.action_inputs[event.action]
+        input_state = event.original_event['type'] in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN)
 
-            # If we're handling a mouse event, also update the current target of our entity
-            # @TODO Find a better way to handle this?
+        entity.components['input'].input[input] = input_state
+
+        if event.original_event.get('pos', None):
             entity.components['input'].input[EntityInput.TARGET_POINT] = event.original_event['pos']
+
+        # Trigger an input change event
+        self.events.dispatch(EntityInputChangeEvent(entity.id, input, input_state))
 
 
 class VelocitySystem(System):
@@ -749,7 +757,7 @@ class VelocitySystem(System):
     }
 
     event_handlers = {
-        TickEvent: ['on_event', 10]
+        EntityInputChangeEvent: ['on_entity_event', 10]
     }
 
     def update(self, entity, event=None):
@@ -872,18 +880,17 @@ class SpriteRenderOrderingSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: ['on_event', 10]
+        EntityMoveEvent: ['on_entity_event', 10]
     }
 
     def on_event(self, event):
         """Handle an event."""
-        for entity in self.entities.find_entities_by_components(self.requirements):
-            # Since only one map layer should be active at a time, it should be safe to only order the sprites once
-            # self.update(entity, event)
-            entity.components['layer'].layer.group._spritelist = sorted(
-                entity.components['layer'].layer.group._spritelist,
-                key=lambda x: x.components['position'].layer_position[1])
-            break
+
+    def update(self, entity, event=None):
+        """Have an entity updated by the system."""
+        entity.components['layer'].layer.group._spritelist = sorted(
+            entity.components['layer'].layer.group._spritelist,
+            key=lambda x: x.components['position'].layer_position[1])
 
 
 class CollisionSystem(System):
