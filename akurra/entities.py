@@ -694,7 +694,9 @@ class PlayerInputSystem(System):
 
     requirements = [
         'input',
-        'player'
+        'player',
+        'layer',
+        'map_layer'
     ]
 
     action_inputs = {
@@ -734,7 +736,8 @@ class PlayerInputSystem(System):
         entity.components['input'].input[input] = input_state
 
         if event.original_event.get('pos', None):
-            entity.components['input'].input[EntityInput.TARGET_POINT] = event.original_event['pos']
+            entity.components['input'].input[EntityInput.TARGET_POINT] = \
+                screen_point_to_layer(entity.components['layer'].layer.map_layer, event.original_event['pos'])
 
         # Trigger an input change event
         self.events.dispatch(EntityInputChangeEvent(entity.id, input, input_state))
@@ -1005,7 +1008,7 @@ class SkillUsageSystem(System):
         layer = entity.components['layer'].layer
 
         source = entity.components['physics'].collision_core.center
-        target = screen_point_to_layer(layer.map_layer, entity.components['input'].input[EntityInput.TARGET_POINT])
+        target = entity.components['input'].input[EntityInput.TARGET_POINT]
         direction = unit_vector_between(source, target)
 
         fireball.components['position'].primary_position = source
