@@ -356,7 +356,7 @@ class EntityManager(ContainerAware):
 
     def create_entity_from_template(self, template_name):
         """Create an entity from a template."""
-        template = self.entity_templates[template_name]
+        template = self.entity_templates[template_name].copy()
 
         # If the template has a parent, merge this data into a copy of the parent
         # Before we do this, unset the parent of the current template

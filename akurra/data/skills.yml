@@ -1,0 +1,16 @@
+akurra:
+  skills:
+    templates:
+      skill_projectile:
+        components:
+          position: ~
+          velocity: ~
+
+      skill_fireball:
+        parent: skill_projectile
+        components:
+          physics:
+            core_offset: [5, 5]
+            core_size: [15, 15]
+          sprite:
+            image: sprites/projectiles/test_projectile.png

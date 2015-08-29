@@ -60,7 +60,11 @@ def build_container(binder):
     # If the directories or files don't exist, create them
     for f in CFG_FILES:
         if not os.path.isfile(f):
-            os.makedirs(os.path.dirname(f))
+            try:
+                os.makedirs(os.path.dirname(f))
+            except FileExistsError:
+                pass
+
             with open(f, 'a+'):
                 pass
 
