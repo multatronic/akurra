@@ -19,15 +19,15 @@ class EntityRect(pygame.Rect):
 
     """Pygame rect subclass which can contain a reference to an entity."""
 
-    @property
-    def entity(self):
-        """Get entity."""
-        return self._entity
+    # @property
+    # def entity(self):
+    #     """Get entity."""
+    #     return self._entity
 
-    @entity.setter
-    def entity(self, value):
-        """Set entity."""
-        self._entity = value
+    # @entity.setter
+    # def entity(self, value):
+    #     """Set entity."""
+    #     self._entity = value
 
 
 class EntityDirection(Enum):
