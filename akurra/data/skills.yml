@@ -1,0 +1,13 @@
+akurra:
+  skills:
+    templates:
+      projectile:
+        components:
+          position: ~
+          velocity: ~
+
+      fireball:
+        parent: projectile
+        components:
+          sprite:
+            image: sprites/projectiles/test_projectile.png
