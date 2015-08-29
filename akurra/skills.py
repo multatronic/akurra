@@ -135,32 +135,26 @@ class SkillUsageSystem(System):
             if left:
                 if bottom:
                     # spawn fireball bottom left of player collision rect
-                    logging.info('bottom left')
                     fireball_spawn_position = list(entity.components['physics'].collision_core.bottomleft)
                     fireball_spawn_position[1] += fireball_height
                 elif top:
-                    logging.info('top left')
                     # spawn fireball top left of player collision rect
                     fireball_spawn_position = list(entity.components['physics'].collision_core.topleft)
                     fireball_spawn_position[1] -= fireball_height
                 else:
-                    logging.info('left')
                     # spawn fireball left of player collision rect
                     fireball_spawn_position = list(entity.components['physics'].collision_core.left)
                 fireball_spawn_position[0] -= fireball_width
             else:
                 if bottom:
-                    logging.info('bottom right')
                     # spawn fireball bottom right of player collision rect
                     fireball_spawn_position = list(entity.components['physics'].collision_core.bottomright)
                     fireball_spawn_position[1] += fireball_height
                 elif top:
-                    logging.info('top right')
                     # spawn fireball top right of player collision rect
                     fireball_spawn_position = list(entity.components['physics'].collision_core.topright)
                     fireball_spawn_position[1] -= fireball_height
                 else:
-                    logging.info('right')
                     # spawn fireball righ of player collision rect
                     fireball_spawn_position = list(entity.components['physics'].collision_core.right)
                 fireball_spawn_position[0] += fireball_width
