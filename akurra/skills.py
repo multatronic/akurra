@@ -70,8 +70,10 @@ class SkillsModule(Module):
         self.configuration = self.container.get(Configuration)
         self.entities = self.container.get(EntityManager)
 
-        # Merge skill templates into the other entity templates from the entity manager
+        # Grab skill templates
         self.skill_templates = self.configuration.get('akurra.skills.templates', {})
+
+        # Merge skill templates into the other entity templates from the entity manager
         self.entities.entity_templates.update(self.skill_templates)
 
     # def start(self):
@@ -103,7 +105,7 @@ class SkillUsageSystem(System):
         if (event.input != EntityInput.SKILL_USAGE) or (event.input_state is False):
             return
 
-        fireball = self.entities.create_entity_from_template('fireball')
+        fireball = self.entities.create_entity_from_template('skill_fireball')
 
         layer = entity.components['layer'].layer
 
