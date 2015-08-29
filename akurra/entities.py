@@ -9,10 +9,25 @@ from .locals import *  # noqa
 from .assets import SpriteAnimation
 from .events import Event, TickEvent, EventManager
 from .audio import AudioModule
-from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, unit_vector_between, memoize
+from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, memoize
 from .assets import AssetManager
 
 logger = logging.getLogger(__name__)
+
+
+class EntityRect(pygame.Rect):
+
+    """Pygame rect subclass which can contain a reference to an entity."""
+
+    @property
+    def entity(self):
+        """Get entity."""
+        return self._entity
+
+    @entity.setter
+    def entity(self, value):
+        """Set entity."""
+        self._entity = value
 
 
 class EntityDirection(Enum):
@@ -86,9 +101,11 @@ class EntityCollisionEvent(EntityEvent):
 
     """Entity collision event."""
 
-    def __init__(self, entity_id):
+    def __init__(self, entity_id, collided_entity_id):
         """Constructor."""
         super().__init__(entity_id)
+
+        self.collided_entity_id = collided_entity_id
 
 
 class EntityInputChangeEvent(EntityEvent):
@@ -575,12 +592,26 @@ class PhysicsComponent(Component):
 
     type = 'physics'
 
+    @property
+    def entity(self):
+        """Return entity."""
+        return self._entity
+
+    @entity.setter
+    def entity(self, value):
+        """Set entity."""
+        self._entity = value
+
+        # Set reference to entity in collision rectangle, in order to be able to find
+        # collided entities again
+        self.collision_core.entity = self._entity
+
     def __init__(self, core_size=[0, 0], core_offset=[0, 0], **kwargs):
         """Constructor."""
-        super().__init__(**kwargs)
-
-        self.collision_core = pygame.Rect([0, 0], core_size)
+        self.collision_core = EntityRect([0, 0], core_size)
         self.collision_core_offset = core_offset
+
+        super().__init__(**kwargs)
 
 
 class PlayerComponent(Component):
@@ -932,7 +963,7 @@ class CollisionSystem(System):
                 entity.components['physics'].collision_core_offset[1]
 
             # Trigger a collision event
-            self.events.dispatch(EntityCollisionEvent(entity.id))
+            self.events.dispatch(EntityCollisionEvent(entity.id, collision_rects[collisions].entity.id))
 
 
 class PlayerTerrainSoundSystem(System):
