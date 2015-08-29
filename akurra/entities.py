@@ -68,6 +68,8 @@ class EntityInput(Enum):
     TARGET_ENTITY = 6
     TARGET_POINT = 7
 
+    SELECTED_SKILL = 8
+
 
 class SystemStatus(Enum):
 
@@ -962,8 +964,11 @@ class CollisionSystem(System):
             entity.components['physics'].collision_core.centery += \
                 entity.components['physics'].collision_core_offset[1]
 
-            # Trigger a collision event
-            self.events.dispatch(EntityCollisionEvent(entity.id, collision_rects[collisions].entity.id))
+            # Trigger a collision event if we're colliding with an entity
+            collided_rect = collision_rects[collisions]
+
+            if hasattr(collided_rect, 'entity'):
+                self.events.dispatch(EntityCollisionEvent(entity.id, collision_rects[collisions].entity.id))
 
 
 class PlayerTerrainSoundSystem(System):
