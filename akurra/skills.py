@@ -1,12 +1,12 @@
 """Skills module."""
+import math
 import logging
-
 
 from .locals import *  # noqa
 from .entities import EntityEvent, EntityInput, EntityInputChangeEvent, EntityCollisionEvent, EntityManager, \
     Component, System
 from .modules import Module
-from .utils import unit_vector_between
+from .utils import unit_vector_between, map_unit_vector_to_angle
 
 
 logger = logging.getLogger(__name__)
@@ -16,9 +16,11 @@ class EntitySkillUsageEvent(EntityEvent):
 
     """Entity skill usage event."""
 
-    def __init__(self, entity_id):
+    def __init__(self, entity_id, skill_entity_id):
         """Constructor."""
         super().__init__(entity_id)
+
+        self.skill_entity_id = skill_entity_id
 
 
 class SkillComponent(Component):
@@ -35,11 +37,12 @@ class RangedTargetedSkillComponent(TargetedSkillComponent):
 
     """Base ranged target skill component."""
 
-    def __init__(self, max_distance=None, **kwargs):
+    def __init__(self, maximum_distance=None, travelling=True, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
 
-        self.max_distance = max_distance
+        self.maximum_distance = maximum_distance
+        self.travelling = travelling
 
 
 class EntityRangedTargetedSkillComponent(RangedTargetedSkillComponent):
@@ -89,12 +92,6 @@ class SkillsModule(Module):
         # Merge skill templates into the other entity templates from the entity manager
         self.entities.entity_templates.update(self.skill_templates)
 
-    # def start(self):
-    #     """Start the module."""
-
-    # def stop(self):
-    #     """Stop the module."""
-
 
 class SkillUsageSystem(System):
 
@@ -119,72 +116,139 @@ class SkillUsageSystem(System):
         """Have an entity updated by the system."""
         # Only proceed if we're here to use a skill
         if (event.input != EntityInput.SKILL_USAGE) or (event.input_state is False):
+            # Not a a change of the skill usage input, or not the correct state
             return
 
-        fireball = self.entities.create_entity_from_template('skill_fireball')
+        entity_input = entity.components['input'].input
+        selected_skill = entity_input[EntityInput.SELECTED_SKILL]
 
-        layer = entity.components['layer'].layer
+        # Only proceed if we actually have a skill to use
+        if not selected_skill:
+            # No selected skill
+            return
 
-        source = entity.components['physics'].collision_core.center
-        target = entity.components['input'].input[EntityInput.TARGET_POINT]
-        direction = unit_vector_between(source, target)
+        skill = self.entities.create_entity_from_template(selected_skill)
 
-        # determine which side of the collision rect to spawn the fireball on
-        center = direction[0] == 0 and direction[1] == 0
-        # exempt center, since the player would shoot himself
-        if not center:
-            left = direction[0] < 0
-            bottom = direction[1] > 0
-            top = direction[1] < 0
+        # If our skill requires a point target
+        if 'point_ranged_targeted_skill' in skill.components:
+            target_requirement = skill.components['point_ranged_targeted_skill']
+            target_point = entity_input[EntityInput.TARGET_POINT]
 
-            # get the dimension of the fireball collision core (with some additional padding)
-            # this will be used to offset the fireball so it doesn't get stuck inside the player
-            fireball_collision_pad = 5
-            fireball_width = fireball.components['physics'].collision_core.width + fireball_collision_pad
-            fireball_height = fireball.components['physics'].collision_core.height + fireball_collision_pad
+            # Only proceed if we have a target point
+            if not target_point:
+                # No target point
+                return
 
-            if left:
-                if bottom:
-                    # spawn fireball bottom left of player collision rect
-                    fireball_spawn_position = list(entity.components['physics'].collision_core.bottomleft)
-                    fireball_spawn_position[1] += fireball_height
-                elif top:
-                    # spawn fireball top left of player collision rect
-                    fireball_spawn_position = list(entity.components['physics'].collision_core.topleft)
-                    fireball_spawn_position[1] -= fireball_height
-                else:
-                    # spawn fireball left of player collision rect
-                    fireball_spawn_position = list(entity.components['physics'].collision_core.left)
-                fireball_spawn_position[0] -= fireball_width
+            source = None
+
+            # If this is a travelling skill
+            if target_requirement.travelling:
+                entity_collision_core = entity.components['physics'].collision_core
+
+                # Since it's a travelling skill, it should spawn at the location of the entity using it
+                source = entity_collision_core.center
+
+                # A travelling skill requires a direction to travel in, so calculate it
+                skill_direction = unit_vector_between(source, target_point)
+                skill.components['velocity'].direction = skill_direction
+
+                # Ensure the skill is spawned outside of the entity collision rectangle
+                # by offsetting the spawn point by a certain distance based on a combination of
+                # the entity collision core's size (height or width, whichever is bigger)
+                # and the skill collision core's size (height or width, whichever is bigger)
+                skill_offset_distance = entity_collision_core.width / 2 \
+                    if entity_collision_core.width > entity_collision_core.height \
+                    else entity_collision_core.height / 2
+
+                skill_collision_core = skill.components['physics'].collision_core
+
+                skill_offset_distance += skill_collision_core.width \
+                    if skill_collision_core.width > skill_collision_core.height \
+                    else skill_collision_core.height
+
+                # Calculate a new spawn point for the skill based on the old spawn point, the
+                # calculated angle of the skill and the offset distance
+                skill_angle = map_unit_vector_to_angle(skill_direction)
+                source = [source[0] + skill_offset_distance * math.cos(skill_angle),
+                          source[1] + skill_offset_distance * math.sin(skill_angle)]
+
+                # Modify the spawn point of the skill to ensure that the collision core
+                # is centered on the spawn point
+                source[0] -= skill_collision_core.width / 2
+                source[1] -= skill_collision_core.height / 2
+
+            # If this is not a travelling skill
             else:
-                if bottom:
-                    # spawn fireball bottom right of player collision rect
-                    fireball_spawn_position = list(entity.components['physics'].collision_core.bottomright)
-                    fireball_spawn_position[1] += fireball_height
-                elif top:
-                    # spawn fireball top right of player collision rect
-                    fireball_spawn_position = list(entity.components['physics'].collision_core.topright)
-                    fireball_spawn_position[1] -= fireball_height
-                else:
-                    # spawn fireball righ of player collision rect
-                    fireball_spawn_position = list(entity.components['physics'].collision_core.right)
-                fireball_spawn_position[0] += fireball_width
+                # Since this skill doesn't travel, it should spawn at the target point directly
+                source = list(target_point)
 
-            fireball.components['position'].primary_position = fireball_spawn_position
-            fireball.components['velocity'].direction = direction
-            fireball.components['velocity'].speed = 150
+            # Set the primary position for our skill
+            skill.components['position'].primary_position = source
 
-            layer.add_entity(fireball)
+            # If we have a maximum distance set for our ranged target
+            if target_requirement.maximum_distance:
+                # Only proceed if our target point is not too far away from our source
+                if distance_between(source, target_point) > target_requirement.maximum_distance:
+                    # Target is located too far away
+                    return
 
-            # Trigger a skill usage event
-            # @TODO Add skill ID and state here
-            self.events.dispatch(EntitySkillUsageEvent(entity.id))
-            self.used_skill_ids.append(entity.id)
+        # If our skill requires mana
+        if 'mana_consuming_skill' in skill.components:
+            entity_mana = entity.components['mana'].mana
+            skill_mana = skill.components['mana_consuming_skill'].mana
+
+            # For all types of required mana, ensure we have the required amount
+            for mana_type in skill_mana:
+                if skill_mana[mana_type] > entity_mana.get(mana_type, 0):
+                    # Not enough mana
+                    return
+
+            # If we have enough mana, subtract the amount from the entity for all types
+            for mana_type in skill_mana:
+                entity_mana[mana_type] -= skill_mana[mana_type]
+
+        # A skill with a position should be added to the layer the entity is on.. probably
+        if 'position' in skill.components:
+            entity.components['layer'].layer.add_entity(skill)
+
+        # Trigger a skill usage event
+        self.events.dispatch(EntitySkillUsageEvent(entity.id, skill.id))
+
+        # Watch this skill
+        self.used_skill_ids.append(skill.id)
 
     def on_entity_collision_event(self, event):
-        """Handle an event which contains a reference to an entity."""
-        original_entity_id = event.entity_id
-        collided_entity_id = event.collided_entity_id
+        """Handle a collision event."""
+        # Only proceed if this is a collision for a skill that we are watching
+        if event.entity_id not in self.used_skill_ids:
+            # We aren't watching this skill
+            return
 
-        if original_entity_id in self.used_skill_ids:
-            logging.debug('FIREBALL HIT %s', original_entity_id)
+        skill = self.entities.find_entity_by_id(event.entity_id)
+
+        # Only proceed if this skill collided with an entity
+        if event.collided_entity_id:
+            target = self.entities.find_entity_by_id(event.collided_entity_id)
+
+            # If this is a damaging skill
+            if 'damaging_skill' in skill.components:
+                skill_damage = skill.components['damaging_skill'].damage
+
+                # Only proceed if the target entity has a health component
+                if 'health' in target.components:
+                    target_health = target.components['health']
+
+                    # Loop through all damage types for this skill and damage target health
+                    for damage_type in skill_damage:
+                        # @TODO Take damage type into account (mitigations, resistances and stuff?)
+                        target_health.health -= skill_damage[damage_type]
+
+        # Remove this skill from its layer
+        # @TODO Add an onremove callback in the components so they can unset certain things when removed?
+        skill.components['layer'].layer.remove_entity(skill)
+
+        # Remove this skill from the manager
+        self.entities.remove_entity(skill)
+
+        # Remove this skill from the watched list
+        self.used_skill_ids.remove(skill.id)

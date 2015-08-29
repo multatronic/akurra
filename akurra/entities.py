@@ -103,10 +103,11 @@ class EntityCollisionEvent(EntityEvent):
 
     """Entity collision event."""
 
-    def __init__(self, entity_id, collided_entity_id):
+    def __init__(self, entity_id, collided_rect, collided_entity_id=None):
         """Constructor."""
         super().__init__(entity_id)
 
+        self.collided_rect = collided_rect
         self.collided_entity_id = collided_entity_id
 
 
@@ -578,7 +579,8 @@ class InputComponent(Component):
             EntityInput.MOVE_LEFT: False,
             EntityInput.MOVE_RIGHT: False,
             EntityInput.MANA_GATHER: False,
-            EntityInput.SKILL_USAGE: False
+            EntityInput.SKILL_USAGE: False,
+            EntityInput.SELECTED_SKILL: None
         }
 
 
@@ -715,7 +717,7 @@ class PlayerInputSystem(System):
         'move_left': EntityInput.MOVE_LEFT,
         'move_right': EntityInput.MOVE_RIGHT,
         'mana_gather': EntityInput.MANA_GATHER,
-        'skill_usage': EntityInput.SKILL_USAGE
+        'skill_usage': EntityInput.SKILL_USAGE,
     }
 
     def __init__(self):
@@ -950,11 +952,10 @@ class CollisionSystem(System):
             entity.components['physics'].collision_core.centery += \
                 entity.components['physics'].collision_core_offset[1]
 
-            # Trigger a collision event if we're colliding with an entity
+            # Trigger a collision event
             collided_rect = collision_rects[collisions]
-
-            if hasattr(collided_rect, 'entity'):
-                self.events.dispatch(EntityCollisionEvent(entity.id, collision_rects[collisions].entity.id))
+            collided_entity_id = collided_rect.entity.id if hasattr(collided_rect, 'entity') else None
+            self.events.dispatch(EntityCollisionEvent(entity.id, collided_rect, collided_entity_id))
 
 
 class PlayerTerrainSoundSystem(System):

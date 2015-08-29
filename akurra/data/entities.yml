@@ -20,6 +20,7 @@ akurra:
       town_guard:
         parent: human
         components:
+          health: ~
           character:
             name: Town Guard
           sprite:

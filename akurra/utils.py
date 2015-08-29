@@ -91,12 +91,32 @@ def distance_between(point_1, point_2):
 
 
 @memoize
+def angle_between(point_1, point_2):
+    """Compute the angle between two points and return it as an int."""
+    x_1, y_1 = point_1
+    x_2, y_2 = point_2
+
+    inner_product = x_1 * x_2 + y_1 * y_2
+
+    len_1 = math.hypot(x_1, y_1)
+    len_2 = math.hypot(x_2, y_2)
+
+    return math.acos(inner_product / (len_1 * len_2))
+
+
+@memoize
 def unit_vector_between(point_1, point_2):
     """Compute and return the normalized unit vector between two points."""
     distance_vector = distance_vector_between(point_1, point_2)
     distance = distance_between(point_1, point_2)
 
     return [distance_vector[0] / distance, distance_vector[1] / distance]
+
+
+@memoize
+def map_unit_vector_to_angle(unit_vector):
+    """Convert a unit vector to an angle."""
+    return math.atan2(unit_vector[1] * math.pi, unit_vector[0] * math.pi)
 
 
 def map_point_to_screen(map_layer, point):

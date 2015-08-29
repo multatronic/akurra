@@ -5,7 +5,7 @@ from .assets import AssetManager
 from .display import (ScrollingMapEntityDisplayLayer,
                       FrameRenderCompletedEvent, DisplayModule, DisplayLayer)
 from .events import EventManager
-from .entities import EntityManager
+from .entities import EntityManager, EntityInput
 from .session import SessionManager
 from .keyboard import KeyboardModule
 from .states import GameState, StateManager
@@ -109,6 +109,10 @@ class DemoGameState(GameState):
         if not player:
             player = self.entities.find_entities_by_components(['player'])[0]
             self.session.set('player', player)
+
+            # Set selected skill to fireball
+            # @TODO Remove this
+            player.components['input'].input[EntityInput.SELECTED_SKILL] = 'skill_fireball'
 
         self.layer.center = player
 
