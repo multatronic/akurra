@@ -9,7 +9,7 @@ from .locals import *  # noqa
 from .assets import SpriteAnimation
 from .events import Event, TickEvent, EventManager
 from .audio import AudioModule
-from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, memoize
+from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, snake_case, memoize
 from .assets import AssetManager
 
 logger = logging.getLogger(__name__)
@@ -386,6 +386,14 @@ class Component(ContainerAware):
 
     """Base component."""
 
+    @property
+    def type(self):
+        """Return type."""
+        # Replace this property on a class level with the correct, generated type code
+        self.__class__.type = snake_case(self.__class__.__name__.replace('Component', ''))
+
+        return self.__class__.type
+
     def __init__(self, entity=None):
         """Constructor."""
         if entity:
@@ -395,8 +403,6 @@ class Component(ContainerAware):
 class HealthComponent(Component):
 
     """Health component."""
-
-    type = 'health'
 
     def __init__(self, min=0, max=100, health=1, **kwargs):
         """Constructor."""
@@ -410,8 +416,6 @@ class HealthComponent(Component):
 class ManaComponent(Component):
 
     """Mana component."""
-
-    type = 'mana'
 
     def __init__(self, mana={}, max=100, **kwargs):
         """
@@ -433,8 +437,6 @@ class ManaComponent(Component):
 class PositionComponent(Component):
 
     """Position component."""
-
-    type = 'position'
 
     @property
     def primary_position(self):
@@ -492,8 +494,6 @@ class VelocityComponent(Component):
 
     """Velocity component."""
 
-    type = 'velocity'
-
     def __init__(self, direction=[0, 0], speed=200, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
@@ -506,8 +506,6 @@ class CharacterComponent(Component):
 
     """Character component."""
 
-    type = 'character'
-
     def __init__(self, name, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
@@ -518,8 +516,6 @@ class CharacterComponent(Component):
 class SpriteComponent(Component):
 
     """Sprite component."""
-
-    type = 'sprite'
 
     @property
     def entity(self):
@@ -572,8 +568,6 @@ class InputComponent(Component):
 
     """Input component."""
 
-    type = 'input'
-
     def __init__(self, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
@@ -591,8 +585,6 @@ class InputComponent(Component):
 class PhysicsComponent(Component):
 
     """Physics component."""
-
-    type = 'physics'
 
     @property
     def entity(self):
@@ -620,14 +612,10 @@ class PlayerComponent(Component):
 
     """Player component."""
 
-    type = 'player'
-
 
 class LayerComponent(Component):
 
     """Map layer component."""
-
-    type = 'layer'
 
     def __init__(self, layer=None, **kwargs):
         """Constructor."""
@@ -639,8 +627,6 @@ class LayerComponent(Component):
 class MapLayerComponent(Component):
 
     """Map layer component."""
-
-    type = 'map_layer'
 
     def __init__(self, **kwargs):
         """Constructor."""

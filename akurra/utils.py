@@ -1,5 +1,6 @@
 """Utils module."""
 import os
+import re
 import math
 import pygame
 import collections
@@ -122,6 +123,13 @@ _ROOT = os.path.abspath(os.path.dirname(__file__))
 def get_data_path(path):
     """Create and return a data path for a relative path."""
     return os.path.join(_ROOT, 'data', path)
+
+
+def snake_case(string):
+    """Convert a string to snake case."""
+    string = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', string)
+
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', string).lower()
 
 
 class ContainerAware:

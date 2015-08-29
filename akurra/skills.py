@@ -4,7 +4,7 @@ import logging
 
 from .locals import *  # noqa
 from .entities import EntityEvent, EntityInput, EntityInputChangeEvent, EntityCollisionEvent, EntityManager, \
-                      Component, System
+    Component, System
 from .modules import Module
 from .utils import unit_vector_between
 
@@ -35,9 +35,9 @@ class RangedTargetedSkillComponent(TargetedSkillComponent):
 
     """Base ranged target skill component."""
 
-    def __init__(self, max_distance=None):
+    def __init__(self, max_distance=None, **kwargs):
         """Constructor."""
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.max_distance = max_distance
 
@@ -56,9 +56,9 @@ class ManaConsumingSkillComponent(SkillComponent):
 
     """Base mana consuming skill component."""
 
-    def __init__(self, mana={}):
+    def __init__(self, mana={}, **kwargs):
         """Constructor."""
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.mana = mana
 
@@ -67,9 +67,9 @@ class DamagingSkillComponent(SkillComponent):
 
     """Base damaging skill component."""
 
-    def __init__(self, damage={}):
+    def __init__(self, damage={}, **kwargs):
         """Constructor."""
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.damage = damage
 
@@ -169,7 +169,6 @@ class SkillUsageSystem(System):
                     # spawn fireball righ of player collision rect
                     fireball_spawn_position = list(entity.components['physics'].collision_core.right)
                 fireball_spawn_position[0] += fireball_width
-
 
             fireball.components['position'].primary_position = fireball_spawn_position
             fireball.components['velocity'].direction = direction

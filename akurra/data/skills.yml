@@ -5,6 +5,7 @@ akurra:
         components:
           position: ~
           velocity: ~
+          point_ranged_targeted_skill: ~
 
       skill_fireball:
         parent: skill_projectile
@@ -14,3 +15,10 @@ akurra:
             core_size: [15, 15]
           sprite:
             image: sprites/projectiles/test_projectile.png
+          mana_consuming_skill:
+            mana:
+              fire: 2
+              air: 1
+          damaging_skill:
+            damage:
+              fire: 5
