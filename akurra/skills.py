@@ -103,7 +103,7 @@ class SkillUsageSystem(System):
         if (event.input != EntityInput.SKILL_USAGE) or (event.input_state is False):
             return
 
-        fireball = self.entities.create_entity_from_template('projectile')
+        fireball = self.entities.create_entity_from_template('fireball')
 
         layer = entity.components['layer'].layer
 
