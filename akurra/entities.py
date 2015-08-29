@@ -315,12 +315,12 @@ class EntityManager(ContainerAware):
     def add_entity_component(self, entity, component):
         """Add a component to an entity, adding it to the manager."""
         self.entities_components[component.type][entity.id] = entity
-        self.__class__.find_entities_by_components.cache.clear()
+        self.clear_cache()
 
     def remove_entity_component(self, entity, component):
         """Remove a component from an entity, removing it from the manager."""
         self.entities_components[component.type].pop(entity.id, None)
-        self.__class__.find_entities_by_components.cache.clear()
+        self.clear_cache()
 
     def find_entity_by_id(self, entity_id):
         """Find an entity by its ID."""
