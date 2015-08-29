@@ -67,7 +67,7 @@ setup(
             'sprite_render_ordering = akurra.entities:SpriteRenderOrderingSystem',
             'positioning = akurra.entities:PositioningSystem',
             'health_regeneration = akurra.entities:HealthRegenerationSystem',
-            'skill_usage = akurra.entities:SkillUsageSystem'
+            'skill_usage = akurra.skills:SkillUsageSystem'
         ]
     },
 
