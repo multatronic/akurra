@@ -61,6 +61,17 @@ class ManaConsumingSkillComponent(SkillComponent):
         self.mana = mana
 
 
+class DamagingSkillComponent(SkillComponent):
+
+    """Base damaging skill component."""
+
+    def __init__(self, damage={}):
+        """Constructor."""
+        super().__init__()
+
+        self.damage = damage
+
+
 class SkillsModule(Module):
 
     """Skills module."""
