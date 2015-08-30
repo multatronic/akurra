@@ -11,7 +11,7 @@ from .keyboard import KeyboardModule
 from .events import Event, TickEvent, EventManager
 from .entities import LayerComponent, EntityManager, MapLayerComponent
 from .modules import Module
-from .utils import ContainerAware, hr_event_type
+from .utils import ContainerAware, hr_event_type, distance_between
 
 
 logger = logging.getLogger(__name__)
