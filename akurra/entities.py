@@ -111,6 +111,26 @@ class EntityCollisionEvent(EntityEvent):
         self.collided_entity_id = collided_entity_id
 
 
+class EntityHealthChangeEvent(EntityEvent):
+
+    """Entity health change event."""
+
+    def __init__(self, entity_id, health_modifier):
+        """Constructor."""
+        super().__init__(entity_id)
+
+        self.health_modifier = health_modifier
+
+
+class EntityDeathEvent(EntityEvent):
+
+    """Entity death event."""
+
+    def __init__(self, entity_id):
+        """Constructor."""
+        super().__init__(entity_id)
+
+
 class EntityInputChangeEvent(EntityEvent):
 
     """Entity input change event."""
@@ -1114,9 +1134,9 @@ class ManaReplenishmentSystem(System):
                 layer.mana_replenishment_map.pop(key, None)
 
 
-class HealthRegenerationSystem(System):
+class HealthSystem(System):
 
-    """Health replenishment system."""
+    """Health system, includes taking damage and health regeneration."""
 
     requirements = [
         'layer',
@@ -1125,7 +1145,8 @@ class HealthRegenerationSystem(System):
     ]
 
     event_handlers = {
-        TickEvent: ['on_event', 10]
+        TickEvent: ['on_event', 10],
+        EntityHealthChangeEvent: ['on_health_change', 10]
     }
 
     def __init__(self):
@@ -1149,3 +1170,25 @@ class HealthRegenerationSystem(System):
         # If adding would result in exceeding the max amount, only give the entity as much as we can
         if health_component.health >= health_component.max:
             health_component.health = health_component.max
+
+    def on_health_change(self, event):
+        """De/Increase an entity's health."""
+        entity = self.entities.find_entity_by_id_and_components(event.entity_id, self.requirements)
+        if not entity:
+            return
+
+        # calculate new health value
+        health_modifier = event.health_modifier
+        entity_health = entity.components['health'].health + health_modifier
+        max_health = entity.components['health'].max
+        min_health = entity.components['health'].min
+
+        # cap new health to upper limit
+        if health_modifier > 0 and entity_health > max_health:
+            entity_health = max_health
+
+        entity.components['health'].health = entity_health
+
+        # submit entity death event if needed
+        if entity_health <= min_health:
+            self.events.dispatch(EntityDeathEvent(entity.id))

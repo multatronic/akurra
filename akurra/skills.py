@@ -3,10 +3,10 @@ import math
 import logging
 
 from .locals import *  # noqa
-from .entities import EntityEvent, EntityInput, EntityInputChangeEvent, EntityCollisionEvent, EntityManager, \
-    Component, System
+from .entities import EntityEvent, EntityInput, EntityInputChangeEvent, EntityHealthChangeEvent, \
+    EntityCollisionEvent, EntityManager, Component, System
 from .modules import Module
-from .utils import unit_vector_between, map_unit_vector_to_angle
+from .utils import unit_vector_between, map_unit_vector_to_angle, distance_between
 
 
 logger = logging.getLogger(__name__)
@@ -236,12 +236,12 @@ class SkillUsageSystem(System):
 
                 # Only proceed if the target entity has a health component
                 if 'health' in target.components:
-                    target_health = target.components['health']
 
                     # Loop through all damage types for this skill and damage target health
                     for damage_type in skill_damage:
                         # @TODO Take damage type into account (mitigations, resistances and stuff?)
-                        target_health.health -= skill_damage[damage_type]
+                        # multiply with -1 to ensure health modifier subtracts health rather than adds it
+                        self.events.dispatch(EntityHealthChangeEvent(target.id, skill_damage[damage_type] * -1))
 
         # Remove this skill from its layer
         # @TODO Add an onremove callback in the components so they can unset certain things when removed?
