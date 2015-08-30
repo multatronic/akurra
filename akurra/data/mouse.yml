@@ -2,5 +2,6 @@ akurra:
     mouse:
         cursor:
             image: graphics/ui/cursors/iron_plague.png
+
         action_bindings:
-            attack: 1
+            skill_usage: 1

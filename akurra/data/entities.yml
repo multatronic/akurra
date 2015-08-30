@@ -20,6 +20,7 @@ akurra:
       town_guard:
         parent: human
         components:
+          health: ~
           character:
             name: Town Guard
           sprite:
@@ -82,13 +83,6 @@ akurra:
                 frames: 8
                 frame_offset: 1
                 loop: true
-
-      projectile:
-        components:
-          position: ~
-          velocity: ~
-          sprite:
-            image: sprites/projectiles/test_projectile.png
 
       cursor:
         components:

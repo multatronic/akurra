@@ -7,12 +7,27 @@ from pkg_resources import iter_entry_points
 
 from .locals import *  # noqa
 from .assets import SpriteAnimation
-from .events import TickEvent, EntityMoveEvent, EventManager, EntitySpellCastEvent
+from .events import Event, TickEvent, EventManager
 from .audio import AudioModule
-from .utils import ContainerAware, map_point_to_screen, vector_between
+from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, snake_case, memoize
 from .assets import AssetManager
 
 logger = logging.getLogger(__name__)
+
+
+class EntityRect(pygame.Rect):
+
+    """Pygame rect subclass which can contain a reference to an entity."""
+
+    # @property
+    # def entity(self):
+    #     """Get entity."""
+    #     return self._entity
+
+    # @entity.setter
+    # def entity(self, value):
+    #     """Set entity."""
+    #     self._entity = value
 
 
 class EntityDirection(Enum):
@@ -46,8 +61,14 @@ class EntityInput(Enum):
     MOVE_DOWN = 1
     MOVE_LEFT = 2
     MOVE_RIGHT = 3
+
     MANA_GATHER = 4
-    ATTACK = 5
+    SKILL_USAGE = 5
+
+    TARGET_ENTITY = 6
+    TARGET_POINT = 7
+
+    SELECTED_SKILL = 8
 
 
 class SystemStatus(Enum):
@@ -58,31 +79,48 @@ class SystemStatus(Enum):
     STARTED = 1
 
 
-# class EquipmentSlot(Enum):
+class EntityEvent(Event):
 
-#     """Equipment slot enum."""
+    """Base entity event."""
 
-#     HEAD = 0
-#     SHOULDERS = 1
-#     CHEST = 2
-#     WAIST = 3
-#     LEGS = 4
-#     FEET = 5
-#     ARMS = 6
-#     LEFT_HAND = 7
-#     RIGHT_HAND = 8
-#     NECK = 9
-#     CLOAK = 10
-#     FINGER_1 = 11
-#     FINGER_2 = 12
-#     FINGER_3 = 13
-#     FINGER_4 = 14
-#     FINGER_5 = 15
-#     FINGER_6 = 16
-#     FINGER_7 = 17
-#     FINGER_8 = 18
-#     FINGER_9 = 19
-#     FINGER_10 = 20
+    def __init__(self, entity_id):
+        """Constructor."""
+        super().__init__()
+
+        self.entity_id = entity_id
+
+
+class EntityMoveEvent(EntityEvent):
+
+    """Entity movement event."""
+
+    def __init__(self, entity_id):
+        """Constructor."""
+        super().__init__(entity_id)
+
+
+class EntityCollisionEvent(EntityEvent):
+
+    """Entity collision event."""
+
+    def __init__(self, entity_id, collided_rect, collided_entity_id=None):
+        """Constructor."""
+        super().__init__(entity_id)
+
+        self.collided_rect = collided_rect
+        self.collided_entity_id = collided_entity_id
+
+
+class EntityInputChangeEvent(EntityEvent):
+
+    """Entity input change event."""
+
+    def __init__(self, entity_id, input, input_state):
+        """Constructor."""
+        super().__init__(entity_id)
+
+        self.input = input
+        self.input_state = input_state
 
 
 class Entity(pygame.sprite.Sprite):
@@ -102,8 +140,6 @@ class Entity(pygame.sprite.Sprite):
         self.id = id if id else uuid4()
         self.components = {}
 
-        # @DO Have the EntityManager inject the container to avoid overhead?
-        # @DO Maybe use a ContainerComponent with a static container inside?
         from . import container
         self.entities = container.get(EntityManager)
 
@@ -115,16 +151,16 @@ class Entity(pygame.sprite.Sprite):
         self.components[component.type] = component
         component.entity = self
 
-        # Add entity to component dict in entitymanager
-        self.entities.entities_components[component.type][self.id] = self
+        # Register entity component in entitymanager
+        self.entities.add_entity_component(self, component)
 
     def remove_component(self, component):
         """Remove a component from the entity."""
         self.components.pop(component.type, None)
         component.entity = None
 
-        # Remove entity from component dict in entitymanager
-        self.entities.entities_components[component.type].pop(self.id, None)
+        # Unregister entity component in entitymanager
+        self.entities.remove_entity_component(self, component)
 
 
 class EntityManager(ContainerAware):
@@ -272,22 +308,36 @@ class EntityManager(ContainerAware):
         else:
             self.stop_system(name)
 
+    def clear_cache(self):
+        """Clear various caches."""
+        self.__class__.find_entities_by_components.cache.clear()
+        self.__class__.find_entity_by_id_and_components.cache.clear()
+
     def add_entity(self, entity):
         """Add an entity to the manager."""
         self.entities[entity.id] = entity
-
-        for key in entity.components:
-            self.entities_components[key][entity.id] = entity
+        [self.add_entity_component(entity, entity.components[x]) for x in entity.components]
 
     def remove_entity(self, entity):
         """Remove an entity from the manager."""
+        [self.remove_entity_component(entity, entity.components[x]) for x in entity.components]
         self.entities.pop(entity.id, None)
-        [self.entities_components[x].pop(entity.id, None) for x in self.entities_components]
+
+    def add_entity_component(self, entity, component):
+        """Add a component to an entity, adding it to the manager."""
+        self.entities_components[component.type][entity.id] = entity
+        self.clear_cache()
+
+    def remove_entity_component(self, entity, component):
+        """Remove a component from an entity, removing it from the manager."""
+        self.entities_components[component.type].pop(entity.id, None)
+        self.clear_cache()
 
     def find_entity_by_id(self, entity_id):
         """Find an entity by its ID."""
         return self.entities.get(entity_id, None)
 
+    @memoize
     def find_entities_by_components(self, components):
         """Find entities which are made up of specific components."""
         keys = [list(self.entities_components[x].keys()) for x in components]
@@ -295,9 +345,19 @@ class EntityManager(ContainerAware):
 
         return [self.entities[x] for x in intersection]
 
+    @memoize
+    def find_entity_by_id_and_components(self, entity_id, components):
+        """Find an entity by its ID if it is made up of specific components."""
+        entity = self.find_entity_by_id(entity_id)
+
+        if (not components) or (not entity):
+            return None
+
+        return entity if False not in [x in entity.components for x in components] else None
+
     def create_entity_from_template(self, template_name):
         """Create an entity from a template."""
-        template = self.entity_templates[template_name]
+        template = self.entity_templates[template_name].copy()
 
         # If the template has a parent, merge this data into a copy of the parent
         # Before we do this, unset the parent of the current template
@@ -327,6 +387,14 @@ class Component(ContainerAware):
 
     """Base component."""
 
+    @property
+    def type(self):
+        """Return type."""
+        # Replace this property on a class level with the correct, generated type code
+        self.__class__.type = snake_case(self.__class__.__name__.replace('Component', ''))
+
+        return self.__class__.type
+
     def __init__(self, entity=None):
         """Constructor."""
         if entity:
@@ -337,11 +405,10 @@ class HealthComponent(Component):
 
     """Health component."""
 
-    type = 'health'
-
     def __init__(self, min=0, max=100, health=1, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
         self.min = min
         self.max = max
         self.health = health
@@ -350,8 +417,6 @@ class HealthComponent(Component):
 class ManaComponent(Component):
 
     """Mana component."""
-
-    type = 'mana'
 
     def __init__(self, mana={}, max=100, **kwargs):
         """
@@ -365,6 +430,7 @@ class ManaComponent(Component):
                     with values indexed by mana type, or as an integer value.
         """
         super().__init__(**kwargs)
+
         self.mana = mana
         self.max = max
 
@@ -372,8 +438,6 @@ class ManaComponent(Component):
 class PositionComponent(Component):
 
     """Position component."""
-
-    type = 'position'
 
     @property
     def primary_position(self):
@@ -418,6 +482,7 @@ class PositionComponent(Component):
     def __init__(self, screen_position=[0, 0], layer_position=[0, 0], map_position=[0, 0], primary='layer', **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
         self.screen_position = screen_position
         self.layer_position = layer_position
         self.map_position = map_position
@@ -430,32 +495,28 @@ class VelocityComponent(Component):
 
     """Velocity component."""
 
-    type = 'velocity'
-
-    def __init__(self, velocity=[0, 0], max=200, **kwargs):
+    def __init__(self, direction=[0, 0], speed=200, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
-        self.velocity = velocity
-        self.max = max
+
+        self.direction = direction
+        self.speed = speed
 
 
 class CharacterComponent(Component):
 
     """Character component."""
 
-    type = 'character'
-
     def __init__(self, name, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
         self.name = name
 
 
 class SpriteComponent(Component):
 
     """Sprite component."""
-
-    type = 'sprite'
 
     @property
     def entity(self):
@@ -508,17 +569,18 @@ class InputComponent(Component):
 
     """Input component."""
 
-    type = 'input'
-
     def __init__(self, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
         self.input = {
             EntityInput.MOVE_UP: False,
             EntityInput.MOVE_DOWN: False,
             EntityInput.MOVE_LEFT: False,
             EntityInput.MOVE_RIGHT: False,
-            EntityInput.MANA_GATHER: False
+            EntityInput.MANA_GATHER: False,
+            EntityInput.SKILL_USAGE: False,
+            EntityInput.SELECTED_SKILL: None
         }
 
 
@@ -526,39 +588,47 @@ class PhysicsComponent(Component):
 
     """Physics component."""
 
-    type = 'physics'
+    @property
+    def entity(self):
+        """Return entity."""
+        return self._entity
+
+    @entity.setter
+    def entity(self, value):
+        """Set entity."""
+        self._entity = value
+
+        # Set reference to entity in collision rectangle, in order to be able to find
+        # collided entities again
+        self.collision_core.entity = self._entity
 
     def __init__(self, core_size=[0, 0], core_offset=[0, 0], **kwargs):
         """Constructor."""
-        super().__init__(**kwargs)
-        self.collision_core = pygame.Rect([0, 0], core_size)
+        self.collision_core = EntityRect([0, 0], core_size)
         self.collision_core_offset = core_offset
+
+        super().__init__(**kwargs)
 
 
 class PlayerComponent(Component):
 
     """Player component."""
 
-    type = 'player'
-
 
 class LayerComponent(Component):
 
     """Map layer component."""
 
-    type = 'layer'
-
     def __init__(self, layer=None, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
         self.layer = layer
 
 
 class MapLayerComponent(Component):
 
     """Map layer component."""
-
-    type = 'map_layer'
 
     def __init__(self, **kwargs):
         """Constructor."""
@@ -577,6 +647,9 @@ class System(ContainerAware):
         self.events = self.container.get(EventManager)
         self.entities = self.container.get(EntityManager)
 
+        # Order requirements, this makes result caching more efficient
+        self.requirements.sort()
+
     def start(self):
         """Start the system."""
         for event, handler in self.event_handlers.items():
@@ -590,6 +663,13 @@ class System(ContainerAware):
     def on_event(self, event):
         """Handle an event."""
         for entity in self.entities.find_entities_by_components(self.requirements):
+            self.update(entity, event)
+
+    def on_entity_event(self, event):
+        """Handle an event which contains a reference to an entity."""
+        entity = self.entities.find_entity_by_id_and_components(event.entity_id, self.requirements)
+
+        if entity:
             self.update(entity, event)
 
     def update(self, entity, event=None):
@@ -614,6 +694,7 @@ class SpriteRectPositionCorrectionSystem(System):
         """Have an entity updated by the system."""
         if not entity.components['position'].old:
             entity.components['position'].old = list(entity.components['position'].primary_position)
+            self.events.dispatch(EntityMoveEvent(entity.id))
 
         # pygame.sprite.Sprite logic
         entity.components['sprite'].rect.topleft = list(entity.components['position'].primary_position)
@@ -625,36 +706,34 @@ class PlayerInputSystem(System):
 
     requirements = [
         'input',
-        'player'
+        'player',
+        'layer',
+        'map_layer'
     ]
 
     action_inputs = {
-        'keyboard': {
-            'move_up': EntityInput.MOVE_UP,
-            'move_down': EntityInput.MOVE_DOWN,
-            'move_left': EntityInput.MOVE_LEFT,
-            'move_right': EntityInput.MOVE_RIGHT,
-            'mana_gather': EntityInput.MANA_GATHER
-        },
-        'mouse': {
-            'attack': EntityInput.ATTACK
-        }
+        'move_up': EntityInput.MOVE_UP,
+        'move_down': EntityInput.MOVE_DOWN,
+        'move_left': EntityInput.MOVE_LEFT,
+        'move_right': EntityInput.MOVE_RIGHT,
+        'mana_gather': EntityInput.MANA_GATHER,
+        'skill_usage': EntityInput.SKILL_USAGE,
     }
 
     def __init__(self):
         """Constructor."""
         super().__init__()
 
-        # imported here to prevent circular dependency stuff
         from .mouse import MouseModule
         from .keyboard import KeyboardModule
+
         self.keyboard = self.container.get(KeyboardModule)
         self.mouse = self.container.get(MouseModule)
 
     def start(self):
         """Start the system."""
-        [self.keyboard.add_action_listener(x, self.on_event) for x in self.action_inputs['keyboard'].keys()]
-        [self.mouse.add_action_listener(x, self.on_event) for x in self.action_inputs['mouse'].keys()]
+        [self.keyboard.add_action_listener(x, self.on_event) for x in self.action_inputs.keys()]
+        [self.mouse.add_action_listener(x, self.on_event) for x in self.action_inputs.keys()]
 
     def stop(self):
         """Stop the system."""
@@ -663,17 +742,17 @@ class PlayerInputSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        if event.type == 'akurra.keyboard.KeyboardActionEvent':
-            entity.components['input'].input[self.action_inputs['keyboard'][event.action]] = \
-                event.original_event['type'] == pygame.KEYDOWN
-        else:
-            entity.components['input'].input[self.action_inputs['mouse'][event.action]] = \
-                event.original_event['type'] == pygame.MOUSEBUTTONDOWN
+        input = self.action_inputs[event.action]
+        input_state = event.original_event['type'] in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN)
 
-            # TODO: get exact player sprite position, preferably using position component
-            # origin = entity.components['position'].primary_position
-            origin = entity.components['sprite'].rect.center
-            self.events.dispatch(EntitySpellCastEvent(entity.id, origin, event.original_event['pos']))
+        entity.components['input'].input[input] = input_state
+
+        if event.original_event.get('pos', None):
+            entity.components['input'].input[EntityInput.TARGET_POINT] = \
+                screen_point_to_layer(entity.components['layer'].layer.map_layer, event.original_event['pos'])
+
+        # Trigger an input change event
+        self.events.dispatch(EntityInputChangeEvent(entity.id, input, input_state))
 
 
 class VelocitySystem(System):
@@ -693,17 +772,17 @@ class VelocitySystem(System):
     }
 
     event_handlers = {
-        TickEvent: ['on_event', 10]
+        EntityInputChangeEvent: ['on_entity_event', 10]
     }
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         for x in self.input_velocities.keys():
             if entity.components['input'].input[x]:
-                entity.components['velocity'].velocity = self.input_velocities[x]
+                entity.components['velocity'].direction = self.input_velocities[x]
                 return
 
-        entity.components['velocity'].velocity = [0, 0]
+        entity.components['velocity'].direction = [0, 0]
 
 
 class MovementSystem(System):
@@ -723,24 +802,24 @@ class MovementSystem(System):
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
         entity.components['sprite'].state = EntityState.MOVING if \
-            list(filter(None, entity.components['velocity'].velocity)) else EntityState.STATIONARY
+            list(filter(None, entity.components['velocity'].direction)) else EntityState.STATIONARY
 
         # Do nothing if there is no velocity
-        if not entity.components['velocity'].velocity[0] and not entity.components['velocity'].velocity[1]:
+        if not entity.components['velocity'].direction[0] and not entity.components['velocity'].direction[1]:
             return
 
         entity.components['position'].old = list(entity.components['position'].primary_position)
 
-        entity.components['position'].primary_position[0] += entity.components['velocity'].velocity[0] * \
-            entity.components['velocity'].max * event.delta_time
-        entity.components['position'].primary_position[1] += entity.components['velocity'].velocity[1] * \
-            entity.components['velocity'].max * event.delta_time
+        entity.components['position'].primary_position[0] += entity.components['velocity'].direction[0] * \
+            entity.components['velocity'].speed * event.delta_time
+        entity.components['position'].primary_position[1] += entity.components['velocity'].direction[1] * \
+            entity.components['velocity'].speed * event.delta_time
 
         # Calculate and set direction
-        direction = EntityDirection.NORTH.value if entity.components['velocity'].velocity[1] < 0 \
-            else EntityDirection.SOUTH.value if entity.components['velocity'].velocity[1] else 0
-        direction |= EntityDirection.EAST.value if entity.components['velocity'].velocity[0] > 0 \
-            else EntityDirection.WEST.value if entity.components['velocity'].velocity[0] else 0
+        direction = EntityDirection.NORTH.value if entity.components['velocity'].direction[1] < 0 \
+            else EntityDirection.SOUTH.value if entity.components['velocity'].direction[1] else 0
+        direction |= EntityDirection.EAST.value if entity.components['velocity'].direction[0] > 0 \
+            else EntityDirection.WEST.value if entity.components['velocity'].direction[0] else 0
 
         entity.components['sprite'].direction = EntityDirection(direction)
 
@@ -764,12 +843,8 @@ class PositioningSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: ['on_event', 10]
+        EntityMoveEvent: ['on_entity_event', 10]
     }
-
-    # def on_event(self, event):
-    #     """Handle an event."""
-    #     self.update(self.entities.find_entity_by_id(event.entity_id), event)
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
@@ -820,18 +895,17 @@ class SpriteRenderOrderingSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: ['on_event', 10]
+        EntityMoveEvent: ['on_entity_event', 10]
     }
 
     def on_event(self, event):
         """Handle an event."""
-        for entity in self.entities.find_entities_by_components(self.requirements):
-            # Since only one map layer should be active at a time, it should be safe to only order the sprites once
-            # self.update(entity, event)
-            entity.components['layer'].layer.group._spritelist = sorted(
-                entity.components['layer'].layer.group._spritelist,
-                key=lambda x: x.components['position'].layer_position[1])
-            break
+
+    def update(self, entity, event=None):
+        """Have an entity updated by the system."""
+        entity.components['layer'].layer.group._spritelist = sorted(
+            entity.components['layer'].layer.group._spritelist,
+            key=lambda x: x.components['position'].layer_position[1])
 
 
 class CollisionSystem(System):
@@ -847,7 +921,7 @@ class CollisionSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: ['on_event', 12]
+        EntityMoveEvent: ['on_entity_event', 12]
     }
 
     def update(self, entity, event=None):
@@ -878,6 +952,11 @@ class CollisionSystem(System):
             entity.components['physics'].collision_core.centery += \
                 entity.components['physics'].collision_core_offset[1]
 
+            # Trigger a collision event
+            collided_rect = collision_rects[collisions]
+            collided_entity_id = collided_rect.entity.id if hasattr(collided_rect, 'entity') else None
+            self.events.dispatch(EntityCollisionEvent(entity.id, collided_rect, collided_entity_id))
+
 
 class PlayerTerrainSoundSystem(System):
 
@@ -891,7 +970,7 @@ class PlayerTerrainSoundSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: ['on_event', 13]
+        EntityMoveEvent: ['on_entity_event', 13]
     }
 
     def __init__(self):
@@ -914,45 +993,6 @@ class PlayerTerrainSoundSystem(System):
                 except KeyError:
                     # If no tile was found on this layer, that's too bad but we can continue regardless
                     pass
-
-
-class SpellCastingSystem(System):
-
-    """Fire a spell."""
-
-    requirements = [
-        'input',
-        'position'
-    ]
-
-    event_handlers = {
-        EntitySpellCastEvent: ['on_event', 10]
-    }
-
-    def __init__(self):
-        """Constructor."""
-        from .display import DisplayModule, EntityDisplayLayer
-
-        super().__init__()
-        self.display = self.container.get(DisplayModule)
-        self.layer = EntityDisplayLayer(flags=pygame.SRCALPHA, z_index=109)
-
-
-    def start(self):
-        """Start the system."""
-        super().start()
-        self.display.add_layer(self.layer)
-
-    def update(self, entity, event=None):
-        """Have an entity updated by the system."""
-        logger.debug('spawning fireball')
-        fireball = self.entities.create_entity_from_template('projectile')
-        fireball.components['position'].layer_position = event.origin
-        fireball.components['velocity'].velocity = vector_between(event.origin, event.target, True)
-        fireball.components['velocity'].max = 150
-
-        self.layer.add_entity(fireball)
-
 
 
 class ManaGatheringSystem(System):
@@ -1062,7 +1102,7 @@ class ManaReplenishmentSystem(System):
         replenishment_amount = self.default_replenishment_amount * event.delta_time
 
         # Loop over all tiles which require replenishment, and replenish them
-        for key, tile_mana in layer.mana_replenishment_map.items():
+        for key, tile_mana in layer.mana_replenishment_map.copy().items():
             mana_data = layer.mana_map[tile_mana[0]][tile_mana[1]][tile_mana[2]][tile_mana[3]]
             mana_data[0] += replenishment_amount
 

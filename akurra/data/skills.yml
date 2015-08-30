@@ -1,0 +1,25 @@
+akurra:
+  skills:
+    templates:
+      skill_projectile:
+        components:
+          position: ~
+          velocity: ~
+          point_ranged_targeted_skill: ~
+
+      skill_fireball:
+        parent: skill_projectile
+        components:
+          physics:
+            core_size: [20, 20]
+          sprite:
+            image: sprites/projectiles/test_projectile.png
+          velocity:
+            speed: 250
+          mana_consuming_skill:
+            mana:
+              # fire: 2
+              air: 4
+          damaging_skill:
+            damage:
+              fire: 5

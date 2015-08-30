@@ -107,12 +107,11 @@ class EntityDisplayLayer(DisplayLayer):
     def add_entity(self, entity):
         """Add an entity to the layer."""
         entity.add_component(LayerComponent(layer=self))
-
         self.entities[entity.id] = entity
 
     def remove_entity(self, entity):
         """Remove an entity from the layer."""
-        entity.components.pop(LayerComponent, None)
+        entity.remove_component(LayerComponent)
         self.entities.pop(entity.id, None)
 
     def draw(self, surface):

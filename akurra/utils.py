@@ -1,10 +1,34 @@
 """Utils module."""
 import os
+import re
 import math
 import pygame
 import collections
+import functools
 
 
+def memoize(obj):
+    """
+    Decorator which memoizes a given function or method.
+
+    See also: https://wiki.python.org/moin/PythonDecoratorLibrary#Memoize .
+
+    """
+    cache = obj.cache = {}
+
+    @functools.wraps(obj)
+    def memoizer(*args, **kwargs):
+        key = str(args) + str(kwargs)
+
+        if key not in cache:
+            cache[key] = obj(*args, **kwargs)
+
+        return cache[key]
+
+    return memoizer
+
+
+@memoize
 def hr_event_type(event_type):
     """Convert an event type to human readable format."""
     if type(event_type) is int:
@@ -13,6 +37,7 @@ def hr_event_type(event_type):
     return event_type
 
 
+@memoize
 def hr_key_id(key_id):
     """Convert a key identifier to human readable format."""
     if type(key_id) is int:
@@ -21,6 +46,7 @@ def hr_key_id(key_id):
     return key_id
 
 
+@memoize
 def hr_button_id(button_id):
     """Convert a button identifier to human readable format."""
     buttons = {
@@ -32,6 +58,7 @@ def hr_button_id(button_id):
     return buttons[button_id]
 
 
+@memoize
 def fqcn(cls):
     """Return the fully qualified class name of a class."""
     return '%s.%s' % (cls.__module__, cls.__name__)
@@ -49,19 +76,47 @@ def flatten(d, parent_key='', sep='_'):
     return dict(items)
 
 
-def vector_between(source, destination, unit=False):
-    """Return the vector starting from source to destination."""
-    vector = [destination[0] - source[0], destination[1] - source[0]]
-    if unit:
-        length = distance_between(destination, source)
-        vector[0] /= length
-        vector[1] /= length
-    return vector
+@memoize
+def distance_vector_between(point_1, point_2):
+    """Compute and return the vector distance between two points."""
+    return [point_2[0] - point_1[0], point_2[1] - point_1[1]]
 
 
+@memoize
 def distance_between(point_1, point_2):
-    """Return the distance between two points."""
-    return math.sqrt(math.pow(point_2[0] - point_1[0], 2) + math.pow(point_2[1] - point_1[1], 2))
+    """Compute the distance between two points and return it as a float."""
+    distance_vector = distance_vector_between(point_1, point_2)
+
+    return math.sqrt(distance_vector[0] ** 2 + distance_vector[1] ** 2)
+
+
+@memoize
+def angle_between(point_1, point_2):
+    """Compute the angle between two points and return it as an int."""
+    x_1, y_1 = point_1
+    x_2, y_2 = point_2
+
+    inner_product = x_1 * x_2 + y_1 * y_2
+
+    len_1 = math.hypot(x_1, y_1)
+    len_2 = math.hypot(x_2, y_2)
+
+    return math.acos(inner_product / (len_1 * len_2))
+
+
+@memoize
+def unit_vector_between(point_1, point_2):
+    """Compute and return the normalized unit vector between two points."""
+    distance_vector = distance_vector_between(point_1, point_2)
+    distance = distance_between(point_1, point_2)
+
+    return [distance_vector[0] / distance, distance_vector[1] / distance]
+
+
+@memoize
+def map_unit_vector_to_angle(unit_vector):
+    """Convert a unit vector to an angle."""
+    return math.atan2(unit_vector[1] * math.pi, unit_vector[0] * math.pi)
 
 
 def map_point_to_screen(map_layer, point):
@@ -76,12 +131,25 @@ def layer_point_to_map(map_layer, point):
             point[1] / map_layer.data.tileheight]
 
 
+def screen_point_to_layer(map_layer, point):
+    """Convert a pair of coordinates from a screen projection to layer projection."""
+    return [point[0] + (map_layer.xoffset + (map_layer.view.left * map_layer.data.tilewidth)),
+            point[1] + (map_layer.yoffset + (map_layer.view.top * map_layer.data.tileheight))]
+
+
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def get_data_path(path):
     """Create and return a data path for a relative path."""
     return os.path.join(_ROOT, 'data', path)
+
+
+def snake_case(string):
+    """Convert a string to snake case."""
+    string = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', string)
+
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', string).lower()
 
 
 class ContainerAware:

@@ -37,7 +37,9 @@ setup(
             'audio = akurra.audio:AudioModule',
             'keyboard = akurra.keyboard:KeyboardModule',
             'mouse = akurra.mouse:MouseModule',
-            'UI = akurra.ui:UIModule'
+            'UI = akurra.ui:UIModule',
+
+            'skills = akurra.skills:SkillsModule',
         ],
 
         'akurra.entities.components': [
@@ -51,7 +53,12 @@ setup(
             'map_layer = akurra.entities:MapLayerComponent',
             'sprite = akurra.entities:SpriteComponent',
             'physics = akurra.entities:PhysicsComponent',
-            'position = akurra.entities:PositionComponent'
+            'position = akurra.entities:PositionComponent',
+
+            'point_ranged_targeted_skill = akurra.skills:PointRangedTargetedSkillComponent',
+            'entity_ranged_targeted_skill = akurra.skills:EntityRangedTargetedSkillComponent',
+            'mana_consuming_skill = akurra.skills:ManaConsumingSkillComponent',
+            'damaging_skill = akurra.skills:DamagingSkillComponent',
         ],
 
         'akurra.entities.systems': [
@@ -67,7 +74,8 @@ setup(
             'sprite_render_ordering = akurra.entities:SpriteRenderOrderingSystem',
             'positioning = akurra.entities:PositioningSystem',
             'health_regeneration = akurra.entities:HealthRegenerationSystem',
-            'spell_casting = akurra.entities:SpellCastingSystem'
+
+            'skill_usage = akurra.skills:SkillUsageSystem',
         ]
     },
 
