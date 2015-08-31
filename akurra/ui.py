@@ -2,11 +2,12 @@
 import pygame
 import logging
 import math
+import threading
 
 from .locals import *  # noqa
 from .display import DisplayModule, DisplayLayer
 from .events import TickEvent, EventManager
-from .entities import EntityManager, EntityHealthChangeEvent
+from .entities import EntityManager, EntityHealthChangeEvent, EntityMoveEvent
 from .assets import AssetManager
 from .modules import Module
 from .session import SessionManager
@@ -53,7 +54,8 @@ class UIModule(Module):
         self.offsets['portrait_mana_orb'] = [105, 70]
         self.offsets['portrait_mana_orb_text'] = [119, 80]
 
-        self.enemies = []
+        self.life_gauge_display_time = 5
+        self.enemies = {}
 
     def start(self):
         """Start the module."""
@@ -109,19 +111,22 @@ class UIModule(Module):
             #TODO: we should be able to convert map position to screen to prevent
             #'sliding' life guages, but the map coords for the npc might not be accurate
             # -> the gauge gets drawn in the upper right corner
-            blit_position = npc.components['position'].primary_position.copy()
-            #TODO: center the life gauge once sliding is fixed
+            # fix this, then center the life gauge above the npc's head
+            blit_position = npc.components['position'].primary_position
             self.layer.surface.blit(self.surfaces['portrait_health_bar'], blit_position, \
                                     [0, 0, int(health_percentage * self.surfaces['portrait_health_bar'].get_width()), 900])
 
     def on_entity_health_change(self, event):
         """handle entity health change event."""
-        # TODO: only *temporarily* draw the life gauge for enemies
         player = self.session.get('player')
 
         if not player or event.entity_id == player.id:
             return
-        self.enemies.append(event.entity_id)
+
+        # temporarily display enemy life gauges by putting their entity_id on the list, then removing it again
+        # after a certain period of time
+        self.enemies[event.entity_id] = 1
+        threading.Timer(self.life_gauge_display_time, lambda x: self.enemies.pop(x), [event.entity_id]).start()
 
     def on_tick(self, event):
         """Handle a tick."""

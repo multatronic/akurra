@@ -126,7 +126,7 @@ def map_point_to_screen(map_layer, point):
 
 
 def layer_point_to_map(map_layer, point):
-    """Convert a pair of coordinates from layer projection map projection."""
+    """Convert a pair of coordinates from layer projection to map projection."""
     return [point[0] / map_layer.data.tilewidth,
             point[1] / map_layer.data.tileheight]
 
