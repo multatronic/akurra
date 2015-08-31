@@ -76,6 +76,9 @@ setup(
             'health_regeneration = akurra.entities:HealthRegenerationSystem',
 
             'skill_usage = akurra.skills:SkillUsageSystem',
+            'mana_consuming_skill = akurra.skills:ManaConsumingSkillSystem',
+            'point_ranged_targeted_skill = akurra.skills:PointRangedTargetedSkillSystem',
+            'damaging_skill = akurra.skills:DamagingSkillSystem',
         ]
     },
 
