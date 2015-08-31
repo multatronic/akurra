@@ -10,6 +10,7 @@ from .entities import EntityManager, EntityHealthChangeEvent
 from .assets import AssetManager
 from .modules import Module
 from .session import SessionManager
+from .utils import map_point_to_screen
 
 
 logger = logging.getLogger(__name__)
@@ -105,8 +106,11 @@ class UIModule(Module):
 
             # The width of the health bar should reflect the npc's health percentage
             health_percentage = health_component.health / health_component.max
-            blit_position = list(physics_component.collision_core.center)
-            blit_position[0] -= int(self.surfaces['portrait_health_bar'].get_width() / 2)
+            #TODO: we should be able to convert map position to screen to prevent
+            #'sliding' life guages, but the map coords for the npc might not be accurate
+            # -> the gauge gets drawn in the upper right corner
+            blit_position = npc.components['position'].primary_position.copy()
+            #TODO: center the life gauge once sliding is fixed
             self.layer.surface.blit(self.surfaces['portrait_health_bar'], blit_position, \
                                     [0, 0, int(health_percentage * self.surfaces['portrait_health_bar'].get_width()), 900])
 
@@ -129,32 +133,5 @@ class UIModule(Module):
         self.layer.surface.fill([0, 0, 0, 0])
         self.render_player_ui(player)
         self.render_enemy_ui()
-        # health_component = player.components['health']
-        #
-        # self.layer.surface.fill([0, 0, 0, 0])
-        #
-        # self.layer.surface.blit(self.surfaces['portrait_main'], self.offsets['portrait'])
-        #
-        # # The width of the health bar should reflect the player's health percentage
-        # health_percentage = health_component.health / health_component.max
-        # self.layer.surface.blit(self.surfaces['portrait_health_bar'], self.offsets['portrait_health_bar'],
-        #                         [0, 0, int(health_percentage * self.surfaces['portrait_health_bar'].get_width()), 900])
-        #
-        # health_text = self.font.render('%s/%s' % (math.floor(health_component.health), health_component.max), 1,
-        #                                [225, 225, 225])
-        # self.layer.surface.blit(health_text, self.offsets['portrait_health_text'])
-        #
-        # portrait_mana_orb_offset = list(self.offsets['portrait_mana_orb'])
-        # portrait_mana_orb_text_offset = list(self.offsets['portrait_mana_orb_text'])
-        #
-        # for mana_type, mana_amount in player.components['mana'].mana.items():
-        #     if mana_amount > 0:
-        #         self.layer.surface.blit(self.surfaces['portrait_mana_orb_%s' % mana_type], portrait_mana_orb_offset)
-        #         portrait_mana_orb_offset[0] += 35
-        #
-        #         mana_text = self.font.render('%s' % math.floor(mana_amount), 1, [102, 0, 102])
-        #         self.layer.surface.blit(mana_text, [portrait_mana_orb_text_offset[0] - (mana_text.get_width() / 2),
-        #                                             portrait_mana_orb_text_offset[1]])
-        #         portrait_mana_orb_text_offset[0] += 35
 
 
