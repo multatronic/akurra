@@ -59,6 +59,7 @@ setup(
             'entity_ranged_targeted_skill = akurra.skills:EntityRangedTargetedSkillComponent',
             'mana_consuming_skill = akurra.skills:ManaConsumingSkillComponent',
             'damaging_skill = akurra.skills:DamagingSkillComponent',
+            'health_modifying_skill = akurra.skills:HealthModifyingSkillComponent',
         ],
 
         'akurra.entities.systems': [
@@ -79,6 +80,7 @@ setup(
             'mana_consuming_skill = akurra.skills:ManaConsumingSkillSystem',
             'point_ranged_targeted_skill = akurra.skills:PointRangedTargetedSkillSystem',
             'damaging_skill = akurra.skills:DamagingSkillSystem',
+            'health_modifying_skill = akurra.skills:HealthModifyingSkillSystem',
         ]
     },
 

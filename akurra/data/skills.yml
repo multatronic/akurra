@@ -23,3 +23,11 @@ akurra:
           damaging_skill:
             damage:
               fire: 5
+
+      skill_lesser_heal:
+        components:
+          mana_consuming_skill:
+            mana:
+              air: 4
+          health_modifying_skill:
+            health: 5

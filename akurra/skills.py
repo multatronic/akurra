@@ -33,6 +33,17 @@ class SkillComponent(Component):
     """Base skill component."""
 
 
+class HealthModifyingSkillComponent(Component):
+
+    """Base health modifying skill component."""
+
+    def __init__(self, health=0, **kwargs):
+        """Constructor."""
+        super().__init__(**kwargs)
+
+        self.health = health
+
+
 class TargetedSkillComponent(SkillComponent):
 
     """Base targeted skill component."""
@@ -351,7 +362,8 @@ class DamagingSkillSystem(System):
     """Damaging skill system."""
 
     event_handlers = {
-        EntityCollisionEvent: ['on_entity_collision', 10]
+        EntityCollisionEvent: ['on_entity_collision', 10],
+        EntitySkillUsageEvent: ['on_entity_skill_usage', 10]
     }
 
     def on_entity_collision(self, event):
@@ -364,9 +376,10 @@ class DamagingSkillSystem(System):
         target = self.entities.find_entity_by_id(event.collided_entity_id)
 
         skill_damage_component = skill.components.get('damaging_skill', None)
+        skill_target_component = skill.components.get('point_ranged_targeted_skill', None)
 
         # If our skill doesn't have the right component(s), this system isn't supposed to handle it
-        if not skill_damage_component:
+        if (not skill_damage_component) or (not skill_target_component):
             return
 
         target_health_component = target.components.get('health', None)
@@ -375,7 +388,91 @@ class DamagingSkillSystem(System):
         if not target_health_component:
             return
 
-        # Loop through all damage types for this skill and damage target health
-        for damage_type in skill_damage_component.damage:
+        self.perform_damage(target_health_component, skill_damage_component.damage)
+
+    def on_entity_skill_usage(self, event):
+        """Handle an entity skill usage."""
+        entity = self.entities.find_entity_by_id(event.entity_id)
+        skill = self.entities.find_entity_by_id(event.skill_entity_id)
+
+        skill_damage_component = skill.components.get('damaging_skill', None)
+        skill_target_component = skill.components.get('entity_ranged_targeted_skill', None)
+
+        # If our skill doesn't have the right component(s), this system isn't supposed to handle it
+        if (not skill_damage_component) or (not skill_target_component):
+            return
+
+        # NOTE: By proceeding beyond this point, we assume our entity attempting to use the skill
+        # has already been checked for position, physics, map_layer, layer, input components
+        # by the SkillUsageSystem.
+
+        target = self.entities.find_entity_by_id(entity.components['input'].input[EntityInput.TARGET_ENTITY])
+
+        # If the target entity no longer exists, don't proceed
+        if not target:
+            return
+
+        target_health_component = target.components.get('health', None)
+
+        # If our target doesn't have the right component(s), this system isn't supposed to handle it
+        if not target_health_component:
+            return
+
+        self.perform_damage(target_health_component, skill_damage_component.damage)
+
+    def perform_damage(self, health_component, damage):
+        """Perform damage to an entity's health."""
+        # Loop through all damage types and damage health
+        for damage_type in damage:
             # @TODO Take damage type into account (mitigations, resistances and stuff?)
-            target_health_component.health -= skill_damage_component.damage[damage_type]
+            health_component.health -= damage[damage_type]
+
+        # @TODO trigger death state somehow here
+
+
+class HealthModifyingSkillSystem(System):
+
+    """Health modifying skill system."""
+
+    event_handlers = {
+        EntitySkillUsageEvent: ['on_entity_skill_usage', 10]
+    }
+
+    def on_entity_skill_usage(self, event):
+        """Handle an entity skill usage."""
+        entity = self.entities.find_entity_by_id(event.entity_id)
+        skill = self.entities.find_entity_by_id(event.skill_entity_id)
+
+        skill_health_modifying_component = skill.components.get('health_modifying_skill', None)
+        skill_target_component = skill.components.get('entity_ranged_targeted_skill', None)
+
+        # If our skill doesn't have the right component(s), this system isn't supposed to handle it
+        if (not skill_health_modifying_component) or (not skill_target_component):
+            return
+
+        # NOTE: By proceeding beyond this point, we assume our entity attempting to use the skill
+        # has already been checked for position, physics, map_layer, layer, input components
+        # by the SkillUsageSystem.
+
+        target = self.entities.find_entity_by_id(entity.components['input'].input[EntityInput.TARGET_ENTITY])
+
+        # If the target entity no longer exists, don't proceed
+        if not target:
+            return
+
+        target_health_component = target.components.get('health', None)
+
+        # If our target doesn't have the right component(s), this system isn't supposed to handle it
+        if not target_health_component:
+            return
+
+        # Modify target health
+        target_health_component.health += skill_health_modifying_component.health
+
+        # If the resulting health is too large, set it to the maximum
+        if target_health_component.health > target_health_component.max:
+            target_health_component.health = target_health_component.max
+        elif target_health_component.health <= target_health_component.min:
+            target_health_component.health = target_health_component.min
+
+            # @TODO Trigger death state somehow here
