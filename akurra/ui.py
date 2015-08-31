@@ -40,6 +40,7 @@ class UIModule(Module):
         self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=110)
 
         self.surfaces = {}
+        self.surfaces['health_bar_small'] = self.assets.get_image('graphics/ui/npc/health_bar_small.png', alpha=True)
         self.surfaces['portrait_main'] = self.assets.get_image('graphics/ui/portrait/main.png', alpha=True)
         self.surfaces['portrait_health_bar'] = self.assets.get_image('graphics/ui/portrait/health_bar.png', alpha=True)
 
@@ -113,8 +114,8 @@ class UIModule(Module):
             # -> the gauge gets drawn in the upper right corner
             # fix this, then center the life gauge above the npc's head
             blit_position = npc.components['position'].primary_position
-            self.layer.surface.blit(self.surfaces['portrait_health_bar'], blit_position, \
-                                    [0, 0, int(health_percentage * self.surfaces['portrait_health_bar'].get_width()), 900])
+            self.layer.surface.blit(self.surfaces['health_bar_small'], blit_position, \
+                                    [0, 0, int(health_percentage * self.surfaces['health_bar_small'].get_width()), 900])
 
     def on_entity_health_change(self, event):
         """handle entity health change event."""
