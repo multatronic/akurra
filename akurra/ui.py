@@ -6,6 +6,7 @@ import math
 from .locals import *  # noqa
 from .display import DisplayModule, DisplayLayer
 from .events import TickEvent, EventManager
+from .entities import EntityManager, EntityHealthChangeEvent
 from .assets import AssetManager
 from .modules import Module
 from .session import SessionManager
@@ -30,6 +31,7 @@ class UIModule(Module):
         self.display = self.container.get(DisplayModule)
         self.session = self.container.get(SessionManager)
         self.assets = self.container.get(AssetManager)
+        self.entities = self.container.get(EntityManager)
 
         self.font = pygame.font.SysFont('monospace', 9)
 
@@ -50,26 +52,24 @@ class UIModule(Module):
         self.offsets['portrait_mana_orb'] = [105, 70]
         self.offsets['portrait_mana_orb_text'] = [119, 80]
 
+        self.enemies = []
+
     def start(self):
         """Start the module."""
         self.display.add_layer(self.layer)
         self.events.register(TickEvent, self.on_tick)
+        self.events.register(EntityHealthChangeEvent, self.on_entity_health_change)
 
     def stop(self):
         """Stop the module."""
         self.events.unregister(self.on_tick)
         self.display.remove_layer(self.layer)
 
-    def on_tick(self, event):
-        """Handle a tick."""
-        player = self.session.get('player')
-
-        if not player:
-            return
-
+    def render_player_ui(self, player):
+        """render player ui elements."""
         health_component = player.components['health']
 
-        self.layer.surface.fill([0, 0, 0, 0])
+        # self.layer.surface.fill([0, 0, 0, 0])
 
         self.layer.surface.blit(self.surfaces['portrait_main'], self.offsets['portrait'])
 
@@ -94,3 +94,67 @@ class UIModule(Module):
                 self.layer.surface.blit(mana_text, [portrait_mana_orb_text_offset[0] - (mana_text.get_width() / 2),
                                                     portrait_mana_orb_text_offset[1]])
                 portrait_mana_orb_text_offset[0] += 35
+
+    def render_enemy_ui(self):
+        """render UI elements not belonging to the player (e.g. enemy life gauge)."""
+
+        for entity_id in self.enemies:
+            npc = self.entities.find_entity_by_id(entity_id)
+            health_component = npc.components['health']
+            physics_component = npc.components['physics']
+
+            # The width of the health bar should reflect the npc's health percentage
+            health_percentage = health_component.health / health_component.max
+            blit_position = list(physics_component.collision_core.center)
+            blit_position[0] -= int(self.surfaces['portrait_health_bar'].get_width() / 2)
+            self.layer.surface.blit(self.surfaces['portrait_health_bar'], blit_position, \
+                                    [0, 0, int(health_percentage * self.surfaces['portrait_health_bar'].get_width()), 900])
+
+    def on_entity_health_change(self, event):
+        """handle entity health change event."""
+        # TODO: only *temporarily* draw the life gauge for enemies
+        player = self.session.get('player')
+
+        if not player or event.entity_id == player.id:
+            return
+        self.enemies.append(event.entity_id)
+
+    def on_tick(self, event):
+        """Handle a tick."""
+        player = self.session.get('player')
+
+        if not player:
+            return
+
+        self.layer.surface.fill([0, 0, 0, 0])
+        self.render_player_ui(player)
+        self.render_enemy_ui()
+        # health_component = player.components['health']
+        #
+        # self.layer.surface.fill([0, 0, 0, 0])
+        #
+        # self.layer.surface.blit(self.surfaces['portrait_main'], self.offsets['portrait'])
+        #
+        # # The width of the health bar should reflect the player's health percentage
+        # health_percentage = health_component.health / health_component.max
+        # self.layer.surface.blit(self.surfaces['portrait_health_bar'], self.offsets['portrait_health_bar'],
+        #                         [0, 0, int(health_percentage * self.surfaces['portrait_health_bar'].get_width()), 900])
+        #
+        # health_text = self.font.render('%s/%s' % (math.floor(health_component.health), health_component.max), 1,
+        #                                [225, 225, 225])
+        # self.layer.surface.blit(health_text, self.offsets['portrait_health_text'])
+        #
+        # portrait_mana_orb_offset = list(self.offsets['portrait_mana_orb'])
+        # portrait_mana_orb_text_offset = list(self.offsets['portrait_mana_orb_text'])
+        #
+        # for mana_type, mana_amount in player.components['mana'].mana.items():
+        #     if mana_amount > 0:
+        #         self.layer.surface.blit(self.surfaces['portrait_mana_orb_%s' % mana_type], portrait_mana_orb_offset)
+        #         portrait_mana_orb_offset[0] += 35
+        #
+        #         mana_text = self.font.render('%s' % math.floor(mana_amount), 1, [102, 0, 102])
+        #         self.layer.surface.blit(mana_text, [portrait_mana_orb_text_offset[0] - (mana_text.get_width() / 2),
+        #                                             portrait_mana_orb_text_offset[1]])
+        #         portrait_mana_orb_text_offset[0] += 35
+
+
