@@ -31,3 +31,4 @@ akurra:
               air: 4
           health_modifying_skill:
             health: 5
+          entity_ranged_targeted_skill: ~

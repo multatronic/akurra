@@ -580,7 +580,9 @@ class InputComponent(Component):
             EntityInput.MOVE_RIGHT: False,
             EntityInput.MANA_GATHER: False,
             EntityInput.SKILL_USAGE: False,
-            EntityInput.SELECTED_SKILL: None
+            EntityInput.SELECTED_SKILL: None,
+            EntityInput.TARGET_POINT: None,
+            EntityInput.TARGET_ENTITY: None,
         }
 
 

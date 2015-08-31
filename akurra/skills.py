@@ -53,12 +53,11 @@ class RangedTargetedSkillComponent(TargetedSkillComponent):
 
     """Base ranged target skill component."""
 
-    def __init__(self, maximum_distance=None, travelling=True, **kwargs):
+    def __init__(self, maximum_distance=None, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
 
         self.maximum_distance = maximum_distance
-        self.travelling = travelling
 
 
 class EntityRangedTargetedSkillComponent(RangedTargetedSkillComponent):
@@ -69,6 +68,12 @@ class EntityRangedTargetedSkillComponent(RangedTargetedSkillComponent):
 class PointRangedTargetedSkillComponent(RangedTargetedSkillComponent):
 
     """Base ranged point target skill component."""
+
+    def __init__(self, travelling=True, **kwargs):
+        """Constructor."""
+        super().__init__(**kwargs)
+
+        self.travelling = travelling
 
 
 class ManaConsumingSkillComponent(SkillComponent):
@@ -357,6 +362,49 @@ class PointRangedTargetedSkillSystem(System):
         skill.components['position'].primary_position = source
 
 
+class EntityRangedTargetedSkillSystem(System):
+
+    """Entity ranged targeted skill system."""
+
+    event_handlers = {
+        EntitySkillUsageAttemptEvent: ['on_entity_skill_usage_attempt', 10]
+    }
+
+    def on_entity_skill_usage_attempt(self, event):
+        """Handle an entity skill usage attempt."""
+        entity = self.entities.find_entity_by_id(event.entity_id)
+        skill = self.entities.find_entity_by_id(event.skill_entity_id)
+
+        skill_target_component = skill.components.get('entity_ranged_targeted_skill', None)
+
+        # If our skill doesn't have the right component(s), this system isn't supposed to handle it
+        if not skill_target_component:
+            return
+
+        target_entity_id = entity.components['input'].input[EntityInput.TARGET_ENTITY]
+
+        # If we have no target entity ID, we can't use this skill
+        if not target_entity_id:
+            # No target
+            return False
+
+        target = self.entities.find_entity_by_id(target_entity_id)
+
+        # If the target entity no longer exists, we can't use this skill
+        if not target:
+            # No target
+            return False
+
+        # If we have a maximum distance set for our ranged target
+        if skill_target_component.maximum_distance:
+            target_position = target.components['position'].primary_position
+
+            # Only proceed if our target entity is not too far away from our source
+            if distance_between(source, target_position) > skill_target_component.maximum_distance:
+                # Target is located too far away
+                return False
+
+
 class DamagingSkillSystem(System):
 
     """Damaging skill system."""
@@ -406,7 +454,13 @@ class DamagingSkillSystem(System):
         # has already been checked for position, physics, map_layer, layer, input components
         # by the SkillUsageSystem.
 
-        target = self.entities.find_entity_by_id(entity.components['input'].input[EntityInput.TARGET_ENTITY])
+        target_entity_id = entity.components['input'].input[EntityInput.TARGET_ENTITY]
+
+        # If we have no target entity ID, don't proceed
+        if not target_entity_id:
+            return
+
+        target = self.entities.find_entity_by_id(target_entity_id)
 
         # If the target entity no longer exists, don't proceed
         if not target:
