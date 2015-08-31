@@ -106,14 +106,25 @@ class SkillUsageSystem(System):
     ]
 
     event_handlers = {
-        EntityInputChangeEvent: ['on_entity_event', 10],
+        EntityInputChangeEvent: ['on_entity_input_change_event', 10],
         EntityCollisionEvent: ['on_entity_collision_event', 10]
     }
 
-    used_skill_ids = []
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
 
-    def update(self, entity, event=None):
-        """Have an entity updated by the system."""
+        self.used_skill_ids = []
+
+    def on_entity_input_change_event(self, event):
+        """Handle an input change event."""
+        entity = self.entities.find_entity_by_id_and_components(event.entity_id, self.requirements)
+
+        # Only proceed if we've found an entity
+        if not entity:
+            # No entity was found for the event's entity id and our required components
+            return
+
         # Only proceed if we're here to use a skill
         if (event.input != EntityInput.SKILL_USAGE) or (event.input_state is False):
             # Not a a change of the skill usage input, or not the correct state
