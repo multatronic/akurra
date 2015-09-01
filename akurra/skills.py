@@ -481,7 +481,13 @@ class DamagingSkillSystem(System):
             # @TODO Take damage type into account (mitigations, resistances and stuff?)
             health_component.health -= damage[damage_type]
 
-        # @TODO trigger death state somehow here
+        # If the resulting health is too large, set it to the maximum
+        if health_component.health > health_component.max:
+            health_component.health = health_component.max
+        elif health_component.health <= health_component.min:
+            health_component.health = health_component.min
+
+            # @TODO trigger death state somehow here
 
 
 class HealthModifyingSkillSystem(System):

@@ -845,7 +845,7 @@ class PositioningSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: ['on_entity_event', 10]
+        EntityMoveEvent: ['on_entity_event', 15]
     }
 
     def update(self, entity, event=None):
