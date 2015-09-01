@@ -136,7 +136,7 @@ class DebugModule(Module):
                                              player.components['velocity'].direction[1],
                                              player.components['velocity'].speed),
                 "Dir.: %s" % player.components['sprite'].direction.name,
-                "State: %s" % player.components['sprite'].state.name,
+                "State: %s" % player.components['sprite'].state,
                 "Health: %06d/%06d" % (player.components['health'].health, player.components['health'].max),
                 "Mana: %s" % ";".join(["%s:%s" % (x[:2].upper(),
                                       math.floor(y)) for x, y in player.components['mana'].mana.items()])

@@ -4,7 +4,7 @@ import logging
 
 from .locals import *  # noqa
 from .entities import EntityEvent, EntityInput, EntityInputChangeEvent, EntityCollisionEvent, EntityManager, \
-    Component, System
+    Component, System, EntityState, EntityStateChangeEvent
 from .modules import Module
 from .utils import unit_vector_between, map_unit_vector_to_angle
 
@@ -430,13 +430,7 @@ class DamagingSkillSystem(System):
         if (not skill_damage_component) or (not skill_target_component):
             return
 
-        target_health_component = target.components.get('health', None)
-
-        # If our target doesn't have the right component(s), this system isn't supposed to handle it
-        if not target_health_component:
-            return
-
-        self.perform_damage(target_health_component, skill_damage_component.damage)
+        self.perform_damage(target, skill_damage_component.damage)
 
     def on_entity_skill_usage(self, event):
         """Handle an entity skill usage."""
@@ -466,16 +460,16 @@ class DamagingSkillSystem(System):
         if not target:
             return
 
-        target_health_component = target.components.get('health', None)
+        self.perform_damage(target, skill_damage_component.damage)
+
+    def perform_damage(self, entity, damage):
+        """Perform damage to an entity's health."""
+        health_component = entity.components.get('health', None)
 
         # If our target doesn't have the right component(s), this system isn't supposed to handle it
-        if not target_health_component:
+        if not health_component:
             return
 
-        self.perform_damage(target_health_component, skill_damage_component.damage)
-
-    def perform_damage(self, health_component, damage):
-        """Perform damage to an entity's health."""
         # Loop through all damage types and damage health
         for damage_type in damage:
             # @TODO Take damage type into account (mitigations, resistances and stuff?)
@@ -484,10 +478,14 @@ class DamagingSkillSystem(System):
         # If the resulting health is too large, set it to the maximum
         if health_component.health > health_component.max:
             health_component.health = health_component.max
+
+        # If the resulting health is too small, set it to the minimum and trigger a
+        # state change
         elif health_component.health <= health_component.min:
             health_component.health = health_component.min
 
-            # @TODO trigger death state somehow here
+            entity.components['state'].state = EntityState.DEAD
+            self.events.dispatch(EntityStateChangeEvent(entity.id, EntityState.DEAD))
 
 
 class HealthModifyingSkillSystem(System):
@@ -532,7 +530,8 @@ class HealthModifyingSkillSystem(System):
         # If the resulting health is too large, set it to the maximum
         if target_health_component.health > target_health_component.max:
             target_health_component.health = target_health_component.max
-        elif target_health_component.health <= target_health_component.min:
-            target_health_component.health = target_health_component.min
 
-            # @TODO Trigger death state somehow here
+        # If the resulting health is too small, set it to the minimum + 1
+        # (this isn't a system for causing death, you know)
+        elif target_health_component.health <= target_health_component.min:
+            target_health_component.health = target_health_component.min + 1

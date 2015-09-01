@@ -4,13 +4,14 @@ akurra:
       human:
         components:
           position: ~
+          state: ~
           physics:
             core_offset: [0, 20]
             core_size: [24, 16]
           sprite:
             sprite_size: [192, 192]
             animations:
-              STATIONARY:
+              stationary:
                 sprite_sheet:
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
                 directions: [NORTH, WEST, SOUTH, EAST]
@@ -26,7 +27,7 @@ akurra:
           sprite:
             sprite_size: [192, 192]
             animations:
-              STATIONARY:
+              stationary:
                 sprite_sheet:
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/FEET_shoes_brown.png
@@ -48,6 +49,7 @@ akurra:
             name: The Hero
           position: ~
           velocity: ~
+          state: ~
           health: ~
           mana: ~
           input: ~
@@ -57,7 +59,7 @@ akurra:
           sprite:
             sprite_size: [192, 192]
             animations:
-              STATIONARY:
+              stationary:
                 sprite_sheet:
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/FEET_plate_armor_shoes.png
@@ -69,7 +71,7 @@ akurra:
                 directions: [NORTH, WEST, SOUTH, EAST]
                 frame_size: [64, 64]
                 frames: 1
-              MOVING:
+              moving:
                 sprite_sheet:
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/FEET_plate_armor_shoes.png

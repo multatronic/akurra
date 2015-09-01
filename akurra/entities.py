@@ -49,8 +49,13 @@ class EntityState(Enum):
 
     """Entity state enum."""
 
-    STATIONARY = 0
-    MOVING = 1
+    DEAD = 0
+    STATIONARY = 1
+
+    CAN_MOVE = 2
+    CAN_USE_SKILLS = 4
+
+    NORMAL = CAN_MOVE | CAN_USE_SKILLS
 
 
 class EntityInput(Enum):
@@ -121,6 +126,17 @@ class EntityInputChangeEvent(EntityEvent):
 
         self.input = input
         self.input_state = input_state
+
+
+class EntityStateChangeEvent(EntityEvent):
+
+    """Entity state change event."""
+
+    def __init__(self, entity_id, entity_state):
+        """Constructor."""
+        super().__init__(entity_id)
+
+        self.entity_state = entity_state
 
 
 class Entity(pygame.sprite.Sprite):
@@ -533,7 +549,7 @@ class SpriteComponent(Component):
         self._entity.image = self.image
 
     def __init__(self, image=None, sprite_size=[0, 0], animations={}, direction=EntityDirection.SOUTH,
-                 state=EntityState.STATIONARY, **kwargs):
+                 state='stationary', **kwargs):
         """Constructor."""
         self.direction = direction
         self.state = state
@@ -635,6 +651,15 @@ class MapLayerComponent(Component):
     def __init__(self, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
+
+class StateComponent(Component):
+
+    """State component."""
+
+    def __init__(self, state=EntityState.NORMAL, **kwargs):
+        """Constructor."""
+        self.state = state
 
 
 class System(ContainerAware):
@@ -803,8 +828,8 @@ class MovementSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        entity.components['sprite'].state = EntityState.MOVING if \
-            list(filter(None, entity.components['velocity'].direction)) else EntityState.STATIONARY
+        entity.components['sprite'].state = 'moving' if \
+            list(filter(None, entity.components['velocity'].direction)) else 'stationary'
 
         # Do nothing if there is no velocity
         if not entity.components['velocity'].direction[0] and not entity.components['velocity'].direction[1]:
@@ -879,7 +904,7 @@ class RenderingSystem(System):
         try:
             entity.components['sprite'].image.fill([0, 0, 0, 0])
 
-            for x in entity.components['sprite'].animations[entity.components['sprite'].state.name]:
+            for x in entity.components['sprite'].animations[entity.components['sprite'].state]:
                 entity.components['sprite'].image.blit(x.get_frame(), x.render_offset)
         except KeyError:
             entity.components['sprite'].image.blit(entity.components['sprite'].default_image, [0, 0])

@@ -54,6 +54,7 @@ setup(
             'sprite = akurra.entities:SpriteComponent',
             'physics = akurra.entities:PhysicsComponent',
             'position = akurra.entities:PositionComponent',
+            'state = akurra.entities:StateComponent',
 
             'point_ranged_targeted_skill = akurra.skills:PointRangedTargetedSkillComponent',
             'entity_ranged_targeted_skill = akurra.skills:EntityRangedTargetedSkillComponent',
