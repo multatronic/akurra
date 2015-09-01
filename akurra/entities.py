@@ -1176,3 +1176,21 @@ class HealthRegenerationSystem(System):
         # If adding would result in exceeding the max amount, only give the entity as much as we can
         if health_component.health >= health_component.max:
             health_component.health = health_component.max
+
+
+class DeathSystem(System):
+
+    """Death system."""
+
+    requirements = [
+        'state',
+        'sprite'
+    ]
+
+    event_handlers = {
+        EntityStateChangeEvent: ['on_entity_event', 10],
+    }
+
+    def update(self, entity, event=None):
+        """Have an entity handled by the system."""
+        entity.components['sprite'].state = 'death'

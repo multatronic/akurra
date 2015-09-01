@@ -480,7 +480,7 @@ class DamagingSkillSystem(System):
             health_component.health = health_component.max
 
         # If the resulting health is too small, set it to the minimum and trigger a
-        # state change
+        # state change to DEAD
         elif health_component.health <= health_component.min:
             health_component.health = health_component.min
 
