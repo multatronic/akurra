@@ -13,7 +13,7 @@ akurra:
           physics:
             core_size: [20, 20]
           sprite:
-            image: sprites/projectiles/test_projectile.png
+            image: tmp/test_projectile.png
           velocity:
             speed: 250
           mana_consuming_skill:

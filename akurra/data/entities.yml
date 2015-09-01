@@ -29,7 +29,7 @@ akurra:
             animations:
               death:
                 sprite_sheet:
-                  - sprites/lpc_medieval_fantasy_character_sprites/tmp/death_BODY_male.png
+                  - tmp/death_BODY_male.png
                 frame_size: [64, 64]
                 frames: 1
                 directions: [NORTH, WEST, SOUTH, EAST]
