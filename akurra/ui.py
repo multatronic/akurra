@@ -2,7 +2,6 @@
 import pygame
 import logging
 import math
-import threading
 
 from .locals import *  # noqa
 from .display import DisplayModule, DisplayLayer
@@ -76,7 +75,6 @@ class UIModule(Module):
         health_component = player.components['health']
 
         # self.layer.surface.fill([0, 0, 0, 0])
-
         self.layer.surface.blit(self.surfaces['portrait_main'], self.offsets['portrait'])
 
         # The width of the health bar should reflect the player's health percentage
@@ -101,40 +99,38 @@ class UIModule(Module):
                                                     portrait_mana_orb_text_offset[1]])
                 portrait_mana_orb_text_offset[0] += 35
 
-    def render_entity_contexts(self):
+    def render_entity_contexts(self, event):
         """Render data related to entity context such as health bars, character names and the like."""
-        for entity_id, padding in self.health_bar_entities.items():
-            npc = self.entities.find_entity_by_id(entity_id)
-            health_component = npc.components['health']
+        health_bar = self.surfaces['health_bar_small']
+        health_bar_width = health_bar.get_width()
 
-            # The width of the health bar should reflect the npc's health percentage
+        for entity_id in self.health_bar_entities.copy():
+            entity = self.entities.find_entity_by_id(entity_id)
+            health_component = entity.components['health']
+
+            # The width of the health bar should reflect the entity's health percentage
             health_percentage = health_component.health / health_component.max
+            blit_position = map_point_to_screen(entity.components['layer'].layer.map_layer,
+                                                entity.components['position'].layer_position)
 
-            blit_position = map_point_to_screen(npc.components['layer'].layer.map_layer,
-                                                npc.components['position'].layer_position)
-            # ask k-man for a more pythonic way to pad these values
+            # @TODO Better padding
+            padding = [(entity.components['sprite'].sprite_size[0] - health_bar_width) / 2, 60]
             blit_position[0] += padding[0]
             blit_position[1] += padding[1]
-            self.layer.surface.blit(self.surfaces['health_bar_small'], blit_position,
-                                    [0, 0, int(health_percentage * self.surfaces['health_bar_small'].get_width()),
-                                    900])
+
+            self.layer.surface.blit(health_bar, blit_position, [0, 0, int(health_percentage * health_bar_width), 900])
+
+            # Increment static time (time entity's health hasn't changed by event delta time)
+            self.health_bar_entities[entity_id] += event.delta_time
+
+            # If this entity's health hasn't changed in "self.health_bar_display_time",
+            # remove the entity from the list of entities we're watching
+            if self.health_bar_entities[entity_id] >= self.health_bar_display_time:
+                self.health_bar_entities.pop(entity_id, None)
 
     def on_entity_health_change(self, event):
         """Handle an entity health change event."""
-        player = self.session.get('player')
-
-        if not player or event.entity_id == player.id:
-            return
-
-        if event.entity_id not in self.health_bar_entities:
-            # temporarily display enemy life gauges by putting their entity_id and a padding value for the gauge
-            # on the list, then removing it again after a certain period of time
-            entity_width = self.entities.find_entity_by_id(event.entity_id).components['sprite'].sprite_size[0]
-            gauge_padding = [(entity_width - self.surfaces['health_bar_small'].get_width()) / 2, 60]
-            self.health_bar_entities[event.entity_id] = gauge_padding
-
-            threading.Timer(self.health_bar_display_time, lambda x: self.health_bar_entities.pop(x),
-                            [event.entity_id]).start()
+        self.health_bar_entities[event.entity_id] = 0.0
 
     def on_tick(self, event):
         """Handle a tick."""
@@ -145,4 +141,4 @@ class UIModule(Module):
 
         self.layer.surface.fill([0, 0, 0, 0])
         self.render_player_ui(player)
-        self.render_entity_contexts()
+        self.render_entity_contexts(event)
