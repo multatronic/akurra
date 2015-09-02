@@ -3,13 +3,9 @@ import math
 import logging
 
 from .locals import *  # noqa
-<<<<<<< HEAD
-from .entities import EntityEvent, EntityInput, EntityInputChangeEvent, EntityHealthChangeEvent, \
-    EntityCollisionEvent, EntityManager, Component, System
-=======
 from .entities import EntityEvent, EntityInput, EntityInputChangeEvent, EntityCollisionEvent, EntityManager, \
     Component, System, EntityState, EntityStateChangeEvent
->>>>>>> 283ec11115280409352e8dea702d1e48fb323cf6
+
 from .modules import Module
 from .utils import unit_vector_between, map_unit_vector_to_angle, distance_between
 
