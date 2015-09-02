@@ -4,7 +4,7 @@ import logging
 
 from .locals import *  # noqa
 from .entities import EntityEvent, EntityInput, EntityInputChangeEvent, EntityCollisionEvent, EntityManager, \
-    Component, System, EntityState, EntityStateChangeEvent
+    Component, System, EntityState, EntityStateChangeEvent, EntityHealthChangeEvent
 
 from .modules import Module
 from .utils import unit_vector_between, map_unit_vector_to_angle, distance_between
@@ -475,6 +475,7 @@ class DamagingSkillSystem(System):
         for damage_type in damage:
             # @TODO Take damage type into account (mitigations, resistances and stuff?)
             health_component.health -= damage[damage_type]
+            self.events.dispatch(EntityHealthChangeEvent(entity.id))
 
         # If the resulting health is too large, set it to the maximum
         if health_component.health > health_component.max:

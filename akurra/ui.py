@@ -56,7 +56,7 @@ class UIModule(Module):
         self.offsets['portrait_mana_orb_text'] = [119, 80]
 
         self.life_gauge_display_time = 5
-        self.enemies = {}
+        self.life_gauge_displaying_entities = {}
 
     def start(self):
         """Start the module."""
@@ -102,18 +102,18 @@ class UIModule(Module):
     def render_enemy_ui(self):
         """render UI elements not belonging to the player (e.g. enemy life gauge)."""
 
-        for entity_id in self.enemies:
+        for entity_id, padding in self.life_gauge_displaying_entities.copy().items():
             npc = self.entities.find_entity_by_id(entity_id)
             health_component = npc.components['health']
-            physics_component = npc.components['physics']
 
             # The width of the health bar should reflect the npc's health percentage
             health_percentage = health_component.health / health_component.max
-            #TODO: we should be able to convert map position to screen to prevent
-            #'sliding' life guages, but the map coords for the npc might not be accurate
-            # -> the gauge gets drawn in the upper right corner
-            # fix this, then center the life gauge above the npc's head
-            blit_position = npc.components['position'].primary_position
+
+            blit_position = map_point_to_screen(npc.components['layer'].layer.map_layer, \
+                                                npc.components['position'].layer_position)
+            # ask k-man for a more pythonic way to pad these values
+            blit_position[0] += padding[0]
+            blit_position[1] += padding[1]
             self.layer.surface.blit(self.surfaces['health_bar_small'], blit_position, \
                                     [0, 0, int(health_percentage * self.surfaces['health_bar_small'].get_width()), 900])
 
@@ -124,10 +124,15 @@ class UIModule(Module):
         if not player or event.entity_id == player.id:
             return
 
-        # temporarily display enemy life gauges by putting their entity_id on the list, then removing it again
-        # after a certain period of time
-        self.enemies[event.entity_id] = 1
-        threading.Timer(self.life_gauge_display_time, lambda x: self.enemies.pop(x), [event.entity_id]).start()
+        if event.entity_id not in self.life_gauge_displaying_entities:
+            # temporarily display enemy life gauges by putting their entity_id and a horizontal padding value for the gauge
+            # on the list, then removing it again after a certain period of time
+            entity_width = self.entities.find_entity_by_id(event.entity_id).components['sprite'].sprite_size[0]
+            gauge_padding = [(entity_width - self.surfaces['health_bar_small'].get_width()) / 2, 60]
+            self.life_gauge_displaying_entities[event.entity_id] = gauge_padding
+
+            threading.Timer(self.life_gauge_display_time, lambda x: self.life_gauge_displaying_entities.pop(x), \
+                            [event.entity_id]).start()
 
     def on_tick(self, event):
         """Handle a tick."""

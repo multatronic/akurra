@@ -120,11 +120,9 @@ class EntityHealthChangeEvent(EntityEvent):
 
     """Entity health change event."""
 
-    def __init__(self, entity_id, health_modifier):
+    def __init__(self, entity_id):
         """Constructor."""
         super().__init__(entity_id)
-
-        self.health_modifier = health_modifier
 
 
 class EntityDeathEvent(EntityEvent):
@@ -1161,9 +1159,9 @@ class ManaReplenishmentSystem(System):
                 layer.mana_replenishment_map.pop(key, None)
 
 
-class HealthSystem(System):
+class HealthRegenerationSystem(System):
 
-    """Health system, includes taking damage and health regeneration."""
+    """Health replenishment system."""
 
     requirements = [
         'layer',
@@ -1172,8 +1170,7 @@ class HealthSystem(System):
     ]
 
     event_handlers = {
-        TickEvent: ['on_event', 10],
-        EntityHealthChangeEvent: ['on_health_change', 10]
+        TickEvent: ['on_event', 10]
     }
 
     def __init__(self):
