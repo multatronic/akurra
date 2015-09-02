@@ -34,6 +34,7 @@ class UIModule(Module):
         self.session = self.container.get(SessionManager)
         self.assets = self.container.get(AssetManager)
         self.entities = self.container.get(EntityManager)
+        self.configuration = self.container.get(Configuration)
 
         self.font = pygame.font.SysFont('monospace', 9)
 
@@ -55,7 +56,7 @@ class UIModule(Module):
         self.offsets['portrait_mana_orb'] = [105, 70]
         self.offsets['portrait_mana_orb_text'] = [119, 80]
 
-        self.health_bar_display_time = 5
+        self.health_bar_display_time = self.configuration.get('akurra.ui.health_bar.display_time', 5)
         self.health_bar_entities = {}
 
     def start(self):
