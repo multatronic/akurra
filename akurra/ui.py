@@ -40,9 +40,9 @@ class UIModule(Module):
         self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=110)
 
         self.surfaces = {}
-        self.surfaces['health_bar_small'] = self.assets.get_image('graphics/ui/npc/health_bar_small.png', alpha=True)
         self.surfaces['portrait_main'] = self.assets.get_image('graphics/ui/portrait/main.png', alpha=True)
         self.surfaces['portrait_health_bar'] = self.assets.get_image('graphics/ui/portrait/health_bar.png', alpha=True)
+        self.surfaces['health_bar_small'] = self.assets.get_image('tmp/health_bar_small.png', alpha=True)
 
         for type, color in {'earth': 'green', 'water': 'blue', 'air': 'grey', 'fire': 'red'}.items():
             surface = self.assets.get_image('graphics/ui/portrait/magic_buttons/%s.png' % color, alpha=True)
