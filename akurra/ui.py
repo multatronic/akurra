@@ -55,8 +55,8 @@ class UIModule(Module):
         self.offsets['portrait_mana_orb'] = [105, 70]
         self.offsets['portrait_mana_orb_text'] = [119, 80]
 
-        self.life_gauge_display_time = 5
-        self.life_gauge_displaying_entities = {}
+        self.health_bar_display_time = 5
+        self.health_bar_entities = {}
 
     def start(self):
         """Start the module."""
@@ -102,7 +102,7 @@ class UIModule(Module):
 
     def render_entity_contexts(self):
         """Render data related to entity context such as health bars, character names and the like."""
-        for entity_id, padding in self.life_gauge_displaying_entities.items():
+        for entity_id, padding in self.health_bar_entities.items():
             npc = self.entities.find_entity_by_id(entity_id)
             health_component = npc.components['health']
 
@@ -125,14 +125,14 @@ class UIModule(Module):
         if not player or event.entity_id == player.id:
             return
 
-        if event.entity_id not in self.life_gauge_displaying_entities:
+        if event.entity_id not in self.health_bar_entities:
             # temporarily display enemy life gauges by putting their entity_id and a padding value for the gauge
             # on the list, then removing it again after a certain period of time
             entity_width = self.entities.find_entity_by_id(event.entity_id).components['sprite'].sprite_size[0]
             gauge_padding = [(entity_width - self.surfaces['health_bar_small'].get_width()) / 2, 60]
-            self.life_gauge_displaying_entities[event.entity_id] = gauge_padding
+            self.health_bar_entities[event.entity_id] = gauge_padding
 
-            threading.Timer(self.life_gauge_display_time, lambda x: self.life_gauge_displaying_entities.pop(x),
+            threading.Timer(self.health_bar_display_time, lambda x: self.health_bar_entities.pop(x),
                             [event.entity_id]).start()
 
     def on_tick(self, event):
