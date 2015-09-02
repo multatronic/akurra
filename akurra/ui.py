@@ -66,11 +66,12 @@ class UIModule(Module):
 
     def stop(self):
         """Stop the module."""
+        self.events.unregister(self.on_entity_health_change)
         self.events.unregister(self.on_tick)
         self.display.remove_layer(self.layer)
 
     def render_player_ui(self, player):
-        """render player ui elements."""
+        """Render player ui elements."""
         health_component = player.components['health']
 
         # self.layer.surface.fill([0, 0, 0, 0])
@@ -99,9 +100,9 @@ class UIModule(Module):
                                                     portrait_mana_orb_text_offset[1]])
                 portrait_mana_orb_text_offset[0] += 35
 
-    def render_enemy_ui(self):
-        """render UI elements not belonging to the player (e.g. enemy life gauge)."""
-        for entity_id, padding in self.life_gauge_displaying_entities.copy().items():
+    def render_entity_contexts(self):
+        """Render data related to entity context such as health bars, character names and the like."""
+        for entity_id, padding in self.life_gauge_displaying_entities.items():
             npc = self.entities.find_entity_by_id(entity_id)
             health_component = npc.components['health']
 
@@ -118,7 +119,7 @@ class UIModule(Module):
                                     900])
 
     def on_entity_health_change(self, event):
-        """handle entity health change event."""
+        """Handle an entity health change event."""
         player = self.session.get('player')
 
         if not player or event.entity_id == player.id:
@@ -143,4 +144,4 @@ class UIModule(Module):
 
         self.layer.surface.fill([0, 0, 0, 0])
         self.render_player_ui(player)
-        self.render_enemy_ui()
+        self.render_entity_contexts()
