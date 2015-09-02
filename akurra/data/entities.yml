@@ -4,13 +4,14 @@ akurra:
       human:
         components:
           position: ~
+          state: ~
           physics:
             core_offset: [0, 20]
             core_size: [24, 16]
           sprite:
             sprite_size: [192, 192]
             animations:
-              STATIONARY:
+              stationary:
                 sprite_sheet:
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
                 directions: [NORTH, WEST, SOUTH, EAST]
@@ -26,7 +27,14 @@ akurra:
           sprite:
             sprite_size: [192, 192]
             animations:
-              STATIONARY:
+              death:
+                sprite_sheet:
+                  - tmp/death_BODY_male.png
+                frame_size: [64, 64]
+                frames: 1
+                directions: [NORTH, WEST, SOUTH, EAST]
+                frame_offset: 5
+              stationary:
                 sprite_sheet:
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/FEET_shoes_brown.png
@@ -40,49 +48,33 @@ akurra:
                 directions: [NORTH, WEST, SOUTH, EAST]
                 frame_size: [64, 64]
                 frames: 1
-
-      player:
-        components:
-          player: ~
-          character:
-            name: The Hero
-          position: ~
-          velocity: ~
-          health: ~
-          mana: ~
-          input: ~
-          physics:
-            core_offset: [0, 20]
-            core_size: [24, 16]
-          sprite:
-            sprite_size: [192, 192]
-            animations:
-              STATIONARY:
+              moving:
                 sprite_sheet:
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
-                  - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/FEET_plate_armor_shoes.png
+                  - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/FEET_shoes_brown.png
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/LEGS_plate_armor_pants.png
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/TORSO_plate_armor_torso.png
+                  - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BELT_leather.png
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/TORSO_plate_armor_arms_shoulders.png
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/HANDS_plate_armor_gloves.png
-                  - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/HEAD_plate_armor_helmet.png
-                directions: [NORTH, WEST, SOUTH, EAST]
-                frame_size: [64, 64]
-                frames: 1
-              MOVING:
-                sprite_sheet:
-                  - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
-                  - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/FEET_plate_armor_shoes.png
-                  - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/LEGS_plate_armor_pants.png
-                  - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/TORSO_plate_armor_torso.png
-                  - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/TORSO_plate_armor_arms_shoulders.png
-                  - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/HANDS_plate_armor_gloves.png
-                  - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/HEAD_plate_armor_helmet.png
+                  - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/HEAD_hair_blonde.png
+                  - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/WEAPON_shield_cutout_body.png
                 directions: [NORTH, WEST, SOUTH, EAST]
                 frame_size: [64, 64]
                 frames: 8
                 frame_offset: 1
                 loop: true
+
+      player:
+        parent: town_guard
+        components:
+          player: ~
+          character:
+            name: The Hero
+          velocity: ~
+          health: ~
+          mana: ~
+          input: ~
 
       cursor:
         components:

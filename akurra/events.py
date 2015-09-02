@@ -90,10 +90,12 @@ class EventManager:
                 if event_listeners:
                     for listener in event_listeners:
                         if listener(event) is False:
-                            break
+                            return False
         except KeyError:
             logger.insane('No listeners defined for event "%s"', hr_event_type(event.type))
             pass
+
+        return True
 
     def poll(self):
         """
