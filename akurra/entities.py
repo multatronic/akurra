@@ -1212,4 +1212,3 @@ class DeathSystem(System):
     def update(self, entity, event=None):
         """Have an entity handled by the system."""
         entity.components['sprite'].state = 'death'
-
