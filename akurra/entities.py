@@ -1211,4 +1211,6 @@ class DeathSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity handled by the system."""
-        entity.components['sprite'].state = 'death'
+        if entity.components['state'].state == EntityState.DEAD:
+            entity.components['sprite'].state = 'death'
+            self.events.dispatch(EntityDeathEvent(entity.id))

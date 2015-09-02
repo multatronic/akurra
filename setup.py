@@ -77,6 +77,7 @@ setup(
             'positioning = akurra.entities:PositioningSystem',
             'health_regeneration = akurra.entities:HealthRegenerationSystem',
             'death = akurra.entities:DeathSystem',
+
             'skill_usage = akurra.skills:SkillUsageSystem',
             'mana_consuming_skill = akurra.skills:ManaConsumingSkillSystem',
             'point_ranged_targeted_skill = akurra.skills:PointRangedTargetedSkillSystem',

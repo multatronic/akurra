@@ -475,7 +475,6 @@ class DamagingSkillSystem(System):
         for damage_type in damage:
             # @TODO Take damage type into account (mitigations, resistances and stuff?)
             health_component.health -= damage[damage_type]
-            self.events.dispatch(EntityHealthChangeEvent(entity.id))
 
         # If the resulting health is too large, set it to the maximum
         if health_component.health > health_component.max:
@@ -488,6 +487,9 @@ class DamagingSkillSystem(System):
 
             entity.components['state'].state = EntityState.DEAD
             self.events.dispatch(EntityStateChangeEvent(entity.id, EntityState.DEAD))
+
+        # Notify of health change
+        self.events.dispatch(EntityHealthChangeEvent(entity.id))
 
 
 class HealthModifyingSkillSystem(System):
@@ -537,3 +539,6 @@ class HealthModifyingSkillSystem(System):
         # (this isn't a system for causing death, you know)
         elif target_health_component.health <= target_health_component.min:
             target_health_component.health = target_health_component.min + 1
+
+        # Notify of health change
+        self.events.dispatch(EntityHealthChangeEvent(entity.id))
