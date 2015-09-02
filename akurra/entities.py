@@ -49,8 +49,13 @@ class EntityState(Enum):
 
     """Entity state enum."""
 
-    STATIONARY = 0
-    MOVING = 1
+    DEAD = 0
+    STATIONARY = 1
+
+    CAN_MOVE = 2
+    CAN_USE_SKILLS = 4
+
+    NORMAL = CAN_MOVE | CAN_USE_SKILLS
 
 
 class EntityInput(Enum):
@@ -141,6 +146,17 @@ class EntityInputChangeEvent(EntityEvent):
 
         self.input = input
         self.input_state = input_state
+
+
+class EntityStateChangeEvent(EntityEvent):
+
+    """Entity state change event."""
+
+    def __init__(self, entity_id, entity_state):
+        """Constructor."""
+        super().__init__(entity_id)
+
+        self.entity_state = entity_state
 
 
 class Entity(pygame.sprite.Sprite):
@@ -553,7 +569,7 @@ class SpriteComponent(Component):
         self._entity.image = self.image
 
     def __init__(self, image=None, sprite_size=[0, 0], animations={}, direction=EntityDirection.SOUTH,
-                 state=EntityState.STATIONARY, **kwargs):
+                 state='stationary', **kwargs):
         """Constructor."""
         self.direction = direction
         self.state = state
@@ -600,7 +616,9 @@ class InputComponent(Component):
             EntityInput.MOVE_RIGHT: False,
             EntityInput.MANA_GATHER: False,
             EntityInput.SKILL_USAGE: False,
-            EntityInput.SELECTED_SKILL: None
+            EntityInput.SELECTED_SKILL: None,
+            EntityInput.TARGET_POINT: None,
+            EntityInput.TARGET_ENTITY: None,
         }
 
 
@@ -653,6 +671,15 @@ class MapLayerComponent(Component):
     def __init__(self, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
+
+
+class StateComponent(Component):
+
+    """State component."""
+
+    def __init__(self, state=EntityState.NORMAL, **kwargs):
+        """Constructor."""
+        self.state = state
 
 
 class System(ContainerAware):
@@ -821,8 +848,8 @@ class MovementSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        entity.components['sprite'].state = EntityState.MOVING if \
-            list(filter(None, entity.components['velocity'].direction)) else EntityState.STATIONARY
+        entity.components['sprite'].state = 'moving' if \
+            list(filter(None, entity.components['velocity'].direction)) else 'stationary'
 
         # Do nothing if there is no velocity
         if not entity.components['velocity'].direction[0] and not entity.components['velocity'].direction[1]:
@@ -863,7 +890,7 @@ class PositioningSystem(System):
     ]
 
     event_handlers = {
-        EntityMoveEvent: ['on_entity_event', 10]
+        EntityMoveEvent: ['on_entity_event', 15]
     }
 
     def update(self, entity, event=None):
@@ -897,7 +924,7 @@ class RenderingSystem(System):
         try:
             entity.components['sprite'].image.fill([0, 0, 0, 0])
 
-            for x in entity.components['sprite'].animations[entity.components['sprite'].state.name]:
+            for x in entity.components['sprite'].animations[entity.components['sprite'].state]:
                 entity.components['sprite'].image.blit(x.get_frame(), x.render_offset)
         except KeyError:
             entity.components['sprite'].image.blit(entity.components['sprite'].default_image, [0, 0])
@@ -1171,24 +1198,21 @@ class HealthSystem(System):
         if health_component.health >= health_component.max:
             health_component.health = health_component.max
 
-    def on_health_change(self, event):
-        """De/Increase an entity's health."""
-        entity = self.entities.find_entity_by_id_and_components(event.entity_id, self.requirements)
-        if not entity:
-            return
 
-        # calculate new health value
-        health_modifier = event.health_modifier
-        entity_health = entity.components['health'].health + health_modifier
-        max_health = entity.components['health'].max
-        min_health = entity.components['health'].min
+class DeathSystem(System):
 
-        # cap new health to upper limit
-        if health_modifier > 0 and entity_health > max_health:
-            entity_health = max_health
+    """Death system."""
 
-        entity.components['health'].health = entity_health
+    requirements = [
+        'state',
+        'sprite'
+    ]
 
-        # submit entity death event if needed
-        if entity_health <= min_health:
-            self.events.dispatch(EntityDeathEvent(entity.id))
+    event_handlers = {
+        EntityStateChangeEvent: ['on_entity_event', 10],
+    }
+
+    def update(self, entity, event=None):
+        """Have an entity handled by the system."""
+        entity.components['sprite'].state = 'death'
+

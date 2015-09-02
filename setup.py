@@ -54,11 +54,13 @@ setup(
             'sprite = akurra.entities:SpriteComponent',
             'physics = akurra.entities:PhysicsComponent',
             'position = akurra.entities:PositionComponent',
+            'state = akurra.entities:StateComponent',
 
             'point_ranged_targeted_skill = akurra.skills:PointRangedTargetedSkillComponent',
             'entity_ranged_targeted_skill = akurra.skills:EntityRangedTargetedSkillComponent',
             'mana_consuming_skill = akurra.skills:ManaConsumingSkillComponent',
             'damaging_skill = akurra.skills:DamagingSkillComponent',
+            'health_modifying_skill = akurra.skills:HealthModifyingSkillComponent',
         ],
 
         'akurra.entities.systems': [
@@ -73,9 +75,14 @@ setup(
             'sprite_rect_position_correction = akurra.entities:SpriteRectPositionCorrectionSystem',
             'sprite_render_ordering = akurra.entities:SpriteRenderOrderingSystem',
             'positioning = akurra.entities:PositioningSystem',
-            'health = akurra.entities:HealthSystem',
-
+            'health_regeneration = akurra.entities:HealthRegenerationSystem',
+            'death = akurra.entities:DeathSystem',
             'skill_usage = akurra.skills:SkillUsageSystem',
+            'mana_consuming_skill = akurra.skills:ManaConsumingSkillSystem',
+            'point_ranged_targeted_skill = akurra.skills:PointRangedTargetedSkillSystem',
+            'entity_ranged_targeted_skill = akurra.skills:EntityRangedTargetedSkillSystem',
+            'damaging_skill = akurra.skills:DamagingSkillSystem',
+            'health_modifying_skill = akurra.skills:HealthModifyingSkillSystem',
         ]
     },
 
