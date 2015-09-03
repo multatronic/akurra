@@ -7,7 +7,7 @@ import argparse
 
 from threading import Event
 from multiprocessing import Value
-from injector import Injector, inject, singleton
+from injector import Injector, singleton
 
 from ballercfg import ConfigurationManager
 
@@ -34,23 +34,12 @@ container = None
 
 def build_container(binder):
     """Build a service container by binding dependencies to an injector."""
-    # Parse command-line arguments and set required variables
-    parser = argparse.ArgumentParser(description='Run the Akurra game engine.')
-    parser.add_argument('-l', '--log-level', type=str,
-                        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'INSANE'],
-                        default='INFO', help='set the log level')
-    parser.add_argument('-d', '--debug', action='store_true', help='toggle debugging')
-    args = parser.parse_args()
-
-    binder.bind(ArgLogLevel, to=args.log_level)
-
     # Core
     binder.bind(Akurra, scope=singleton)
 
     # General flags and shared objects
     binder.bind(ShutdownFlag, to=Event())
-    binder.bind(DebugFlag, to=Value('B', args.debug))
-    binder.bind(DisplayClock, to=pygame.time.Clock, scope=singleton)
+    binder.bind(DisplayClock, to=pygame.time.Clock())
 
     # Configuration
     CFG_FILES = [
@@ -88,21 +77,31 @@ class Akurra:
 
     """Base game class."""
 
-    @inject(configuration=Configuration, modules=ModuleManager, events=EventManager, states=StateManager,
-            entities=EntityManager, log_level=ArgLogLevel, clock=DisplayClock, shutdown=ShutdownFlag)
-    def __init__(self, log_level, configuration, shutdown, clock, modules, events, states, entities):
+    def __init__(self, log_level, debug):
         """Constructor."""
+        # Set up container
+        global container
+        self.container = container = Injector(build_container)
+
+        # Start pygame (+ audio frequency, size, channels, buffersize)
+        pygame.mixer.pre_init(44100, 16, 2, 4096)
+        pygame.init()
+
         configure_logging(log_level=log_level)
         logger.info('Initializing..')
 
-        self.configuration = configuration
-        self.shutdown = shutdown
-        self.clock = clock
+        self.container.binder.bind(DebugFlag, to=Value('b', debug))
 
-        self.modules = modules
-        self.events = events
-        self.entities = entities
-        self.states = states
+        self.configuration = self.container.get(Configuration)
+        self.shutdown = self.container.get(ShutdownFlag)
+        self.clock = self.container.get(DisplayClock)
+
+        self.modules = self.container.get(ModuleManager)
+        self.events = self.container.get(EventManager)
+        self.entities = self.container.get(EntityManager)
+        self.states = self.container.get(StateManager)
+        self.assets = self.container.get(AssetManager)
+        self.states = self.container.get(StateManager)
 
         self.loop_wait_millis = self.configuration.get('akurra.core.loop_wait_millis', 5)
         self.max_fps = self.configuration.get('akurra.display.max_fps', 60)
@@ -114,6 +113,9 @@ class Akurra:
     def start(self):
         """Start."""
         logger.debug('Starting..')
+
+        # Reset shutdown flag
+        self.shutdown.clear()
 
         self.modules.load()
         self.entities.start()
@@ -164,13 +166,13 @@ class Akurra:
 
 def main():
     """Main entry point."""
-    # frequency, size, channels, buffersize
-    pygame.mixer.pre_init(44100, 16, 2, 4096)
-    pygame.init()
+    # Parse command-line arguments and set required variables
+    parser = argparse.ArgumentParser(description='Run the Akurra game engine.')
+    parser.add_argument('--log-level', type=str, default='INFO', help='set the log level',
+                        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'INSANE'])
+    parser.add_argument('-d', '--debug', action='store_true', help='toggle debugging')
+    args = parser.parse_args()
 
-    global container
-    container = Injector(build_container)
-
-    akurra = container.get(Akurra)
-    akurra.container = container
+    # Start Akurra
+    akurra = Akurra(log_level=args.log_level, debug=args.debug)
     akurra.start()
