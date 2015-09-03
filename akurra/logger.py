@@ -56,11 +56,11 @@ def configure_logging(config=None, log_level='NOT_SET'):
     logging.config.dictConfig(cfg)
 
     # Add log level: insane
-    def insane(self, message, *args, **kws):
+    def insane(self, message, *args, **kwargs):
         if self.isEnabledFor(DEBUG_LEVEL_INSANE_NUM):
-            self._log(DEBUG_LEVEL_INSANE_NUM, message, args, **kws)
+            self._log(DEBUG_LEVEL_INSANE_NUM, message, args, **kwargs)
 
-    logging.addLevelName(DEBUG_LEVEL_INSANE_NUM, "INSANE")
+    logging.addLevelName(DEBUG_LEVEL_INSANE_NUM, 'INSANE')
     logging.INSANE = DEBUG_LEVEL_INSANE_NUM
     logging.Logger.insane = insane
 

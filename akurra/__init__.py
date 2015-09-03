@@ -28,7 +28,6 @@ from .demo import DemoIntroScreen, DemoGameState
 
 os.chdir(os.path.dirname(os.path.dirname(__file__)))
 logger = logging.getLogger(__name__)
-
 container = None
 
 
