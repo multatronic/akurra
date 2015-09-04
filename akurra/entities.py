@@ -19,16 +19,6 @@ class EntityRect(pygame.Rect):
 
     """Pygame rect subclass which can contain a reference to an entity."""
 
-    # @property
-    # def entity(self):
-    #     """Get entity."""
-    #     return self._entity
-
-    # @entity.setter
-    # def entity(self, value):
-    #     """Set entity."""
-    #     self._entity = value
-
 
 class EntityDirection(Enum):
 
@@ -54,8 +44,11 @@ class EntityState(Enum):
 
     CAN_MOVE = 2
     CAN_USE_SKILLS = 4
+    CAN_CHANGE_INPUT = 8
+    CAN_REPLENISH_HEALTH = 16
+    CAN_BE_DAMAGED = 32
 
-    NORMAL = CAN_MOVE | CAN_USE_SKILLS
+    NORMAL = CAN_MOVE | CAN_USE_SKILLS | CAN_CHANGE_INPUT | CAN_REPLENISH_HEALTH | CAN_BE_DAMAGED
 
 
 class EntityInput(Enum):
@@ -753,7 +746,8 @@ class PlayerInputSystem(System):
         'input',
         'player',
         'layer',
-        'map_layer'
+        'map_layer',
+        'state'
     ]
 
     action_inputs = {
@@ -787,6 +781,9 @@ class PlayerInputSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
+        if not entity.components['state'].state.value & EntityState.CAN_CHANGE_INPUT.value:
+            return
+
         input = self.action_inputs[event.action]
         input_state = event.original_event['type'] in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN)
 
@@ -806,7 +803,7 @@ class VelocitySystem(System):
 
     requirements = [
         'input',
-        'velocity'
+        'velocity',
     ]
 
     input_velocities = {
@@ -1166,7 +1163,8 @@ class HealthRegenerationSystem(System):
     requirements = [
         'layer',
         'map_layer',
-        'health'
+        'health',
+        'state'
     ]
 
     event_handlers = {
@@ -1182,6 +1180,9 @@ class HealthRegenerationSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
+        if not entity.components['state'].state.value & EntityState.CAN_REPLENISH_HEALTH.value:
+            return
+
         health_component = entity.components['health']
 
         # Skip this entity if we're at full health
@@ -1202,7 +1203,7 @@ class DeathSystem(System):
 
     requirements = [
         'state',
-        'sprite'
+        'sprite',
     ]
 
     event_handlers = {
@@ -1211,6 +1212,13 @@ class DeathSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity handled by the system."""
-        if entity.components['state'].state == EntityState.DEAD:
+        if entity.components['state'].state is EntityState.DEAD:
             entity.components['sprite'].state = 'death'
             self.events.dispatch(EntityDeathEvent(entity.id))
+
+            # If this entity has an input component, set all inputs to false
+            try:
+                for key in entity.components['input'].input:
+                    entity.components['input'].input[key] = False
+            except KeyError:
+                pass

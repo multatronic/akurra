@@ -124,7 +124,8 @@ class SkillUsageSystem(System):
         'position',
         'map_layer',
         'layer',
-        'physics'
+        'physics',
+        'state'
     ]
 
     event_handlers = {
@@ -150,6 +151,11 @@ class SkillUsageSystem(System):
         # Only proceed if we're here to use a skill
         if (event.input != EntityInput.SKILL_USAGE) or (event.input_state is False):
             # Not a change of the skill usage input, or not the correct state
+            return
+
+        # Only proceed if we are allowed to use skills
+        if not entity.components['state'].state.value & EntityState.CAN_USE_SKILLS.value:
+            # Not allowed to use skills
             return
 
         entity_input = entity.components['input'].input
@@ -431,6 +437,10 @@ class DamagingSkillSystem(System):
         if (not skill_damage_component) or (not skill_target_component):
             return
 
+        # If the target entity no longer exists, don't proceed
+        if not target:
+            return
+
         self.perform_damage(target, skill_damage_component.damage)
 
     def on_entity_skill_usage(self, event):
@@ -469,6 +479,11 @@ class DamagingSkillSystem(System):
 
         # If our target doesn't have the right component(s), this system isn't supposed to handle it
         if not health_component:
+            return
+
+        # If our target has a state component, only proceed if they can take damage
+        state_component = entity.components.get('state', None)
+        if state_component and not state_component.state.value & EntityState.CAN_BE_DAMAGED.value:
             return
 
         # Loop through all damage types and damage health

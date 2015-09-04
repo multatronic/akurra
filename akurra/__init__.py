@@ -33,9 +33,6 @@ container = None
 
 def build_container(binder):
     """Build a service container by binding dependencies to an injector."""
-    # Core
-    binder.bind(Akurra, scope=singleton)
-
     # General flags and shared objects
     binder.bind(ShutdownFlag, to=Event())
     binder.bind(DisplayClock, to=pygame.time.Clock())
@@ -82,14 +79,15 @@ class Akurra:
         global container
         self.container = container = Injector(build_container)
 
+        self.container.binder.bind(Akurra, to=self)
+        self.container.binder.bind(DebugFlag, to=Value('b', debug))
+
         # Start pygame (+ audio frequency, size, channels, buffersize)
         pygame.mixer.pre_init(44100, 16, 2, 4096)
         pygame.init()
 
         configure_logging(log_level=log_level)
         logger.info('Initializing..')
-
-        self.container.binder.bind(DebugFlag, to=Value('b', debug))
 
         self.configuration = self.container.get(Configuration)
         self.shutdown = self.container.get(ShutdownFlag)

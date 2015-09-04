@@ -16,10 +16,10 @@ akurra:
             image: tmp/test_projectile.png
           velocity:
             speed: 250
-          mana_consuming_skill:
-            mana:
-              # fire: 2
-              air: 4
+          # mana_consuming_skill:
+          #   mana:
+          #     # fire: 2
+          #     air: 4
           damaging_skill:
             damage:
               fire: 5
