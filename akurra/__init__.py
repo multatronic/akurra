@@ -168,8 +168,26 @@ def main():
     parser.add_argument('--log-level', type=str, default='INFO', help='set the log level',
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'INSANE'])
     parser.add_argument('-d', '--debug', action='store_true', help='toggle debugging')
+    parser.add_argument('-p', '--profile', action='store_true', help='toggle profiling')
     args = parser.parse_args()
 
-    # Start Akurra
     akurra = Akurra(log_level=args.log_level, debug=args.debug)
-    akurra.start()
+
+    if not args.profile:
+        akurra.start()
+    else:
+        from cProfile import Profile
+        from pstats import Stats
+
+        profiler = Profile()
+        profiler.enable()
+
+        akurra.start()
+
+        profiler.disable()
+        stats = Stats(profiler)
+        stats.sort_stats('tottime')
+        stats.print_stats()
+
+if __name__ == '__main__':
+    main()
