@@ -31,9 +31,9 @@ akurra:
                 sprite_sheet:
                   - tmp/death_BODY_male.png
                 frame_size: [64, 64]
-                frames: 1
+                frames: 6
+                frame_interval: 30
                 directions: [NORTH, WEST, SOUTH, EAST]
-                frame_offset: 5
               stationary:
                 sprite_sheet:
                   - sprites/lpc_medieval_fantasy_character_sprites/walkcycle/BODY_male.png
