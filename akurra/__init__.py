@@ -23,7 +23,7 @@ from .entities import EntityManager
 from .session import SessionManager
 from .utils import get_data_path
 
-from .demo import DemoIntroScreen, DemoGameState
+from .demo import DemoGameState
 
 
 os.chdir(os.path.dirname(os.path.dirname(__file__)))
@@ -65,7 +65,6 @@ def build_container(binder):
     binder.bind(StateManager, scope=singleton)
 
     # Demo
-    binder.bind(DemoIntroScreen)
     binder.bind(DemoGameState)
 
 
@@ -121,10 +120,8 @@ class Akurra:
         # create states, set introscreen as initial state
         # @TODO Turn these babies into modules and somesuch
         game_realm = self.container.get(DemoGameState)
-        intro_screen = self.container.get(DemoIntroScreen)
-        splash_screen = SplashScreen(image='graphics/logos/multatronic.png', next=intro_screen)
+        splash_screen = SplashScreen(image='graphics/logos/multatronic.png', next=game_realm)
         self.states.add(splash_screen)
-        self.states.add(intro_screen)
         self.states.add(game_realm)
 
         self.states.set_active(splash_screen)

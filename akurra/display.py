@@ -7,7 +7,7 @@ import pyscroll
 from pyscroll.util import PyscrollGroup
 
 from .locals import *  # noqa
-from .keyboard import KeyboardModule
+from .input import InputModule
 from .events import Event, TickEvent, EventManager
 from .entities import LayerComponent, EntityManager, MapLayerComponent
 from .modules import Module
@@ -313,14 +313,14 @@ class DisplayModule(Module):
     """Display module."""
 
     dependencies = [
-        'keyboard'
+        'input'
     ]
 
     def __init__(self):
         """Constructor."""
         self.configuration = self.container.get(Configuration)
         self.events = self.container.get(EventManager)
-        self.keyboard = self.container.get(KeyboardModule)
+        self.input = self.container.get(InputModule)
 
         self.resolution = self.configuration.get('akurra.display.resolution', [0, 0])
         self.caption = self.configuration.get('akurra.display.caption', 'Akurra DEV')
@@ -338,11 +338,11 @@ class DisplayModule(Module):
         self.events.register(TickEvent, self.on_tick)
         self.events.register(pygame.VIDEORESIZE, self.on_video_resize)
 
-        self.keyboard.add_action_listener('fullscreen_toggle', self.toggle_fullscreen)
+        self.input.add_action_listener('fullscreen_toggle', self.toggle_fullscreen)
 
     def stop(self):
         """Stop the module."""
-        self.keyboard.remove_action_listener(self.toggle_fullscreen)
+        self.input.remove_action_listener(self.toggle_fullscreen)
 
         self.events.unregister(self.on_video_resize)
         self.events.unregister(self.on_tick)
@@ -417,7 +417,7 @@ class DisplayModule(Module):
 
     def toggle_fullscreen(self, event):
         """Toggle fullscreen mode."""
-        if event.original_event['type'] is not pygame.KEYDOWN:
+        if not event.state:
             return
 
         if self.flags & pygame.FULLSCREEN:

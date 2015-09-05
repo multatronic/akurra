@@ -3,5 +3,7 @@ akurra:
         cursor:
             image: graphics/ui/cursors/iron_plague.png
 
-        action_bindings:
-            skill_usage: 1
+    input:
+        mouse:
+            action_bindings:
+                skill_usage: 1

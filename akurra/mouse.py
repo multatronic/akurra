@@ -5,7 +5,8 @@ import pygame
 from .modules import Module
 from .assets import AssetManager
 from .display import EntityDisplayLayer, DisplayModule
-from .events import EventManager, Event
+from .events import EventManager
+from .input import InputSource, InputActionEvent
 from .entities import EntityManager, SpriteComponent
 from .utils import hr_button_id, hr_event_type, fqcn
 from .locals import *  # noqa
@@ -14,75 +15,28 @@ from .locals import *  # noqa
 logger = logging.getLogger(__name__)
 
 
-class MouseActionEvent(Event):
+class MouseInput(InputSource):
 
-    """Mouse action event."""
-
-    def __init__(self, action, original_event):
-        """Constructor."""
-        super().__init__()
-
-        self.action = action
-        self.original_event = original_event.__dict__
-        self.original_event['type'] = original_event.type
-
-
-class MouseModule(Module):
-
-    """
-    Mouse module.
-
-    The mouse module is in charge of managing button bindings and acting upon
-    mouse clicks or hovers.
-
-    """
-
-    dependencies = [
-        'display'
-    ]
+    """Mouse input source, responsible for triggering input actions when buttons are pressed, released or held."""
 
     def __init__(self):
         """Constructor."""
         super().__init__()
 
-        self.listeners = {}
-        self.action_listeners = {}
-
         self.configuration = self.container.get(Configuration)
         self.events = self.container.get(EventManager)
-        self.assets = self.container.get(AssetManager)
-        self.display = self.container.get(DisplayModule)
-        self.entities = self.container.get(EntityManager)
-
-        self.cursor_layer = EntityDisplayLayer(z_index=102, flags=pygame.SRCALPHA)
-        self.load_cursor()
+        self.listeners = {}
+        self.load_action_bindings()
 
     def start(self):
         """Start the module."""
-        self.events.register(pygame.MOUSEBUTTONDOWN, self.on_mouse_button_down)
-        self.events.register(pygame.MOUSEBUTTONUP, self.on_mouse_button_up)
-        self.events.register(pygame.MOUSEMOTION, self.on_mouse_motion)
-        self.events.register(MouseActionEvent, self.on_mouse_action)
-        self.load_action_bindings()
-
-        # Add custom cursor rendering layer to display
-        self.display.add_layer(self.cursor_layer)
-
-        # Hide the default pygame cursor
-        pygame.mouse.set_visible(False)
+        self.events.register(pygame.MOUSEBUTTONDOWN, self.on_button_down)
+        self.events.register(pygame.MOUSEBUTTONUP, self.on_button_up)
 
     def stop(self):
         """Stop the module."""
-        # Show the default pygame cursor
-        pygame.mouse.set_visible(True)
-
-        # Remove custom cursor rendering layer from display
-        self.display.remove_layer(self.cursor_layer)
-
-        self.events.unregister(self.on_mouse_action)
-        self.events.unregister(self.on_mouse_motion)
-        self.events.unregister(self.on_mouse_button_up)
-        self.events.unregister(self.on_mouse_button_down)
+        self.events.unregister(self.on_button_down)
+        self.events.unregister(self.on_button_up)
 
     def add_listener(self, button_id, listener, event_type=pygame.MOUSEBUTTONDOWN, priority=10):
         """
@@ -127,15 +81,15 @@ class MouseModule(Module):
                                 logger.debug('Unregistered listener for key "%s" [event=%s]', hr_button_id(button_id),
                                              hr_event_type(event_type))
 
-    def on_mouse_button_down(self, event):
+    def on_button_down(self, event):
         """Handle holding down of a mouse button."""
         logger.insane('Detected mouse button down [button=%s, pos=%s]', hr_button_id(event.button), event.pos)
 
-        for z_index in self.display.layers:
-            for layer in self.display.layers[z_index]:
-                if hasattr(layer, 'find_entities_at'):
-                    for e in layer.find_entities_at(event.pos, ignore_ids=[self.cursor.id], position_type='screen'):
-                        layer.on_entity_mouse(e, event)
+        # for z_index in self.display.layers:
+        #     for layer in self.display.layers[z_index]:
+        #         if hasattr(layer, 'find_entities_at'):
+        #             for e in layer.find_entities_at(event.pos, ignore_ids=[self.cursor.id], position_type='screen'):
+        #                 layer.on_entity_mouse(e, event)
 
         try:
             for listeners in self.listeners[event.type][event.button]:
@@ -148,15 +102,15 @@ class MouseModule(Module):
                           hr_event_type(event.type))
             pass
 
-    def on_mouse_button_up(self, event):
+    def on_button_up(self, event):
         """Handle releasing of a mouse button."""
         logger.insane('Detected mouse button up [button=%s, pos=%s]', hr_button_id(event.button), event.pos)
 
-        for z_index in self.display.layers:
-            for layer in self.display.layers[z_index]:
-                if hasattr(layer, 'find_entities_at'):
-                    for e in layer.find_entities_at(event.pos, ignore_ids=[self.cursor.id], position_type='screen'):
-                        layer.on_entity_mouse(e, event)
+        # for z_index in self.display.layers:
+        #     for layer in self.display.layers[z_index]:
+        #         if hasattr(layer, 'find_entities_at'):
+        #             for e in layer.find_entities_at(event.pos, ignore_ids=[self.cursor.id], position_type='screen'):
+        #                 layer.on_entity_mouse(e, event)
 
         try:
             for listeners in self.listeners[event.type][event.button].copy():
@@ -169,26 +123,9 @@ class MouseModule(Module):
                           hr_event_type(event.type))
             pass
 
-    def on_mouse_motion(self, event):
-        """Handle mouse motion."""
-        # Set cursor entity position to mouse location
-        self.cursor.components['position'].primary_position = pygame.mouse.get_pos()
-
-        # @TODO Maybe do something else on mouse motion?
-        # logger.insane('Detected mouse motion [pos=%s]', event.pos)
-
-    def load_cursor(self):
-        """Load the mouse cursor."""
-        self.cursor_image_path = self.configuration.get('akurra.mouse.cursor.image', 'graphics/ui/cursors/default.png')
-
-        self.cursor = self.entities.create_entity_from_template('cursor')
-        self.cursor.add_component(SpriteComponent(image=self.cursor_image_path))
-
-        self.cursor_layer.add_entity(self.cursor)
-
     def load_action_bindings(self):
         """Load action bindings."""
-        bindings = self.configuration.get('akurra.mouse.action_bindings', {})
+        bindings = self.configuration.get('akurra.input.mouse.action_bindings', {})
 
         for action, binding in bindings.items():
             self.add_action_binding(action, binding)
@@ -217,57 +154,65 @@ class MouseModule(Module):
 
     def trigger_action(self, event, action):
         """
-        Process a mouse press, hold or release event and trigger an action.
+        Process a key press, hold or release event and trigger an action.
 
         :param event: Event to process.
         :param action: Action to trigger.
 
         """
-        self.events.dispatch(MouseActionEvent(action=action, original_event=event))
+        self.events.dispatch(InputActionEvent(source='mouse', action=action,
+                                              state=event.type is pygame.MOUSEBUTTONDOWN, original_event=event))
         logger.insane('Triggered mouse action "%s"', action)
 
-    def on_mouse_action(self, event):
-        """
-        Handle a mouse action.
 
-        :param event: Event to process.
+class MouseModule(Module):
 
-        """
-        for listeners in self.action_listeners[event.action]:
-            if listeners:
-                for listener in listeners:
-                    if listener and listener(event) is False:
-                        break
+    """
+    Mouse module.
 
-        logger.insane('Handled key action "%s"', event.action)
+    The mouse module is in charge of drawing the cursor.
 
-    def add_action_listener(self, action, listener, priority=10):
-        """
-        Register a listener for an action.
+    """
 
-        :param action: An identifier for an action.
-        :param listener: An event listener which can accept an event.
-        :param priotrity: Priority of event listener.
+    dependencies = [
+        'display'
+    ]
 
-        """
-        if action not in self.action_listeners:
-            self.action_listeners[action] = 99 * [None]
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
 
-        if not self.action_listeners[action][priority]:
-            self.action_listeners[action][priority] = []
+        self.configuration = self.container.get(Configuration)
+        self.events = self.container.get(EventManager)
+        self.assets = self.container.get(AssetManager)
+        self.display = self.container.get(DisplayModule)
+        self.entities = self.container.get(EntityManager)
 
-        self.action_listeners[action][priority].append(listener)
-        logger.debug('Registered listener for action "%s" [priority=%s]', action, priority)
+        self.cursor_layer = EntityDisplayLayer(z_index=102, flags=pygame.SRCALPHA)
+        self.load_cursor()
 
-    def remove_action_listener(self, listener):
-        """
-        Remove a listener for an action.
+    def start(self):
+        """Start the module."""
+        self.events.register(pygame.MOUSEMOTION, self.on_mouse_motion)
+        self.display.add_layer(self.cursor_layer)
+        pygame.mouse.set_visible(False)
 
-        :param listener: A listener to remove.
+    def stop(self):
+        """Stop the module."""
+        pygame.mouse.set_visible(True)
+        self.display.remove_layer(self.cursor_layer)
+        self.events.unregister(self.on_mouse_motion)
 
-        """
-        for action in self.action_listeners:
-            for listeners in self.action_listeners[action]:
-                if listeners and listener in listeners:
-                    listeners.remove(listener)
-                    logger.debug('Unregistered listener for action "%s"', action)
+    def on_mouse_motion(self, event):
+        """Handle mouse motion."""
+        # Set cursor entity position to mouse location
+        self.cursor.components['position'].primary_position = pygame.mouse.get_pos()
+
+    def load_cursor(self):
+        """Load the mouse cursor."""
+        self.cursor_image_path = self.configuration.get('akurra.mouse.cursor.image', 'graphics/ui/cursors/default.png')
+
+        self.cursor = self.entities.create_entity_from_template('cursor')
+        self.cursor.add_component(SpriteComponent(image=self.cursor_image_path))
+
+        self.cursor_layer.add_entity(self.cursor)

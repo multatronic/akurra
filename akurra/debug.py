@@ -4,7 +4,7 @@ import logging
 import math
 
 from .locals import *  # noqa
-from .keyboard import KeyboardModule
+from .input import InputModule
 from .display import DisplayModule, DisplayLayer
 from .entities import EntityManager
 from .events import TickEvent, EventManager
@@ -21,7 +21,7 @@ class DebugModule(Module):
     """Debugging module."""
 
     dependencies = [
-        'keyboard',
+        'input',
         'display'
     ]
 
@@ -31,7 +31,7 @@ class DebugModule(Module):
 
         self.debug = self.container.get(DebugFlag)
 
-        self.keyboard = self.container.get(KeyboardModule)
+        self.input = self.container.get(InputModule)
         self.events = self.container.get(EventManager)
         self.entities = self.container.get(EntityManager)
         self.display = self.container.get(DisplayModule)
@@ -44,7 +44,7 @@ class DebugModule(Module):
 
     def start(self):
         """Start the module."""
-        self.keyboard.add_action_listener('debug_toggle', self.debug_toggle)
+        self.input.add_action_listener('debug_toggle', self.debug_toggle)
 
         if self.debug.value:
             self.display.add_layer(self.layer)
@@ -52,11 +52,11 @@ class DebugModule(Module):
 
     def stop(self):
         """Stop the module."""
-        self.keyboard.remove_action_listener(self.debug_toggle)
+        self.input.remove_action_listener(self.debug_toggle)
 
     def debug_toggle(self, event):
         """Toggle debug mode."""
-        if event.original_event['type'] == pygame.KEYDOWN:
+        if event.state:
             self.debug.value = not self.debug.value
 
             if self.debug.value:

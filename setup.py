@@ -35,11 +35,14 @@ setup(
             'display = akurra.display:DisplayModule',
             'debug = akurra.debug:DebugModule',
             'audio = akurra.audio:AudioModule',
-            'keyboard = akurra.keyboard:KeyboardModule',
             'mouse = akurra.mouse:MouseModule',
             'UI = akurra.ui:UIModule',
 
             'skills = akurra.skills:SkillsModule',
+
+            'input = akurra.input:InputModule',
+            'keyboard_input = akurra.keyboard:KeyboardInput',
+            'mouse_input = akurra.mouse:MouseInput',
         ],
 
         'akurra.entities.components': [

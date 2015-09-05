@@ -4,36 +4,17 @@ import functools
 import pygame
 
 from .locals import *  # noqa
-from .modules import Module
-from .events import EventManager, Event
+from .input import InputSource, InputActionEvent
+from .events import EventManager
 from .utils import hr_key_id, hr_event_type, fqcn
 
 
 logger = logging.getLogger(__name__)
 
 
-class KeyboardActionEvent(Event):
+class KeyboardInput(InputSource):
 
-    """Keyboard action event."""
-
-    def __init__(self, action, original_event):
-        """Constructor."""
-        super().__init__()
-
-        self.action = action
-        self.original_event = original_event.__dict__
-        self.original_event['type'] = original_event.type
-
-
-class KeyboardModule(Module):
-
-    """
-    Keyboard module.
-
-    The keyboard module is in charge of managing key bindings and acting upon
-    key presses or releases.
-
-    """
+    """Keyboard input source, responsible for triggering input actions when keys are pressed, released or held."""
 
     def __init__(self):
         """Constructor."""
@@ -42,18 +23,15 @@ class KeyboardModule(Module):
         self.configuration = self.container.get(Configuration)
         self.events = self.container.get(EventManager)
         self.listeners = {}
-        self.action_listeners = {}
+        self.load_action_bindings()
 
     def start(self):
         """Start the module."""
         self.events.register(pygame.KEYDOWN, self.on_key_down)
         self.events.register(pygame.KEYUP, self.on_key_up)
-        self.events.register(KeyboardActionEvent, self.on_keyboard_action)
-        self.load_action_bindings()
 
     def stop(self):
         """Stop the module."""
-        self.events.unregister(self.on_keyboard_action)
         self.events.unregister(self.on_key_down)
         self.events.unregister(self.on_key_up)
 
@@ -140,7 +118,7 @@ class KeyboardModule(Module):
 
     def load_action_bindings(self):
         """Load action bindings."""
-        bindings = self.configuration.get('akurra.keyboard.action_bindings', {})
+        bindings = self.configuration.get('akurra.input.keyboard.action_bindings', {})
 
         for action, binding in bindings.items():
             # If no modifier was specified for this binding, default to 0
@@ -184,51 +162,6 @@ class KeyboardModule(Module):
         :param action: Action to trigger.
 
         """
-        self.events.dispatch(KeyboardActionEvent(action=action, original_event=event))
+        self.events.dispatch(InputActionEvent(source='keyboard', action=action,
+                                              state=event.type is pygame.KEYDOWN, original_event=event))
         logger.insane('Triggered key action "%s"', action)
-
-    def on_keyboard_action(self, event):
-        """
-        Handle a keyboard action.
-
-        :param event: Event to process.
-
-        """
-        for listeners in self.action_listeners[event.action]:
-            if listeners:
-                for listener in listeners:
-                    if listener and listener(event) is False:
-                        break
-
-        logger.insane('Handled key action "%s"', event.action)
-
-    def add_action_listener(self, action, listener, priority=10):
-        """
-        Register a listener for an action.
-
-        :param action: An identifier for an action.
-        :param listener: An event listener which can accept an event.
-        :param priotrity: Priority of event listener.
-
-        """
-        if action not in self.action_listeners:
-            self.action_listeners[action] = 99 * [None]
-
-        if not self.action_listeners[action][priority]:
-            self.action_listeners[action][priority] = []
-
-        self.action_listeners[action][priority].append(listener)
-        logger.debug('Registered listener for action "%s" [priority=%s]', action, priority)
-
-    def remove_action_listener(self, listener):
-        """
-        Remove a listener for an action.
-
-        :param listener: A listener to remove.
-
-        """
-        for action in self.action_listeners:
-            for listeners in self.action_listeners[action]:
-                if listeners and listener in listeners:
-                    listeners.remove(listener)
-                    logger.debug('Unregistered listener for action "%s"', action)

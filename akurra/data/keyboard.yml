@@ -1,12 +1,13 @@
 akurra:
-    keyboard:
-        action_bindings:
-            debug_toggle: [K_F11, [KMOD_LCTRL]]
-            fullscreen_toggle: K_F12
-            game_quit: K_ESCAPE
-            splash_screen_skip: K_SPACE
-            move_up: K_UP
-            move_down: K_DOWN
-            move_left: K_LEFT
-            move_right: K_RIGHT
-            mana_gather: K_m
+    input:
+        keyboard:
+            action_bindings:
+                debug_toggle: [K_F11, [KMOD_LCTRL]]
+                fullscreen_toggle: K_F12
+                game_quit: K_ESCAPE
+                splash_screen_skip: K_SPACE
+                move_up: K_UP
+                move_down: K_DOWN
+                move_left: K_LEFT
+                move_right: K_RIGHT
+                mana_gather: K_m

@@ -763,21 +763,16 @@ class PlayerInputSystem(System):
         """Constructor."""
         super().__init__()
 
-        from .mouse import MouseModule
-        from .keyboard import KeyboardModule
-
-        self.keyboard = self.container.get(KeyboardModule)
-        self.mouse = self.container.get(MouseModule)
+        from .input import InputModule
+        self.input = self.container.get(InputModule)
 
     def start(self):
         """Start the system."""
-        [self.keyboard.add_action_listener(x, self.on_event) for x in self.action_inputs.keys()]
-        [self.mouse.add_action_listener(x, self.on_event) for x in self.action_inputs.keys()]
+        [self.input.add_action_listener(x, self.on_event) for x in self.action_inputs.keys()]
 
     def stop(self):
         """Stop the system."""
-        self.mouse.remove_action_listener(self.on_event)
-        self.keyboard.remove_action_listener(self.on_event)
+        self.input.remove_action_listener(self.on_event)
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
@@ -785,16 +780,14 @@ class PlayerInputSystem(System):
             return
 
         input = self.action_inputs[event.action]
-        input_state = event.original_event['type'] in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN)
+        entity.components['input'].input[input] = event.state
 
-        entity.components['input'].input[input] = input_state
-
-        if event.original_event.get('pos', None):
+        if event.source == 'mouse':
             entity.components['input'].input[EntityInput.TARGET_POINT] = \
                 screen_point_to_layer(entity.components['layer'].layer.map_layer, event.original_event['pos'])
 
         # Trigger an input change event
-        self.events.dispatch(EntityInputChangeEvent(entity.id, input, input_state))
+        self.events.dispatch(EntityInputChangeEvent(entity.id, input, event.state))
 
 
 class VelocitySystem(System):

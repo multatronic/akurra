@@ -78,7 +78,7 @@ class ModuleManager(ContainerAware):
         logger.debug('Unloading module "%s"', name)
 
         # Remove the module from the python interpreter
-        sys.modules.pop(self.modules[name].__module__)
+        sys.modules.pop(self.modules[name].__module__, None)
 
         del self.modules[name]
         self.modules.pop("", None)
