@@ -53,7 +53,7 @@ def build_container(binder):
             with open(f, 'a+'):
                 pass
 
-    cfg = ConfigurationManager.load(CFG_FILES + [get_data_path('*.yml')])
+    cfg = ConfigurationManager.load([get_data_path('*.yml')] + CFG_FILES)
     binder.bind(Configuration, to=cfg)
 
     # Core components (@TODO some of these may or may not require modules)
