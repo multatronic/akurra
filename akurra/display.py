@@ -424,3 +424,5 @@ class DisplayModule(Module):
             self.flags ^= pygame.FULLSCREEN
         else:
             self.flags |= pygame.FULLSCREEN
+
+        self.screen = self.create_screen()
