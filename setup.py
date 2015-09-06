@@ -43,6 +43,8 @@ setup(
             'input = akurra.input:InputModule',
             'keyboard_input = akurra.keyboard:KeyboardInput',
             'mouse_input = akurra.mouse:MouseInput',
+
+            'demo_game = akurra.demo:DemoGame',
         ],
 
         'akurra.entities.components': [

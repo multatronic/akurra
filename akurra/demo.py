@@ -1,19 +1,46 @@
 """Demo module."""
 import pygame
 import logging
+
 from .assets import AssetManager
-from .display import (ScrollingMapEntityDisplayLayer,
-                      DisplayModule, DisplayLayer)
+from .display import ScrollingMapEntityDisplayLayer, DisplayModule, DisplayLayer
 from .events import EventManager
 from .entities import EntityManager, EntityInput
 from .session import SessionManager
-from .states import GameState
+from .modules import Game
+from .states import GameState, SplashScreen, StateManager
 from .input import InputModule
 from .audio import AudioModule
 from .locals import *  # noqa
 
 
 logger = logging.getLogger(__name__)
+
+
+class DemoGame(Game):
+
+    """Demo game."""
+
+    def __init__(self):
+        """Constructor."""
+        self.states = self.container.get(StateManager)
+
+        self.game_realm = DemoGameState()
+        self.splash_screen = SplashScreen(image='graphics/logos/multatronic.png', next=self.game_realm)
+
+    def start(self):
+        """Start the module."""
+        self.states.add(self.splash_screen)
+        self.states.add(self.game_realm)
+
+    def stop(self):
+        """Stop the module."""
+        self.states.remove(self.game_realm)
+        self.states.remove(self.splash_screen)
+
+    def play(self):
+        """Play the game."""
+        self.states.set_active(self.splash_screen)
 
 
 class DemoGameState(GameState):

@@ -29,6 +29,21 @@ class Module(ContainerAware):
         pass
 
 
+class Game(Module):
+
+    """
+    Base game module.
+
+    A game module is a module of which only one can be running at a time.
+    It is responsible for loading game assets, adding and running game states and the like.
+
+    """
+
+    def play(self):
+        """Start the game."""
+        raise NotImplementedError('A game must implement a play method!')
+
+
 class ModuleManager(ContainerAware):
 
     """The ModuleManager manages the loading, unloading, etc. of modules."""

@@ -23,8 +23,6 @@ from .entities import EntityManager
 from .session import SessionManager
 from .utils import get_data_path
 
-from .demo import DemoGameState
-
 
 os.chdir(os.path.dirname(os.path.dirname(__file__)))
 logger = logging.getLogger(__name__)
@@ -64,19 +62,18 @@ def build_container(binder):
     binder.bind(SessionManager, scope=singleton)
     binder.bind(StateManager, scope=singleton)
 
-    # Demo
-    binder.bind(DemoGameState)
-
 
 class Akurra:
 
     """Base game class."""
 
-    def __init__(self, log_level, debug):
+    def __init__(self, game, log_level='INFO', debug=False):
         """Constructor."""
         # Set up container
         global container
         self.container = container = Injector(build_container)
+
+        self.game = game
 
         self.container.binder.bind(Akurra, to=self)
         self.container.binder.bind(DebugFlag, to=Value('b', debug))
@@ -117,14 +114,12 @@ class Akurra:
         self.entities.start()
         self.modules.start()
 
-        # create states, set introscreen as initial state
-        # @TODO Turn these babies into modules and somesuch
-        game_realm = self.container.get(DemoGameState)
-        splash_screen = SplashScreen(image='graphics/logos/multatronic.png', next=game_realm)
-        self.states.add(splash_screen)
-        self.states.add(game_realm)
-
-        self.states.set_active(splash_screen)
+        # Fetch game and play it
+        try:
+            game = self.modules.modules.get(self.game)
+            game.play()
+        except AttributeError:
+            raise ValueError('No game module named "%s" exists!' % self.game)
 
         while not self.shutdown.is_set():
             # Pump/handle events (both pygame and akurra)
@@ -165,9 +160,10 @@ def main():
     parser.add_argument('--log-level', type=str, default='INFO', help='set the log level',
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'INSANE'])
     parser.add_argument('-d', '--debug', action='store_true', help='toggle debugging')
+    parser.add_argument('-g', '--game', required=True, type=str, help='game to run')
     args = parser.parse_args()
 
-    akurra = Akurra(log_level=args.log_level, debug=args.debug)
+    akurra = Akurra(game=args.game, log_level=args.log_level, debug=args.debug)
     akurra.start()
 
 
