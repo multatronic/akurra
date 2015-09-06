@@ -27,16 +27,8 @@ class DemoGame(Game):
 
         self.game_realm = DemoGameState()
         self.splash_screen = SplashScreen(image='graphics/logos/multatronic.png', next=self.game_realm)
-
-    def start(self):
-        """Start the module."""
         self.states.add(self.splash_screen)
         self.states.add(self.game_realm)
-
-    def stop(self):
-        """Stop the module."""
-        self.states.remove(self.game_realm)
-        self.states.remove(self.splash_screen)
 
     def play(self):
         """Play the game."""

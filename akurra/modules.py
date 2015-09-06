@@ -1,4 +1,5 @@
 """Modules module."""
+import re
 import sys
 import logging
 from pkg_resources import iter_entry_points
@@ -53,10 +54,18 @@ class ModuleManager(ContainerAware):
         logger.debug('Initializing ModuleManager')
 
         self.configuration = self.container.get(Configuration)
+
         self.group = self.configuration.get('akurra.modules.entry_point.group', 'akurra.modules')
+
+        self.whitelist = self.configuration.get('akurra.modules.whitelist.enabled', False)
+        self.whitelist_modules = self.configuration.get('akurra.modules.whitelist.modules', [])
+
+        self.blacklist = self.configuration.get('akurra.modules.blacklist.enabled', True)
+        self.blacklist_modules = self.configuration.get('akurra.modules.blacklist.modules', [])
+
         self.modules = {}
 
-    def load_single(self, name):
+    def load_single(self, name, ignore_preferences=False):
         """
         Load a single module.
 
@@ -68,6 +77,20 @@ class ModuleManager(ContainerAware):
         if name in self.modules:
             logger.debug('Module "%s" already loaded, skipping', name)
             return
+
+        if not ignore_preferences:
+            if self.whitelist:
+                for expr in self.whitelist_modules:
+                    if re.match(expr, name):
+                        break
+
+                logger.debug('Module "%s" is not whitelisted, skipping', name)
+                return
+            elif self.blacklist:
+                for expr in self.blacklist_modules:
+                    if re.match(expr, name):
+                        logger.debug('Module "%s" is blacklisted, skipping', name)
+                        return
 
         for entry_point in iter_entry_points(group=self.group, name=name):
             module_class = entry_point.load()

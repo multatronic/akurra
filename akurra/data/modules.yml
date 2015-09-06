@@ -1,3 +1,11 @@
 akurra:
     modules:
         entry_point_group: akurra.modules
+
+        whitelist:
+            enabled: false
+
+        blacklist:
+            enabled: true
+            modules:
+                - .*game.* # Don't load any modules with names containing the string 'game' by default

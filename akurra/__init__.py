@@ -17,7 +17,7 @@ from .events import EventManager, TickEvent
 from .modules import ModuleManager
 from .logger import configure_logging
 
-from .states import StateManager, SplashScreen
+from .states import StateManager
 from .assets import AssetManager
 from .entities import EntityManager
 from .session import SessionManager
@@ -114,8 +114,11 @@ class Akurra:
         self.entities.start()
         self.modules.start()
 
-        # Fetch game and play it
         try:
+            # Attempt to load game, ignoring whitelist/blacklist settings
+            self.modules.load_single(self.game, ignore_preferences=True)
+
+            # Attempt to fetch and launch game
             game = self.modules.modules.get(self.game)
             game.play()
         except AttributeError:
