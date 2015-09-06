@@ -45,27 +45,22 @@ class Game(Module):
         raise NotImplementedError('A game must implement a play method!')
 
 
-class ModuleManager(ContainerAware):
+class ModuleLoader(ContainerAware):
 
-    """The ModuleManager manages the loading, unloading, etc. of modules."""
+    """Module loader manages the loading, unloading, etc. of modules."""
 
-    def __init__(self):
+    def __init__(self, group, whitelist=None, blacklist=None, instantiate=True):
         """Constructor."""
-        logger.debug('Initializing ModuleManager')
+        logger.debug('Initializing ModuleLoader [group=%s]' % group)
 
-        self.configuration = self.container.get(Configuration)
-
-        self.group = self.configuration.get('akurra.modules.entry_point.group', 'akurra.modules')
-
-        self.whitelist = self.configuration.get('akurra.modules.whitelist.enabled', False)
-        self.whitelist_modules = self.configuration.get('akurra.modules.whitelist.modules', [])
-
-        self.blacklist = self.configuration.get('akurra.modules.blacklist.enabled', True)
-        self.blacklist_modules = self.configuration.get('akurra.modules.blacklist.modules', [])
+        self.group = group
+        self.whitelist = whitelist
+        self.blacklist = blacklist
+        self.instantiate = instantiate
 
         self.modules = {}
 
-    def load_single(self, name, ignore_preferences=False):
+    def load_single(self, name):
         """
         Load a single module.
 
@@ -78,28 +73,30 @@ class ModuleManager(ContainerAware):
             logger.debug('Module "%s" already loaded, skipping', name)
             return
 
-        if not ignore_preferences:
-            if self.whitelist:
-                for expr in self.whitelist_modules:
-                    if re.match(expr, name):
-                        break
+        if self.whitelist is not None:
+            for expr in self.whitelist:
+                if re.match(expr, name):
+                    break
 
-                logger.debug('Module "%s" is not whitelisted, skipping', name)
-                return
-            elif self.blacklist:
-                for expr in self.blacklist_modules:
-                    if re.match(expr, name):
-                        logger.debug('Module "%s" is blacklisted, skipping', name)
-                        return
+            logger.debug('Module "%s" is not whitelisted, skipping', name)
+            return
+        elif self.blacklist is not None:
+            for expr in self.blacklist:
+                if re.match(expr, name):
+                    logger.debug('Module "%s" is blacklisted, skipping', name)
+                    return
 
         for entry_point in iter_entry_points(group=self.group, name=name):
             module_class = entry_point.load()
 
             # If the module has any dependencies, ensure those are loaded first
-            if module_class.dependencies:
+            try:
                 [self.load_single(x) for x in module_class.dependencies]
+            except AttributeError:
+                # No dependencies defined
+                pass
 
-            self.modules[name] = module_class()
+            self.modules[name] = module_class() if self.instantiate else module_class
 
             # Add the module to the container
             self.container.binder.bind(self.modules[name].__class__, to=self.modules[name])

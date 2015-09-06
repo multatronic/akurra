@@ -43,8 +43,6 @@ setup(
             'input = akurra.input:InputModule',
             'keyboard_input = akurra.keyboard:KeyboardInput',
             'mouse_input = akurra.mouse:MouseInput',
-
-            'demo_game = akurra.demo:DemoGame',
         ],
 
         'akurra.entities.components': [
@@ -89,6 +87,10 @@ setup(
             'entity_ranged_targeted_skill = akurra.skills:EntityRangedTargetedSkillSystem',
             'damaging_skill = akurra.skills:DamagingSkillSystem',
             'health_modifying_skill = akurra.skills:HealthModifyingSkillSystem',
+        ],
+
+        'akurra.games': [
+            'demo = akurra.demo:DemoGame',
         ]
     },
 

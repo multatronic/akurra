@@ -14,7 +14,7 @@ from ballercfg import ConfigurationManager
 from .locals import *  # noqa
 
 from .events import EventManager, TickEvent
-from .modules import ModuleManager
+from .modules import ModuleLoader
 from .logger import configure_logging
 
 from .states import StateManager
@@ -55,7 +55,6 @@ def build_container(binder):
     binder.bind(Configuration, to=cfg)
 
     # Core components (@TODO some of these may or may not require modules)
-    binder.bind(ModuleManager, scope=singleton)
     binder.bind(EventManager, scope=singleton)
     binder.bind(EntityManager, scope=singleton)
     binder.bind(AssetManager, scope=singleton)
@@ -74,22 +73,33 @@ class Akurra:
         self.container = container = Injector(build_container)
 
         self.game = game
+        self.log_level = log_level
+        self.debug = debug
 
         self.container.binder.bind(Akurra, to=self)
-        self.container.binder.bind(DebugFlag, to=Value('b', debug))
+        self.container.binder.bind(DebugFlag, to=Value('b', self.debug))
 
         # Start pygame (+ audio frequency, size, channels, buffersize)
         pygame.mixer.pre_init(44100, 16, 2, 4096)
         pygame.init()
 
-        configure_logging(log_level=log_level)
+        configure_logging(log_level=self.log_level)
         logger.info('Initializing..')
 
         self.configuration = self.container.get(Configuration)
         self.shutdown = self.container.get(ShutdownFlag)
         self.clock = self.container.get(DisplayClock)
 
-        self.modules = self.container.get(ModuleManager)
+        self.modules = ModuleLoader(
+            group=self.configuration.get('akurra.modules.entry_point_group', 'akurra.modules'),
+            whitelist=self.configuration.get('akurra.modules.whitelist', None),
+            blacklist=self.configuration.get('akurra.modules.blacklist', None),
+        )
+
+        self.games = ModuleLoader(
+            group=self.configuration.get('akurra.games.entry_point_group', 'akurra.games'),
+        )
+
         self.events = self.container.get(EventManager)
         self.entities = self.container.get(EntityManager)
         self.states = self.container.get(StateManager)
@@ -115,11 +125,9 @@ class Akurra:
         self.modules.start()
 
         try:
-            # Attempt to load game, ignoring whitelist/blacklist settings
-            self.modules.load_single(self.game, ignore_preferences=True)
-
             # Attempt to fetch and launch game
-            game = self.modules.modules.get(self.game)
+            self.games.load_single(self.game)
+            game = self.games.modules.get(self.game)
             game.play()
         except AttributeError:
             raise ValueError('No game module named "%s" exists!' % self.game)

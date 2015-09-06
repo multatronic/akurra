@@ -3,12 +3,12 @@ import logging
 import pygame
 from uuid import uuid4
 from enum import Enum
-from pkg_resources import iter_entry_points
 
 from .locals import *  # noqa
 from .assets import SpriteAnimation
 from .events import Event, TickEvent, EventManager
 from .audio import AudioModule
+from .modules import ModuleLoader
 from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, snake_case, memoize
 from .assets import AssetManager
 
@@ -200,10 +200,10 @@ class EntityManager(ContainerAware):
 
         self.configuration = self.container.get(Configuration)
 
-        self.components_entry_point_group = self.configuration.get('akurra.entities.components.entry_point_group',
-                                                                   'akurra.entities.components')
-        self.systems_entry_point_group = self.configuration.get('akurra.entities.systems.entry_point_group',
-                                                                'akurra.entities.systems')
+        self.components_group = self.configuration.get('akurra.entities.components.entry_point_group',
+                                                       'akurra.entities.components')
+        self.systems_group = self.configuration.get('akurra.entities.systems.entry_point_group',
+                                                    'akurra.entities.systems')
         self.entity_templates = self.configuration.get('akurra.entities.templates', {})
 
         self.entities = {}
@@ -211,129 +211,32 @@ class EntityManager(ContainerAware):
 
         self.components = {}
         self.systems = {}
-        self.systems_statuses = {}
+
+        self.component_loader = ModuleLoader(group=self.components_group, instantiate=False)
+        self.system_loader = ModuleLoader(group=self.systems_group)
 
         self.load_components()
 
     def start(self):
         """Start."""
-        self.load_systems()
-        self.start_systems()
+        self.system_loader.load()
+        self.system_loader.start()
 
     def stop(self):
         """Stop."""
-        self.stop_systems()
-        self.unload_systems()
+        self.system_loader.stop()
+        self.system_loader.unload()
 
     def load_components(self):
         """Load components."""
         logger.debug('Loading all entity components')
-        [self.load_component(x.name) for x in iter_entry_points(group=self.components_entry_point_group)]
 
-    def load_component(self, name):
-        """Load a component by name."""
-        logger.debug('Loading entity component "%s"', name)
+        self.component_loader.load()
+        self.components = self.component_loader.modules.copy()
 
-        for entry_point in iter_entry_points(group=self.components_entry_point_group, name=name):
-            self.components[name] = entry_point.load()
-
+        for name in self.component_loader.modules:
             if name not in self.entities_components:
                 self.entities_components[name] = {}
-
-        logger.debug('Entity component "%s" loaded', name)
-
-    def load_systems(self):
-        """Load systems."""
-        logger.debug('Loading all entity systems')
-        [self.load_system(x.name) for x in iter_entry_points(group=self.systems_entry_point_group)]
-
-    def load_system(self, name):
-        """
-        Load a system by name.
-
-        :param name: A string identifier for a system.
-
-        """
-        logger.debug('Loading entity system "%s"', name)
-
-        for entry_point in iter_entry_points(group=self.systems_entry_point_group, name=name):
-            self.systems[name] = entry_point.load()()
-            self.systems_statuses[name] = SystemStatus.STOPPED
-
-        logger.debug('Entity system "%s" loaded', name)
-
-    def start_systems(self):
-        """Start systems."""
-        logger.debug('Starting all entity systems')
-        [self.start_system(x) for x in self.systems]
-
-    def start_system(self, name):
-        """
-        Start a system by name.
-
-        :param name: A string identifier for a system.
-
-        """
-        logger.debug('Starting entity system "%s"', name)
-
-        self.systems[name].start()
-        self.systems_statuses[name] = SystemStatus.STARTED
-
-        logger.debug('Entity system "%s" started', name)
-
-    def stop_systems(self):
-        """Stop systems."""
-        logger.debug('Stopping all entity systems')
-        [self.stop_system(x) for x in self.systems]
-
-    def stop_system(self, name):
-        """
-        Stop a system by name.
-
-        :param name: A string identifier for a system.
-
-        """
-        logger.debug('Stopping entity system "%s"', name)
-
-        self.systems[name].stop()
-        self.systems_statuses[name] = SystemStatus.STOPPED
-
-        logger.debug('Entity system "%s" stopped', name)
-
-    def unload_system(self, name):
-        """
-        Unload a system by name..
-
-        :param name: A string identifier for a system.
-
-        """
-        logger.debug('Unloading entity system "%s"', name)
-
-        del self.systems[name]
-        self.systems.pop("", None)
-        self.systems.pop(None, None)
-
-        logger.debug('Unloaded entity system "%s"', name)
-
-    def unload_systems(self):
-        """Unload all systems."""
-        logger.debug('Unloading all entity systems')
-
-        # We need to copy the list of names, because unloading a system
-        # removes it from the systems dict
-        [self.unload_system(x) for x in list(self.systems.keys())]
-
-    def toggle_system(self, name):
-        """
-        Toggle a system by name.
-
-        :param name: A string identifier for a system.
-
-        """
-        if self.systems_statuses[name] is SystemStatus.STOPPED:
-            self.start_system(name)
-        else:
-            self.stop_system(name)
 
     def clear_cache(self):
         """Clear various caches."""
