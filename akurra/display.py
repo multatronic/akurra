@@ -318,6 +318,7 @@ class DisplayModule(Module):
 
     def __init__(self):
         """Constructor."""
+        """Constructor."""
         self.configuration = self.container.get(Configuration)
         self.events = self.container.get(EventManager)
         self.input = self.container.get(InputModule)

@@ -72,6 +72,7 @@ class GameState(ContainerAware):
 
     def __init__(self):
         """Constructor."""
+        self.states = self.container.get(StateManager)
 
     def enable(self):
         """Enable the game state."""
@@ -103,7 +104,6 @@ class SplashScreen(GameState):
         self.events = self.container.get(EventManager)
         self.display = self.container.get(DisplayModule)
         self.assets = self.container.get(AssetManager)
-        self.states = self.container.get(StateManager)
         self.input = self.container.get(InputModule)
 
         self.layer = DisplayLayer(flags=pygame.SRCALPHA)

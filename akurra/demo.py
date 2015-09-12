@@ -9,6 +9,7 @@ from .entities import EntityManager, EntityInput
 from .session import SessionManager
 from .modules import Game
 from .states import GameState, SplashScreen, StateManager
+from .menu import MenuScreen
 from .input import InputModule
 from .audio import AudioModule
 from .locals import *  # noqa
@@ -26,13 +27,16 @@ class DemoGame(Game):
         self.states = self.container.get(StateManager)
 
         self.game_realm = DemoGameState()
+        self.main_menu = MenuScreen('Main Menu')
         self.splash_screen = SplashScreen(image='graphics/logos/multatronic.png', next=self.game_realm)
         self.states.add(self.splash_screen)
         self.states.add(self.game_realm)
+        self.states.add(self.main_menu)
 
     def play(self):
         """Play the game."""
-        self.states.set_active(self.splash_screen)
+        # self.states.set_active(self.splash_screen)
+        self.states.set_active(self.main_menu)
 
 
 class DemoGameState(GameState):
