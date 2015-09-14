@@ -3,9 +3,43 @@
 import logging
 import pygame
 from .states import GameState
+from .utils import ContainerAware
 
 logger = logging.getLogger(__name__)
 
+
+class MenuPrompt(ContainerAware):
+    """A prompt, acting as an atomic menu within a menu screen. (eg: Really quit? Y/N)"""
+
+    def __init__(self, prompt, options={}, text_color=(255,0,0)):
+        """Init function."""
+        from .input import InputModule
+        self.font = pygame.font.SysFont('monospace', 30)
+        self.text_color = text_color
+        self.prompt = prompt
+        self.options = options
+        self.input = self.container.get(InputModule)
+        self.prompt_text = self.font.render(self.prompt, False, self.text_color)
+
+    def add_option(self, option, callback):
+        """"Add an option to the menu prompt."""
+        self.options[option] = callback
+
+    def enable(self):
+        """Enable the menu screen."""
+        from .events import TickEvent
+        self.events.register(TickEvent, self.on_tick)
+        self.events.register(pygame.VIDEORESIZE, self.on_video_resize)
+        self.display.add_layer(self.layer)
+
+    def disable(self):
+        """Disable the menu screen."""
+        self.events.unregister(self.on_tick)
+        self.display.remove_layer(self.layer)
+
+    def render(self, surface, position=(0, 0)):
+        """Render the prompt onto a surface."""
+        surface.blit(self.prompt_text, position)
 
 class MenuButton:
     """A button on a menu screen."""
@@ -21,12 +55,16 @@ class MenuButton:
 class MenuScreen(GameState):
     """Base class for menu screen."""
 
-    def __init__(self, name, background_color=(0, 0, 0, 255)):
+    def __init__(self, title="", background_color=(0, 0, 0, 255)):
         """Initialize the menu screen."""
         from .events import EventManager
         from .display import DisplayLayer, DisplayModule
+
         super().__init__()
-        self.name = name
+        self.prompts = {}
+        self.active_prompt = None
+        self.buttons = {}
+        self.title = title
         self.background_color = background_color
         self.events = self.container.get(EventManager)
         self.display = self.container.get(DisplayModule)
@@ -35,9 +73,11 @@ class MenuScreen(GameState):
 
         # store a few values ahead of time  so we don't have to
         # calculate them during ticks
-        self.title = self.big_font.render(self.name, False, (255, 0, 0))
         self.screen_size = self.display.screen.get_size()
-        self.title_position = (int((self.screen_size[0] - self.title.get_width()) / 2), 0)
+
+        if len(self.title):
+            self.title_text = self.big_font.render(self.title, False, (255, 0, 0))
+            self.title_position = (int((self.screen_size[0] - self.title_text.get_width()) / 2), 0)
 
     def enable(self):
         """Enable the menu screen."""
@@ -56,10 +96,35 @@ class MenuScreen(GameState):
         self.screen_size = event.size
         self.title_position = (int((self.screen_size[0] - self.title.get_width()) / 2), 0)
 
+    def add_action_listener(self, action, listener):
+        """Add an action listener."""
+        self.input.add_action_listener(action, listener)
+
+    def add_prompt(self, key, prompt):
+        """Add a menu prompt."""
+        self.prompts[key] = prompt
+
+    def enable_prompt(self, name):
+        """Enable a prompt by name."""
+        self.active_prompt = self.prompts[name]
+
+    def disable_prompt(self):
+        """Set active prompt to none."""
+        self.active_prompt = None
+
+    def add_button(self, button):
+        """Add a button."""
+        self.buttons[button.name] = button
+
     def on_tick(self, event):
         """Respond to tick events"""
         surface = self.layer.surface
         surface.fill(self.background_color)
-        surface.blit(self.title, self.title_position)
+
+        if self.title_text:
+            surface.blit(self.title_text, self.title_position)
+
+        if self.active_prompt:
+            self.active_prompt.render(surface)
 
 

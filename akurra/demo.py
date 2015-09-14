@@ -9,7 +9,7 @@ from .entities import EntityManager, EntityInput
 from .session import SessionManager
 from .modules import Game
 from .states import GameState, SplashScreen, StateManager
-from .menu import MenuScreen
+from .menu import MenuScreen, MenuPrompt
 from .input import InputModule
 from .audio import AudioModule
 from .locals import *  # noqa
@@ -25,12 +25,26 @@ class DemoGame(Game):
     def __init__(self):
         """Constructor."""
         self.states = self.container.get(StateManager)
-
         self.game_realm = DemoGameState()
-        self.main_menu = MenuScreen('Main Menu')
         self.splash_screen = SplashScreen(image='graphics/logos/multatronic.png', next=self.game_realm)
         self.states.add(self.splash_screen)
         self.states.add(self.game_realm)
+        self.main_menu = None
+        self.init_menus()
+
+    def init_menus(self):
+        """Perform initialization of menu screens."""
+        # set up the main menu screen
+        self.main_menu = MenuScreen(title='Main Menu')
+
+        # set up a quit prompt
+        quit_prompt = MenuPrompt("Really quit?")
+        # quit_prompt.add_option("Yes", self.game_realm.shutdown.set())
+        quit_prompt.add_option("No", self.main_menu.disable_prompt())
+        self.main_menu.add_prompt("quit", quit_prompt)
+
+        # respond to escape key (meaning exit the game)
+        self.main_menu.add_action_listener('game_quit', lambda x: self.main_menu.enable_prompt("quit"))
         self.states.add(self.main_menu)
 
     def play(self):

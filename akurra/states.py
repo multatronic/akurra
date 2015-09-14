@@ -72,7 +72,9 @@ class GameState(ContainerAware):
 
     def __init__(self):
         """Constructor."""
+        from .input import InputModule
         self.states = self.container.get(StateManager)
+        self.input = self.container.get(InputModule)
 
     def enable(self):
         """Enable the game state."""
