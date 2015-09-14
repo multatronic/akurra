@@ -137,7 +137,7 @@ class KeyboardInput(InputSource):
         :param key_id: A key identifier.
         :param mods: An integer representing a bitmask of all modifier keys that should be held.
         :param action: An action to trigger.
-        :parma event_type: Event type to trigger action on.
+        :param event_type: Event type to trigger action on.
         :param priority: Priority of event listener.
 
         """

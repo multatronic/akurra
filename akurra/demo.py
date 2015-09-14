@@ -39,12 +39,12 @@ class DemoGame(Game):
 
         # set up a quit prompt
         quit_prompt = MenuPrompt("Really quit?")
-        # quit_prompt.add_option("Yes", self.game_realm.shutdown.set())
-        quit_prompt.add_option("No", self.main_menu.disable_prompt())
+        quit_prompt.add_option("Yes", self.game_realm.shutdown.set)
+        quit_prompt.add_option("No", self.main_menu.disable_prompt)
         self.main_menu.add_prompt("quit", quit_prompt)
 
         # respond to escape key (meaning exit the game)
-        self.main_menu.add_action_listener('game_quit', lambda x: self.main_menu.enable_prompt("quit"))
+        self.main_menu.add_action_listener('game_quit', lambda event: self.main_menu.toggle_prompt("quit"))
         self.states.add(self.main_menu)
 
     def play(self):

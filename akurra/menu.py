@@ -37,9 +37,15 @@ class MenuPrompt(ContainerAware):
         self.events.unregister(self.on_tick)
         self.display.remove_layer(self.layer)
 
-    def render(self, surface, position=(0, 0)):
+    def render(self, surface, position=[0, 0]):
         """Render the prompt onto a surface."""
-        surface.blit(self.prompt_text, position)
+        blit_position = list(position).copy()
+        surface.blit(self.prompt_text, blit_position)
+        for option in self.options:
+            blit_position[1] += self.prompt_text.get_height()
+            option_text = self.font.render(option, False, self.text_color)
+            surface.blit(option_text, blit_position)
+
 
 class MenuButton:
     """A button on a menu screen."""
@@ -107,6 +113,13 @@ class MenuScreen(GameState):
     def enable_prompt(self, name):
         """Enable a prompt by name."""
         self.active_prompt = self.prompts[name]
+
+    def toggle_prompt(self, name):
+        """Toggle a prompt by name."""
+        if self.active_prompt:
+            self.disable_prompt()
+        else:
+            self.active_prompt = self.prompts[name]
 
     def disable_prompt(self):
         """Set active prompt to none."""

@@ -58,6 +58,7 @@ class InputModule(Module):
         :param InputActionEvent event: Event to process.
 
         """
+
         for listeners in self.action_listeners[event.action]:
             if listeners:
                 for listener in listeners:
