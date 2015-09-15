@@ -85,12 +85,6 @@ class MouseInput(InputSource):
         """Handle holding down of a mouse button."""
         logger.insane('Detected mouse button down [button=%s, pos=%s]', hr_button_id(event.button), event.pos)
 
-        # for z_index in self.display.layers:
-        #     for layer in self.display.layers[z_index]:
-        #         if hasattr(layer, 'find_entities_at'):
-        #             for e in layer.find_entities_at(event.pos, ignore_ids=[self.cursor.id], position_type='screen'):
-        #                 layer.on_entity_mouse(e, event)
-
         try:
             for listeners in self.listeners[event.type][event.button]:
                 if listeners:
@@ -105,12 +99,6 @@ class MouseInput(InputSource):
     def on_button_up(self, event):
         """Handle releasing of a mouse button."""
         logger.insane('Detected mouse button up [button=%s, pos=%s]', hr_button_id(event.button), event.pos)
-
-        # for z_index in self.display.layers:
-        #     for layer in self.display.layers[z_index]:
-        #         if hasattr(layer, 'find_entities_at'):
-        #             for e in layer.find_entities_at(event.pos, ignore_ids=[self.cursor.id], position_type='screen'):
-        #                 layer.on_entity_mouse(e, event)
 
         try:
             for listeners in self.listeners[event.type][event.button].copy():

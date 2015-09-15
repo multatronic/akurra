@@ -9,7 +9,8 @@ from .assets import SpriteAnimation
 from .events import Event, TickEvent, EventManager
 from .audio import AudioModule
 from .modules import ModuleLoader
-from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, snake_case, memoize
+from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, snake_case, memoize, \
+    distance_vector_between
 from .assets import AssetManager
 
 logger = logging.getLogger(__name__)
@@ -641,9 +642,106 @@ class SpriteRectPositionCorrectionSystem(System):
         entity.components['sprite'].rect.topleft = list(entity.components['position'].primary_position)
 
 
-class PlayerInputSystem(System):
+class PlayerMouseInputSystem(System):
 
-    """Input system."""
+    """Entity system for interacting with the world using a mouse."""
+
+    requirements = [
+        'input',
+        'player',
+        'state',
+        'layer',
+        'map_layer',
+    ]
+
+    action_inputs = {
+        'skill_usage': EntityInput.SKILL_USAGE,
+        'interact': None,
+    }
+
+    action_handlers = {
+        'interact': 'on_interact',
+    }
+
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
+
+        from .input import InputModule
+        self.input = self.container.get(InputModule)
+
+    def start(self):
+        """Start the system."""
+        [self.input.add_action_listener(x, self.on_event) for x in self.action_inputs]
+
+    def stop(self):
+        """Stop the system."""
+        self.input.remove_action_listener(self.on_event)
+
+    def update(self, entity, event=None):
+        """Have an entity updated by the system."""
+        if not entity.components['state'].state.value & EntityState.CAN_CHANGE_INPUT.value:
+            return
+
+        if event.source != 'mouse':
+            return
+
+        # If there's an entity-specific input store the state and dispatch event
+        try:
+            input = self.action_inputs[event.action]
+            entity.components['input'].input[input] = event.state
+            self.events.dispatch(EntityInputChangeEvent(entity.id, input, event.state))
+        except KeyError:
+            pass
+
+        # Since this is a mouse action, set the target point for this entity
+        entity.components['input'].input[EntityInput.TARGET_POINT] = \
+            screen_point_to_layer(entity.components['layer'].layer.map_layer, event.original_event['pos'])
+
+        # Call the action-specific callback if necessary
+        try:
+            getattr(self, self.action_handlers[event.action])(entity, event)
+        except KeyError:
+            pass
+
+    def on_interact(self, entity, event):
+        """Handle an attempt at interaction."""
+        # Instead of using the screen coordinate from our event as our cursor position,
+        # by this point the entity input should contain the same coordinate, but in layer projection.
+        # We have a 1x1 rect at that position in order to determine which entities collide with our cursor.
+        target = entity.components['input'].input[EntityInput.TARGET_POINT]
+        target_rect = pygame.Rect(target, [1, 1])
+        layer = entity.components['layer'].layer
+
+        # Check if the sprite rectangles of any of the entities on the later collide with the cursor position
+        # To check collisions, we create a rect from the cursor position by assigning it width and height 1
+        entity_sprites = [x.components['sprite'] for x in layer.entities.values()]
+        sprite_rects = [x.rect for x in entity_sprites]
+        collisions = target_rect.collidelist(sprite_rects)
+
+        # If we have collisions, check if the specific pixel our cursor landed on is transparent.
+        # If it's transparent, we're not trying to interact with this entity
+        if collisions != -1:
+            # Get the cursor's position relative to the entity rect
+            # Considering that we've collided with the rect, this should always be a positive number so we
+            # can simply use the distance between the cursor and the entity rect as our relative position
+            relative_position = distance_vector_between(sprite_rects[collisions], target)
+            relative_position = [int(relative_position[0]), int(relative_position[1])]
+
+            # Get the color value for the sprite pixel at the relative cursor position
+            pixel = entity_sprites[collisions].image.get_at(relative_position)
+
+            # Only non-transparent pixels count as a valid interaction
+            if sum(pixel) != 0:
+                # Set target entity of current entity to target
+                target_entity = entity_sprites[collisions].entity
+                entity.components['input'].input[EntityInput.TARGET_ENTITY] = target_entity.id
+                self.events.dispatch(EntityInputChangeEvent(entity.id, EntityInput.TARGET_ENTITY, target_entity.id))
+
+
+class PlayerKeyboardInputSystem(System):
+
+    """Player keyboard input system."""
 
     requirements = [
         'input',
@@ -659,8 +757,9 @@ class PlayerInputSystem(System):
         'move_left': EntityInput.MOVE_LEFT,
         'move_right': EntityInput.MOVE_RIGHT,
         'mana_gather': EntityInput.MANA_GATHER,
-        'skill_usage': EntityInput.SKILL_USAGE,
     }
+
+    action_handlers = {}
 
     def __init__(self):
         """Constructor."""
@@ -671,7 +770,7 @@ class PlayerInputSystem(System):
 
     def start(self):
         """Start the system."""
-        [self.input.add_action_listener(x, self.on_event) for x in self.action_inputs.keys()]
+        [self.input.add_action_listener(x, self.on_event) for x in self.action_inputs]
 
     def stop(self):
         """Stop the system."""
@@ -682,15 +781,22 @@ class PlayerInputSystem(System):
         if not entity.components['state'].state.value & EntityState.CAN_CHANGE_INPUT.value:
             return
 
-        input = self.action_inputs[event.action]
-        entity.components['input'].input[input] = event.state
+        if event.source != 'keyboard':
+            return
 
-        if event.source == 'mouse':
-            entity.components['input'].input[EntityInput.TARGET_POINT] = \
-                screen_point_to_layer(entity.components['layer'].layer.map_layer, event.original_event['pos'])
+        # If there's an entity-specific input store the state and dispatch event
+        try:
+            input = self.action_inputs[event.action]
+            entity.components['input'].input[input] = event.state
+            self.events.dispatch(EntityInputChangeEvent(entity.id, input, event.state))
+        except KeyError:
+            pass
 
-        # Trigger an input change event
-        self.events.dispatch(EntityInputChangeEvent(entity.id, input, event.state))
+        # Call the action-specific callback if necessary
+        try:
+            getattr(self, self.action_handlers[event.action])(entity, event)
+        except KeyError:
+            pass
 
 
 class VelocitySystem(System):
