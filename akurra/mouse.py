@@ -176,7 +176,7 @@ class MouseModule(Module):
         self.display = self.container.get(DisplayModule)
         self.entities = self.container.get(EntityManager)
 
-        self.cursor_layer = EntityDisplayLayer(z_index=102, flags=pygame.SRCALPHA)
+        self.cursor_layer = EntityDisplayLayer(z_index=180, flags=pygame.SRCALPHA)
         self.load_cursor()
 
     def start(self):
