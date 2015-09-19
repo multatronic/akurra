@@ -36,30 +36,40 @@ class UIModule(Module):
         self.configuration = self.container.get(Configuration)
 
         self.font = pygame.font.SysFont('monospace', 9)
-
         self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=140)
 
-        self.surfaces = {}
-        self.surfaces['portrait_main'] = self.assets.get_image('graphics/ui/portrait/main.png', alpha=True)
-        self.surfaces['portrait_name_bar'] = self.assets.get_image('graphics/ui/portrait/name_bar.png', alpha=True)
-        self.surfaces['portrait_health_bar'] = self.assets.get_image('graphics/ui/portrait/health_bar.png', alpha=True)
-        self.surfaces['health_bar_small'] = self.assets.get_image('tmp/health_bar_small.png', alpha=True)
-
-        for type, color in {'earth': 'green', 'water': 'blue', 'air': 'grey', 'fire': 'red'}.items():
-            surface = self.assets.get_image('graphics/ui/portrait/magic_buttons/%s.png' % color, alpha=True)
-            self.surfaces['portrait_mana_orb_%s' % type] = pygame.transform.smoothscale(surface, [30, 30])
-
-        self.offsets = {}
-        self.offsets['portrait'] = [20, 20]
-        self.offsets['portrait_name_bar'] = [103, 33]
-        self.offsets['portrait_name_text'] = [115, 32]
-        self.offsets['portrait_health_bar'] = [103, 47]
-        self.offsets['portrait_health_text'] = [115, 46]
-        self.offsets['portrait_mana_orb'] = [105, 70]
-        self.offsets['portrait_mana_orb_text'] = [119, 80]
+        self.elements = {}
+        self.health_bar_entities = {}
 
         self.health_bar_display_time = self.configuration.get('akurra.ui.health_bar.display_time', 5)
-        self.health_bar_entities = {}
+        self.element_configs = self.configuration.get('akurra.ui.elements', {})
+
+        def load_ui_element(elements, element_configs, element_name):
+            """Load and return a ui element."""
+            data = element_configs[element_name]
+            element = data.copy()
+
+            if data.get('image', None):
+                element['image'] = self.assets.get_image(data['image'], alpha=True)
+
+                if data.get('resize', None):
+                    element['image'] = pygame.transform.smoothscale(element['image'], data['resize'])
+
+            if data.get('position', None):
+                element['position'] = list(data['position'])
+
+                if data.get('parent', None):
+                    parent = load_ui_element(elements, element_configs, data['parent'])
+
+                    if parent.get('position', None):
+                        element['position'][0] += parent['position'][0]
+                        element['position'][1] += parent['position'][1]
+
+            elements[element_name] = element
+            return element
+
+        for name in self.element_configs:
+            load_ui_element(self.elements, self.element_configs, name)
 
     def start(self):
         """Start the module."""
@@ -78,37 +88,36 @@ class UIModule(Module):
         health_component = player.components['health']
 
         # self.layer.surface.fill([0, 0, 0, 0])
-        self.layer.surface.blit(self.surfaces['portrait_main'], self.offsets['portrait'])
+        for name in ['portrait_main',
+                     'portrait_name_bar',
+                     'portrait_mana_orb_earth',
+                     'portrait_mana_orb_water',
+                     'portrait_mana_orb_fire',
+                     'portrait_mana_orb_air']:
+            element = self.elements[name]
+            self.layer.surface.blit(element['image'], element['position'])
 
-        self.layer.surface.blit(self.surfaces['portrait_name_bar'], self.offsets['portrait_name_bar'])
         name_text = self.font.render(player.components['character'].name, 1, [255, 255, 255])
-        self.layer.surface.blit(name_text, self.offsets['portrait_name_text'])
+        self.layer.surface.blit(name_text, self.elements['portrait_name_text']['position'])
 
         # The width of the health bar should reflect the player's health percentage
         health_percentage = health_component.health / health_component.max
-        self.layer.surface.blit(self.surfaces['portrait_health_bar'], self.offsets['portrait_health_bar'],
-                                [0, 0, int(health_percentage * self.surfaces['portrait_health_bar'].get_width()), 900])
+        health_bar = self.elements['portrait_health_bar']
+        self.layer.surface.blit(health_bar['image'], health_bar['position'],
+                                [0, 0, int(health_percentage * health_bar['image'].get_width()), 900])
 
         health_text = self.font.render('%s/%s' % (math.floor(health_component.health), health_component.max), 1,
                                        [205, 205, 205])
-        self.layer.surface.blit(health_text, self.offsets['portrait_health_text'])
-
-        portrait_mana_orb_offset = list(self.offsets['portrait_mana_orb'])
-        portrait_mana_orb_text_offset = list(self.offsets['portrait_mana_orb_text'])
+        self.layer.surface.blit(health_text, self.elements['portrait_health_text']['position'])
 
         for mana_type, mana_amount in player.components['mana'].mana.items():
-            if mana_amount > 0:
-                self.layer.surface.blit(self.surfaces['portrait_mana_orb_%s' % mana_type], portrait_mana_orb_offset)
-                portrait_mana_orb_offset[0] += 35
-
-                mana_text = self.font.render('%s' % math.floor(mana_amount), 1, [102, 0, 102])
-                self.layer.surface.blit(mana_text, [portrait_mana_orb_text_offset[0] - (mana_text.get_width() / 2),
-                                                    portrait_mana_orb_text_offset[1]])
-                portrait_mana_orb_text_offset[0] += 35
+            offset = list(self.elements['portrait_mana_orb_%s_text' % mana_type]['position'])
+            mana_text = self.font.render('%s' % math.floor(mana_amount), 1, [102, 0, 102])
+            self.layer.surface.blit(mana_text, [offset[0] - (mana_text.get_width() / 2), offset[1]])
 
     def render_entity_contexts(self, event):
         """Render data related to entity context such as health bars, character names and the like."""
-        health_bar = self.surfaces['health_bar_small']
+        health_bar = self.elements['health_bar_small']['image']
         health_bar_width = health_bar.get_width()
 
         for entity_id in self.health_bar_entities.copy():
