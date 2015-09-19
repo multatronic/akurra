@@ -7,7 +7,7 @@ import copy
 from .locals import *  # noqa
 from .display import DisplayModule, DisplayLayer
 from .events import TickEvent, EventManager
-from .entities import EntityManager, EntityHealthChangeEvent
+from .entities import EntityManager, EntityHealthChangeEvent, EntityInput
 from .assets import AssetManager
 from .modules import Module
 from .session import SessionManager
@@ -112,6 +112,7 @@ class UIModule(Module):
         player_health = player.components['health']
         player_mana = player.components['mana']
         player_character = player.components['character']
+        player_input = player.components['input']
 
         self.ui_scope_variables = {
             'player_mana_earth': math.floor(player_mana.mana.get('earth', 0)),
@@ -122,10 +123,29 @@ class UIModule(Module):
             'player_max_health': player_health.max,
             'player_current_health_percentage': (player_health.health * 100) / player_health.max,
             'player_character_name': player_character.name,
+
+            'target_character_name': None,
+            'target_current_health': None,
+            'target_max_health': None,
+            'target_current_health_percentage': None,
         }
+
+        if player_input.input[EntityInput.TARGET_ENTITY]:
+            target_entity = self.entities.find_entity_by_id(player_input.input[EntityInput.TARGET_ENTITY])
+            target_health = target_entity.components['health']
+            target_character = target_entity.components['character']
+
+            self.ui_scope_variables['target_character_name'] = target_character.name
+            self.ui_scope_variables['target_current_health'] = math.floor(target_health.health)
+            self.ui_scope_variables['target_max_health'] = target_health.max
+            self.ui_scope_variables['target_current_health_percentage'] = (target_health.health * 100) / target_health.max
 
         # self.layer.surface.fill([0, 0, 0, 0])
         for element in self.autodraw_elements:
+            if element.get('visibility_link', None):
+                if not self.ui_scope_variables[element['visibility_link']]:
+                    continue
+
             if element.get('image', None):
                 image_size = [0, 0, element['image'].get_width(), element['image'].get_height()]
 

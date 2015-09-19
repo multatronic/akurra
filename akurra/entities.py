@@ -715,28 +715,42 @@ class PlayerMouseInputSystem(System):
 
         # Check if the sprite rectangles of any of the entities on the later collide with the cursor position
         # To check collisions, we create a rect from the cursor position by assigning it width and height 1
-        entity_sprites = [x.components['sprite'] for x in layer.entities.values()]
+        entity_sprites = layer.group._spritelist
         sprite_rects = [x.rect for x in entity_sprites]
-        collisions = target_rect.collidelist(sprite_rects)
+        collisions = target_rect.collidelistall(sprite_rects)
 
         # If we have collisions, check if the specific pixel our cursor landed on is transparent.
-        # If it's transparent, we're not trying to interact with this entity
-        if collisions != -1:
-            # Get the cursor's position relative to the entity rect
-            # Considering that we've collided with the rect, this should always be a positive number so we
-            # can simply use the distance between the cursor and the entity rect as our relative position
-            relative_position = distance_vector_between(sprite_rects[collisions], target)
-            relative_position = [int(relative_position[0]), int(relative_position[1])]
+        # If it's transparent, we're not trying to interact with this entity and we move to check
+        # the next one.
+        if collisions:
+            # NOTE: The order in which collisions are checked is reversed because in order for dynamic sprite
+            # ordering to work in the rendering phase, all of the sprites in the spritelist are ordered
+            # by their y-positioning on the map, with the entities being rendered first (and thus possibly
+            # being placed underneath other sprites) being at the front of the list. Since interactions with the
+            # topmost entity at a certain location should be prioritized, we reverse the list to be able to check
+            # the "higher" entities first.
+            for collision in reversed(collisions):
+                # Get the cursor's position relative to the entity rect
+                # Considering that we've collided with the rect, this should always be a positive number so we
+                # can simply use the distance between the cursor and the entity rect as our relative position
+                relative_position = distance_vector_between(sprite_rects[collision], target)
+                relative_position = [int(relative_position[0]), int(relative_position[1])]
 
-            # Get the color value for the sprite pixel at the relative cursor position
-            pixel = entity_sprites[collisions].image.get_at(relative_position)
+                # Get the color value for the sprite pixel at the relative cursor position
+                pixel = entity_sprites[collision].image.get_at(relative_position)
 
-            # Only non-transparent pixels count as a valid interaction
-            if sum(pixel) != 0:
-                # Set target entity of current entity to target
-                target_entity = entity_sprites[collisions].entity
-                entity.components['input'].input[EntityInput.TARGET_ENTITY] = target_entity.id
-                self.events.dispatch(EntityInputChangeEvent(entity.id, EntityInput.TARGET_ENTITY, target_entity.id))
+                # Only non-transparent pixels count as a valid interaction
+                if sum(pixel) != 0:
+                    # Set target entity of current entity to target
+                    target_entity = entity_sprites[collision]
+                    entity.components['input'].input[EntityInput.TARGET_ENTITY] = target_entity.id
+
+                    # Dispatch event to notify other stuff
+                    event = EntityInputChangeEvent(entity.id, EntityInput.TARGET_ENTITY, target_entity.id)
+                    self.events.dispatch(event)
+
+                    # We've interacted, no needed to process further
+                    break
 
 
 class PlayerKeyboardInputSystem(System):
