@@ -4,61 +4,88 @@ akurra:
             display_time: 5
 
         elements:
+            abstract_auto_draw:
+                abstract: true
+                auto_draw: true
+                z_index: 50
+
             portrait_main:
                 image: graphics/ui/portrait/main.png
                 position: [20, 20]
+                parent: abstract_auto_draw
 
             portrait_name_bar:
                 image: graphics/ui/portrait/name_bar.png
                 position: [83, 13]
-                parent: portrait_main
+                parent: abstract_auto_draw
+                relative_position: portrait_main
             portrait_name_text:
                 position: [12, -1]
-                parent: portrait_name_bar
+                parent: abstract_auto_draw
+                relative_position: portrait_name_bar
+                text: "{player_character_name}"
 
             portrait_health_bar:
                 image: graphics/ui/portrait/health_bar.png
                 position: [83, 27]
-                parent: portrait_main
+                relative_position: portrait_main
+                parent: abstract_auto_draw
+                width_link: player_current_health_percentage
             portrait_health_text:
                 position: [12, -1]
-                parent: portrait_health_bar
+                relative_position: portrait_health_bar
+                text: "{player_current_health}/{player_max_health}"
+                text_color: [205, 205, 205]
+                parent: abstract_auto_draw
+
+            abstract_mana_orb:
+                abstract: true
+                parent: abstract_auto_draw
+                resize: [30, 30]
+                position: [35, 0]
+            abstract_mana_orb_text:
+                abstract: true
+                parent: abstract_auto_draw
+                position: [14, 10]
+                text_color: [102, 0, 102]
+                text_align: center
 
             portrait_mana_orb_earth:
                 image: graphics/ui/portrait/magic_buttons/green.png
-                resize: [30, 30]
+                parent: abstract_mana_orb
                 position: [82, 50]
-                parent: portrait_main
+                relative_position: portrait_main
             portrait_mana_orb_earth_text:
-                position: [14, 10]
-                parent: portrait_mana_orb_earth
+                parent: abstract_mana_orb_text
+                relative_position: portrait_mana_orb_earth
+                text: "{player_mana_earth}"
 
             portrait_mana_orb_water:
                 image: graphics/ui/portrait/magic_buttons/blue.png
-                resize: [30, 30]
-                position: [35, 0]
-                parent: portrait_mana_orb_earth
+                parent: abstract_mana_orb
+                relative_position: portrait_mana_orb_earth
             portrait_mana_orb_water_text:
-                position: [14, 10]
-                parent: portrait_mana_orb_water
+                parent: abstract_mana_orb_text
+                relative_position: portrait_mana_orb_water
+                text: "{player_mana_water}"
 
             portrait_mana_orb_air:
                 image: graphics/ui/portrait/magic_buttons/grey.png
-                resize: [30, 30]
-                position: [35, 0]
-                parent: portrait_mana_orb_water
+                parent: abstract_mana_orb
+                relative_position: portrait_mana_orb_water
             portrait_mana_orb_air_text:
-                position: [14, 10]
-                parent: portrait_mana_orb_air
+                parent: abstract_mana_orb_text
+                relative_position: portrait_mana_orb_air
+                text: "{player_mana_air}"
 
             portrait_mana_orb_fire:
                 image: graphics/ui/portrait/magic_buttons/red.png
-                resize: [30, 30]
-                position: [35, 0]
-                parent: portrait_mana_orb_air
+                parent: abstract_mana_orb
+                relative_position: portrait_mana_orb_air
             portrait_mana_orb_fire_text:
-                position: [14, 10]
-                parent: portrait_mana_orb_fire
+                parent: abstract_mana_orb_text
+                relative_position: portrait_mana_orb_fire
+                text: "{player_mana_fire}"
 
             health_bar_small:
                 image: tmp/health_bar_small.png
