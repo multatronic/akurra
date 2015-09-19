@@ -138,7 +138,8 @@ class UIModule(Module):
             self.ui_scope_variables['target_character_name'] = target_character.name
             self.ui_scope_variables['target_current_health'] = math.floor(target_health.health)
             self.ui_scope_variables['target_max_health'] = target_health.max
-            self.ui_scope_variables['target_current_health_percentage'] = (target_health.health * 100) / target_health.max
+            self.ui_scope_variables['target_current_health_percentage'] = \
+                (target_health.health * 100) / target_health.max
 
         # self.layer.surface.fill([0, 0, 0, 0])
         for element in self.autodraw_elements:
