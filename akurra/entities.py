@@ -718,6 +718,7 @@ class PlayerMouseInputSystem(System):
         entity_sprites = layer.group._spritelist
         sprite_rects = [x.rect for x in entity_sprites]
         collisions = target_rect.collidelistall(sprite_rects)
+        target_entity_id = None
 
         # If we have collisions, check if the specific pixel our cursor landed on is transparent.
         # If it's transparent, we're not trying to interact with this entity and we move to check
@@ -741,16 +742,16 @@ class PlayerMouseInputSystem(System):
 
                 # Only non-transparent pixels count as a valid interaction
                 if sum(pixel) != 0:
-                    # Set target entity of current entity to target
-                    target_entity = entity_sprites[collision]
-                    entity.components['input'].input[EntityInput.TARGET_ENTITY] = target_entity.id
+                    # Store target entity id of current entity to target
+                    target_entity_id = entity_sprites[collision].id
 
-                    # Dispatch event to notify other stuff
-                    event = EntityInputChangeEvent(entity.id, EntityInput.TARGET_ENTITY, target_entity.id)
-                    self.events.dispatch(event)
-
-                    # We've interacted, no needed to process further
+                    # Break loop
                     break
+
+        # Store target entity and dispatch notification event
+        entity.components['input'].input[EntityInput.TARGET_ENTITY] = target_entity_id
+        event = EntityInputChangeEvent(entity.id, EntityInput.TARGET_ENTITY, target_entity_id)
+        self.events.dispatch(event)
 
 
 class PlayerKeyboardInputSystem(System):
