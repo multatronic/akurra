@@ -18,6 +18,7 @@ class MenuPrompt(ContainerAware):
         self.text_color = text_color
         self.prompt = prompt
         self.options = options
+        self.selected_option = None
         self.input = self.container.get(InputModule)
         self.prompt_text = self.font.render(self.prompt, False, self.text_color)
 
@@ -37,9 +38,17 @@ class MenuPrompt(ContainerAware):
         self.events.unregister(self.on_tick)
         self.display.remove_layer(self.layer)
 
-    def render(self, surface, position=[0, 0]):
+    def trigger_selected_option(self):
+        """trigger the selected option."""
+        if self.selected_option:
+            self.options[self.selected_option]()
+
+    def render(self, surface, screen_size=[0, 0]):
         """Render the prompt onto a surface."""
-        blit_position = list(position).copy()
+        blit_position = list(screen_size).copy()
+        # TODO subtract total height instead of just the prompt height
+        blit_position[1] = int((screen_size[1] - self.prompt_text.get_height()) / 2)
+        blit_position[0] = int((screen_size[0] - self.prompt_text.get_width()) / 2)
         surface.blit(self.prompt_text, blit_position)
         for option in self.options:
             blit_position[1] += self.prompt_text.get_height()
@@ -61,7 +70,7 @@ class MenuButton:
 class MenuScreen(GameState):
     """Base class for menu screen."""
 
-    def __init__(self, title="", background_color=(0, 0, 0, 255)):
+    def __init__(self, title=None, background_color=(0, 0, 0, 255)):
         """Initialize the menu screen."""
         from .events import EventManager
         from .display import DisplayLayer, DisplayModule
@@ -81,7 +90,7 @@ class MenuScreen(GameState):
         # calculate them during ticks
         self.screen_size = self.display.screen.get_size()
 
-        if len(self.title):
+        if self.title:
             self.title_text = self.big_font.render(self.title, False, (255, 0, 0))
             self.title_position = (int((self.screen_size[0] - self.title_text.get_width()) / 2), 0)
 
@@ -100,7 +109,8 @@ class MenuScreen(GameState):
     def on_video_resize(self, event):
         """Adjust resolution when resize event occurs."""
         self.screen_size = event.size
-        self.title_position = (int((self.screen_size[0] - self.title.get_width()) / 2), 0)
+        if self.title:
+            self.title_position = (int((self.screen_size[0] - self.title.get_width()) / 2), 0)
 
     def add_action_listener(self, action, listener):
         """Add an action listener."""
@@ -138,6 +148,6 @@ class MenuScreen(GameState):
             surface.blit(self.title_text, self.title_position)
 
         if self.active_prompt:
-            self.active_prompt.render(surface)
+            self.active_prompt.render(surface, self.screen_size)
 
 
