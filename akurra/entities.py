@@ -1,11 +1,11 @@
 """Entities module."""
 import logging
 import pygame
+import pyganim
 from uuid import uuid4
 from enum import Enum
 
 from .locals import *  # noqa
-from .assets import SpriteAnimation
 from .events import Event, TickEvent, EventManager
 from .audio import AudioModule
 from .modules import ModuleLoader
@@ -463,35 +463,54 @@ class SpriteComponent(Component):
         self._entity.rect = self.rect
         self._entity.image = self.image
 
-    def __init__(self, image=None, sprite_size=[0, 0], animations={}, direction=EntityDirection.SOUTH,
-                 state='stationary', **kwargs):
+    def __init__(self, sprite_size=None, image=None, animations={}, **kwargs):
         """Constructor."""
-        self.direction = direction
-        self.state = state
+        assets = self.container.get(AssetManager)
+
+        self._direction = 'south'
+        self._state = 'stationary'
         self.sprite_size = sprite_size
 
         if image:
-            self.image = self.container.get(AssetManager).get_image(image, alpha=True)
+            self.image = assets.get_image(image, alpha=True)
         else:
             self.image = pygame.Surface(self.sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
 
         self.default_image = self.image.copy()
         self.animations = {}
-
-        for state in animations:
-            animations[state] = animations[state] if type(animations[state]) is list else [animations[state]]
-            self.animations[state] = []
-
-            for value in animations[state]:
-                value['frame_size'] = value.get('frame_size', self.sprite_size)
-                value['render_offset'] = value.get('render_offset', [(self.sprite_size[y] - value['frame_size'][y]) / 2
-                                                   for y in [0, 1]])
-                value['direction'] = value.get('direction', self.direction.name)
-
-                animation = SpriteAnimation(**value)
-                self.animations[state].append(animation)
-
         self.rect = self.image.get_rect()
+
+        if not image:
+            for animation in animations:
+                states = animation.get('states', ['stationary_south'])
+                frame_size = animation.get('frame_size', self.sprite_size)
+                render_offset = [(self.sprite_size[0] - frame_size[0]) / 2, (self.sprite_size[1] - frame_size[1]) / 2]
+
+                sprite_sheets = animation['sprite_sheet']
+                sprite_sheets = sprite_sheets if type(sprite_sheets) is list else [sprite_sheets]
+                sprite_sheets = [assets.get_image(x, alpha=True) for x in sprite_sheets]
+
+                sprite_sheet = sprite_sheets[0]
+                [sprite_sheet.blit(x, [0, 0]) for x in sprite_sheets[1:]]
+
+                max_frame_count = int(sprite_sheet.get_width() / frame_size[0])
+                frame_count = animation.get('frame_count', max_frame_count)
+
+                state_offset = animation.get('state_offset', 0)
+                frame_offset = animation.get('frame_offset', 0)
+                frame_interval = animation.get('frame_interval', 50)
+                loop = animation.get('loop', False)
+
+                for key, state in enumerate(states):
+                    frames = [[pygame.Surface(frame_size, flags=pygame.HWSURFACE | pygame.SRCALPHA), frame_interval]
+                              for x in range(0, frame_count)]
+
+                    for i, frame in enumerate(frames):
+                        blit_offset = [(i + frame_offset) * frame_size[0], (key + state_offset) * frame_size[1]]
+                        frame[0].blit(sprite_sheet, [0, 0], [blit_offset, frame_size])
+
+                    animator = pyganim.PygAnimation(frames, loop=loop)
+                    self.animations[state] = [animator, render_offset]
 
         super().__init__(**kwargs)
 
@@ -860,34 +879,27 @@ class MovementSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        entity.components['sprite'].state = 'moving' if \
-            list(filter(None, entity.components['velocity'].direction)) else 'stationary'
+        entity.components['sprite']._state = state = 'moving' \
+            if list(filter(None, entity.components['velocity'].direction)) else 'stationary'
 
-        # Do nothing if there is no velocity
-        if not entity.components['velocity'].direction[0] and not entity.components['velocity'].direction[1]:
-            return
+        if state == 'moving':
+            entity.components['position'].old = list(entity.components['position'].primary_position)
 
-        entity.components['position'].old = list(entity.components['position'].primary_position)
+            entity.components['position'].primary_position[0] += entity.components['velocity'].direction[0] * \
+                entity.components['velocity'].speed * event.delta_time
+            entity.components['position'].primary_position[1] += entity.components['velocity'].direction[1] * \
+                entity.components['velocity'].speed * event.delta_time
 
-        entity.components['position'].primary_position[0] += entity.components['velocity'].direction[0] * \
-            entity.components['velocity'].speed * event.delta_time
-        entity.components['position'].primary_position[1] += entity.components['velocity'].direction[1] * \
-            entity.components['velocity'].speed * event.delta_time
+            # Calculate and set direction
+            direction = EntityDirection.NORTH.value if entity.components['velocity'].direction[1] < 0 \
+                else EntityDirection.SOUTH.value if entity.components['velocity'].direction[1] else 0
+            direction |= EntityDirection.EAST.value if entity.components['velocity'].direction[0] > 0 \
+                else EntityDirection.WEST.value if entity.components['velocity'].direction[0] else 0
 
-        # Calculate and set direction
-        direction = EntityDirection.NORTH.value if entity.components['velocity'].direction[1] < 0 \
-            else EntityDirection.SOUTH.value if entity.components['velocity'].direction[1] else 0
-        direction |= EntityDirection.EAST.value if entity.components['velocity'].direction[0] > 0 \
-            else EntityDirection.WEST.value if entity.components['velocity'].direction[0] else 0
+            entity.components['sprite']._direction = EntityDirection(direction).name.lower()
 
-        entity.components['sprite'].direction = EntityDirection(direction)
-
-        for state in entity.components['sprite'].animations:
-            for animation in entity.components['sprite'].animations[state]:
-                animation.direction = entity.components['sprite'].direction.name
-
-        # Trigger a move event
-        self.events.dispatch(EntityMoveEvent(entity.id))
+            # Trigger a move event
+            self.events.dispatch(EntityMoveEvent(entity.id))
 
 
 class PositioningSystem(System):
@@ -933,13 +945,21 @@ class RenderingSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        try:
-            entity.components['sprite'].image.fill([0, 0, 0, 0])
+        sprite_component = entity.components['sprite']
 
-            for x in entity.components['sprite'].animations[entity.components['sprite'].state]:
-                entity.components['sprite'].image.blit(x.get_frame(), x.render_offset)
+        try:
+            sprite_component.image.fill([0, 0, 0, 0])
+
+            state_string = '%s_%s' % (sprite_component._state, sprite_component._direction)
+            animation = sprite_component.animations[state_string]
+
+            # Start animations that haven't been started yet
+            if not animation[0]._playingStartTime:
+                animation[0].play()
+
+            sprite_component.image.blit(animation[0].getCurrentFrame(), animation[1])
         except KeyError:
-            entity.components['sprite'].image.blit(entity.components['sprite'].default_image, [0, 0])
+            sprite_component.image.blit(sprite_component.default_image, [0, 0])
 
 
 class SpriteRenderOrderingSystem(System):
@@ -1230,7 +1250,7 @@ class DeathSystem(System):
     def update(self, entity, event=None):
         """Have an entity handled by the system."""
         if entity.components['state'].state is EntityState.DEAD:
-            entity.components['sprite'].state = 'death'
+            entity.components['sprite']._state = 'dead'
             self.events.dispatch(EntityDeathEvent(entity.id))
 
             # If this entity has an input component, set all inputs to false

@@ -102,6 +102,7 @@ setup(
         'injector',
         'pytmx',
         'pyscroll',
+        'pyganim',
         'BallerCFG'
     ],
     dependency_links=[
