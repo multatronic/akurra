@@ -35,7 +35,7 @@ def build_container(binder):
     binder.bind(ShutdownFlag, to=Event())
     binder.bind(DisplayClock, to=pygame.time.Clock())
 
-    # Core components (@TODO some of these may or may not require modules)
+    # Core components
     binder.bind(EventManager, scope=singleton)
     binder.bind(EntityManager, scope=singleton)
     binder.bind(AssetManager, scope=singleton)
@@ -94,7 +94,7 @@ class Akurra:
         self.entities = self.container.get(EntityManager)
         self.states = self.container.get(StateManager)
         self.assets = self.container.get(AssetManager)
-        self.states = self.container.get(StateManager)
+        self.session = self.container.get(SessionManager)
 
         self.loop_wait_millis = self.configuration.get('akurra.core.loop_wait_millis', 5)
         self.max_fps = self.configuration.get('akurra.display.max_fps', 60)
