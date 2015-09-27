@@ -35,25 +35,6 @@ def build_container(binder):
     binder.bind(ShutdownFlag, to=Event())
     binder.bind(DisplayClock, to=pygame.time.Clock())
 
-    # Configuration
-    CFG_FILES = [
-        os.path.expanduser('~/.config/akurra/config.yml'),
-    ]
-
-    # If the directories or files don't exist, create them
-    for f in CFG_FILES:
-        if not os.path.isfile(f):
-            try:
-                os.makedirs(os.path.dirname(f))
-            except FileExistsError:
-                pass
-
-            with open(f, 'a+'):
-                pass
-
-    cfg = ConfigurationManager.load([get_data_path('*.yml')] + CFG_FILES)
-    binder.bind(Configuration, to=cfg)
-
     # Core components (@TODO some of these may or may not require modules)
     binder.bind(EventManager, scope=singleton)
     binder.bind(EntityManager, scope=singleton)
@@ -76,8 +57,17 @@ class Akurra:
         self.log_level = log_level
         self.debug = debug
 
-        self.container.binder.bind(Akurra, to=self)
+        # Load configuration
+        cfg_files = [
+            os.path.expanduser('~/.config/akurra/*.yml'),
+            os.path.expanduser('~/.config/akurra/games/%s/*.yml' % self.game)
+        ]
+
+        cfg = ConfigurationManager.load([get_data_path('*.yml')] + cfg_files)
+        self.container.binder.bind(Configuration, to=cfg)
+
         self.container.binder.bind(DebugFlag, to=Value('b', self.debug))
+        self.container.binder.bind(Akurra, to=self)
 
         # Start pygame (+ audio frequency, size, channels, buffersize)
         pygame.mixer.pre_init(44100, 16, 2, 4096)
