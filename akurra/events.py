@@ -29,6 +29,15 @@ class TickEvent(Event):
         self.delta_time = delta_time
 
 
+class QuitGameEvent(Event):
+
+    """Quit game event."""
+
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
+
+
 class EventManager:
 
     """Event manager."""

@@ -110,7 +110,11 @@ class MenuScreen(GameState):
         """Adjust resolution when resize event occurs."""
         self.screen_size = event.size
         if self.title:
-            self.title_position = (int((self.screen_size[0] - self.title.get_width()) / 2), 0)
+            self.title_position = (int((self.screen_size[0] - self.title_text.get_width()) / 2), 0)
+
+    def add_key_listener(self, key, listener):
+        """Add a key listener."""
+        self.keyboard.add_listener(key, listener)
 
     def add_action_listener(self, action, listener):
         """Add an action listener."""
