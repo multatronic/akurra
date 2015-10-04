@@ -21,9 +21,12 @@ class MenuPrompt(ContainerAware):
         self.selected_option = None
         self.input = self.container.get(InputModule)
         self.prompt_text = self.font.render(self.prompt, False, self.text_color)
+        self.selection_marker = self.font.render('>> ', False, self.text_color)
 
     def add_option(self, option, callback):
         """"Add an option to the menu prompt."""
+        if self.selected_option is None:
+            self.selected_option = option
         self.options[option] = callback
 
     def enable(self):
@@ -46,14 +49,24 @@ class MenuPrompt(ContainerAware):
     def render(self, surface, screen_size=[0, 0]):
         """Render the prompt onto a surface."""
         blit_position = list(screen_size).copy()
-        # TODO subtract total height instead of just the prompt height
+        # center the text prompt in the middle of the screen
         blit_position[1] = int((screen_size[1] - self.prompt_text.get_height()) / 2)
-        blit_position[0] = int((screen_size[0] - self.prompt_text.get_width()) / 2)
+        x_left = int((screen_size[0] - self.prompt_text.get_width()) / 2)
+        blit_position[0] = x_left
         surface.blit(self.prompt_text, blit_position)
+
         for option in self.options:
-            blit_position[1] += self.prompt_text.get_height()
+            # center the option text under the text prompt
             option_text = self.font.render(option, False, self.text_color)
+            left_margin = int((self.prompt_text.get_width() - option_text.get_width()) / 2)
+            blit_position[0] = x_left + left_margin
+            blit_position[1] += self.prompt_text.get_height()
             surface.blit(option_text, blit_position)
+
+            # mark selected option
+            if option == self.selected_option:
+                marker_position = [blit_position[0] - self.selection_marker.get_width(), blit_position[1]]
+                surface.blit(self.selection_marker, marker_position)
 
 
 class MenuButton:
