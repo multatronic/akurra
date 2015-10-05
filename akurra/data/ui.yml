@@ -2,3 +2,125 @@ akurra:
     ui:
         health_bar:
             display_time: 5
+
+        elements:
+            health_bar_small:
+                image: tmp/health_bar_small.png
+
+            abstract_auto_draw:
+                abstract: true
+                auto_draw: true
+                z_index: 50
+
+            player_portrait_main:
+                image: graphics/ui/portrait/main.png
+                position: [20, 20]
+                parent: abstract_auto_draw
+
+            player_portrait_name_bar:
+                image: graphics/ui/portrait/name_bar.png
+                position: [83, 13]
+                parent: abstract_auto_draw
+                relative_position: player_portrait_main
+            player_portrait_name_text:
+                position: [12, -1]
+                parent: abstract_auto_draw
+                relative_position: player_portrait_name_bar
+                text: "{player_character_name}"
+
+            player_portrait_health_bar:
+                image: graphics/ui/portrait/health_bar.png
+                position: [83, 27]
+                relative_position: player_portrait_main
+                parent: abstract_auto_draw
+                width_link: player_current_health_percentage
+            player_portrait_health_text:
+                position: [12, -1]
+                relative_position: player_portrait_health_bar
+                text: "{player_current_health}/{player_max_health}"
+                text_color: [205, 205, 205]
+                parent: abstract_auto_draw
+
+            abstract_mana_orb:
+                abstract: true
+                parent: abstract_auto_draw
+                resize: [30, 30]
+                position: [35, 0]
+            abstract_mana_orb_text:
+                abstract: true
+                parent: abstract_auto_draw
+                position: [14, 10]
+                text_color: [102, 0, 102]
+                text_align: center
+
+            player_portrait_mana_orb_earth:
+                image: graphics/ui/portrait/magic_buttons/green.png
+                parent: abstract_mana_orb
+                position: [82, 50]
+                relative_position: player_portrait_main
+            player_portrait_mana_orb_earth_text:
+                parent: abstract_mana_orb_text
+                relative_position: player_portrait_mana_orb_earth
+                text: "{player_mana_earth}"
+
+            player_portrait_mana_orb_water:
+                image: graphics/ui/portrait/magic_buttons/blue.png
+                parent: abstract_mana_orb
+                relative_position: player_portrait_mana_orb_earth
+            player_portrait_mana_orb_water_text:
+                parent: abstract_mana_orb_text
+                relative_position: player_portrait_mana_orb_water
+                text: "{player_mana_water}"
+
+            player_portrait_mana_orb_air:
+                image: graphics/ui/portrait/magic_buttons/grey.png
+                parent: abstract_mana_orb
+                relative_position: player_portrait_mana_orb_water
+            player_portrait_mana_orb_air_text:
+                parent: abstract_mana_orb_text
+                relative_position: player_portrait_mana_orb_air
+                text: "{player_mana_air}"
+
+            player_portrait_mana_orb_fire:
+                image: graphics/ui/portrait/magic_buttons/red.png
+                parent: abstract_mana_orb
+                relative_position: player_portrait_mana_orb_air
+            player_portrait_mana_orb_fire_text:
+                parent: abstract_mana_orb_text
+                relative_position: player_portrait_mana_orb_fire
+                text: "{player_mana_fire}"
+
+            abstract_target_portrait_element:
+                abstract: true
+                parent: abstract_auto_draw
+                visibility_link: target_character_name
+
+            target_portrait_main:
+                image: graphics/ui/portrait/target.png
+                position: [250, 0]
+                relative_position: player_portrait_main
+                parent: abstract_target_portrait_element
+
+            target_portrait_name_bar:
+                image: graphics/ui/portrait/name_bar_alt.png
+                position: [20, 13]
+                parent: abstract_target_portrait_element
+                relative_position: target_portrait_main
+            target_portrait_name_text:
+                position: [12, -1]
+                parent: abstract_target_portrait_element
+                relative_position: target_portrait_name_bar
+                text: "{target_character_name}"
+
+            target_portrait_health_bar:
+                image: graphics/ui/portrait/health_bar.png
+                position: [20, 27]
+                relative_position: target_portrait_main
+                parent: abstract_target_portrait_element
+                width_link: target_current_health_percentage
+            target_portrait_health_text:
+                position: [12, -1]
+                relative_position: target_portrait_health_bar
+                text: "{target_current_health}/{target_max_health}"
+                text_color: [205, 205, 205]
+                parent: abstract_target_portrait_element

@@ -3,11 +3,11 @@ Akurra
 
 [![Build Status](https://travis-ci.org/multatronic/akurra.svg?branch=master)](https://travis-ci.org/multatronic/akurra)
 
-##About
+## About
 
 Akurra is a pluggable game boilerplate built in python.
 
-##Installation
+## Installation
 
 ### Development
 
@@ -24,7 +24,7 @@ $ sudo ./setup.py develop
 $ sudo pip3 install -U git+https://github.com/multatronic/akurra.git
 ```
 
-##Dependencies
+## Dependencies
 
 * python3
 * pygame
@@ -32,7 +32,8 @@ $ sudo pip3 install -U git+https://github.com/multatronic/akurra.git
 * injector
 * pytmx
 * pyscroll
+* pyganim
 
-##License
+## License
 
 See [LICENSE](LICENSE).

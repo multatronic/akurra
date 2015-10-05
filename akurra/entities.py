@@ -1,15 +1,16 @@
 """Entities module."""
 import logging
 import pygame
+import pyganim
 from uuid import uuid4
 from enum import Enum
 
 from .locals import *  # noqa
-from .assets import SpriteAnimation
 from .events import Event, TickEvent, EventManager
 from .audio import AudioModule
 from .modules import ModuleLoader
-from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, snake_case, memoize
+from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, snake_case, memoize, \
+    distance_vector_between
 from .assets import AssetManager
 
 logger = logging.getLogger(__name__)
@@ -462,35 +463,54 @@ class SpriteComponent(Component):
         self._entity.rect = self.rect
         self._entity.image = self.image
 
-    def __init__(self, image=None, sprite_size=[0, 0], animations={}, direction=EntityDirection.SOUTH,
-                 state='stationary', **kwargs):
+    def __init__(self, sprite_size=None, image=None, animations={}, **kwargs):
         """Constructor."""
-        self.direction = direction
-        self.state = state
+        assets = self.container.get(AssetManager)
+
+        self._direction = 'south'
+        self._state = 'stationary'
         self.sprite_size = sprite_size
 
         if image:
-            self.image = self.container.get(AssetManager).get_image(image, alpha=True)
+            self.image = assets.get_image(image, alpha=True)
         else:
             self.image = pygame.Surface(self.sprite_size, flags=pygame.HWSURFACE | pygame.SRCALPHA)
 
         self.default_image = self.image.copy()
         self.animations = {}
-
-        for state in animations:
-            animations[state] = animations[state] if type(animations[state]) is list else [animations[state]]
-            self.animations[state] = []
-
-            for value in animations[state]:
-                value['frame_size'] = value.get('frame_size', self.sprite_size)
-                value['render_offset'] = value.get('render_offset', [(self.sprite_size[y] - value['frame_size'][y]) / 2
-                                                   for y in [0, 1]])
-                value['direction'] = value.get('direction', self.direction.name)
-
-                animation = SpriteAnimation(**value)
-                self.animations[state].append(animation)
-
         self.rect = self.image.get_rect()
+
+        if not image:
+            for animation in animations:
+                states = animation.get('states', ['stationary_south'])
+                frame_size = animation.get('frame_size', self.sprite_size)
+                render_offset = [(self.sprite_size[0] - frame_size[0]) / 2, (self.sprite_size[1] - frame_size[1]) / 2]
+
+                sprite_sheets = animation['sprite_sheet']
+                sprite_sheets = sprite_sheets if type(sprite_sheets) is list else [sprite_sheets]
+                sprite_sheets = [assets.get_image(x, alpha=True) for x in sprite_sheets]
+
+                sprite_sheet = sprite_sheets[0]
+                [sprite_sheet.blit(x, [0, 0]) for x in sprite_sheets[1:]]
+
+                max_frame_count = int(sprite_sheet.get_width() / frame_size[0])
+                frame_count = animation.get('frame_count', max_frame_count)
+
+                state_offset = animation.get('state_offset', 0)
+                frame_offset = animation.get('frame_offset', 0)
+                frame_interval = animation.get('frame_interval', 50)
+                loop = animation.get('loop', False)
+
+                for key, state in enumerate(states):
+                    frames = [[pygame.Surface(frame_size, flags=pygame.HWSURFACE | pygame.SRCALPHA), frame_interval]
+                              for x in range(0, frame_count)]
+
+                    for i, frame in enumerate(frames):
+                        blit_offset = [(i + frame_offset) * frame_size[0], (key + state_offset) * frame_size[1]]
+                        frame[0].blit(sprite_sheet, [0, 0], [blit_offset, frame_size])
+
+                    animator = pyganim.PygAnimation(frames, loop=loop)
+                    self.animations[state] = [animator, render_offset]
 
         super().__init__(**kwargs)
 
@@ -641,9 +661,121 @@ class SpriteRectPositionCorrectionSystem(System):
         entity.components['sprite'].rect.topleft = list(entity.components['position'].primary_position)
 
 
-class PlayerInputSystem(System):
+class PlayerMouseInputSystem(System):
 
-    """Input system."""
+    """Entity system for interacting with the world using a mouse."""
+
+    requirements = [
+        'input',
+        'player',
+        'state',
+        'layer',
+        'map_layer',
+    ]
+
+    action_inputs = {
+        'skill_usage': EntityInput.SKILL_USAGE,
+        'interact': None,
+    }
+
+    action_handlers = {
+        'interact': 'on_interact',
+    }
+
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
+
+        from .input import InputModule
+        self.input = self.container.get(InputModule)
+
+    def start(self):
+        """Start the system."""
+        [self.input.add_action_listener(x, self.on_event) for x in self.action_inputs]
+
+    def stop(self):
+        """Stop the system."""
+        self.input.remove_action_listener(self.on_event)
+
+    def update(self, entity, event=None):
+        """Have an entity updated by the system."""
+        if not entity.components['state'].state.value & EntityState.CAN_CHANGE_INPUT.value:
+            return
+
+        if event.source != 'mouse':
+            return
+
+        # If there's an entity-specific input store the state and dispatch event
+        try:
+            input = self.action_inputs[event.action]
+            entity.components['input'].input[input] = event.state
+            self.events.dispatch(EntityInputChangeEvent(entity.id, input, event.state))
+        except KeyError:
+            pass
+
+        # Since this is a mouse action, set the target point for this entity
+        entity.components['input'].input[EntityInput.TARGET_POINT] = \
+            screen_point_to_layer(entity.components['layer'].layer.map_layer, event.original_event['pos'])
+
+        # Call the action-specific callback if necessary
+        try:
+            getattr(self, self.action_handlers[event.action])(entity, event)
+        except KeyError:
+            pass
+
+    def on_interact(self, entity, event):
+        """Handle an attempt at interaction."""
+        # Instead of using the screen coordinate from our event as our cursor position,
+        # by this point the entity input should contain the same coordinate, but in layer projection.
+        # We have a 1x1 rect at that position in order to determine which entities collide with our cursor.
+        target = entity.components['input'].input[EntityInput.TARGET_POINT]
+        target_rect = pygame.Rect(target, [1, 1])
+        layer = entity.components['layer'].layer
+
+        # Check if the sprite rectangles of any of the entities on the later collide with the cursor position
+        # To check collisions, we create a rect from the cursor position by assigning it width and height 1
+        entity_sprites = layer.group._spritelist
+        sprite_rects = [x.rect for x in entity_sprites]
+        collisions = target_rect.collidelistall(sprite_rects)
+        target_entity_id = None
+
+        # If we have collisions, check if the specific pixel our cursor landed on is transparent.
+        # If it's transparent, we're not trying to interact with this entity and we move to check
+        # the next one.
+        if collisions:
+            # NOTE: The order in which collisions are checked is reversed because in order for dynamic sprite
+            # ordering to work in the rendering phase, all of the sprites in the spritelist are ordered
+            # by their y-positioning on the map, with the entities being rendered first (and thus possibly
+            # being placed underneath other sprites) being at the front of the list. Since interactions with the
+            # topmost entity at a certain location should be prioritized, we reverse the list to be able to check
+            # the "higher" entities first.
+            for collision in reversed(collisions):
+                # Get the cursor's position relative to the entity rect
+                # Considering that we've collided with the rect, this should always be a positive number so we
+                # can simply use the distance between the cursor and the entity rect as our relative position
+                relative_position = distance_vector_between(sprite_rects[collision], target)
+                relative_position = [int(relative_position[0]), int(relative_position[1])]
+
+                # Get the color value for the sprite pixel at the relative cursor position
+                pixel = entity_sprites[collision].image.get_at(relative_position)
+
+                # Only non-transparent pixels count as a valid interaction
+                if sum(pixel) != 0:
+                    # Store target entity id of current entity to target
+                    target_entity_id = entity_sprites[collision].id
+
+                    # Break loop
+                    break
+
+        # Store target entity and dispatch notification event
+        entity.components['input'].input[EntityInput.TARGET_ENTITY] = target_entity_id
+        event = EntityInputChangeEvent(entity.id, EntityInput.TARGET_ENTITY, target_entity_id)
+        self.events.dispatch(event)
+
+
+class PlayerKeyboardInputSystem(System):
+
+    """Player keyboard input system."""
 
     requirements = [
         'input',
@@ -659,8 +791,9 @@ class PlayerInputSystem(System):
         'move_left': EntityInput.MOVE_LEFT,
         'move_right': EntityInput.MOVE_RIGHT,
         'mana_gather': EntityInput.MANA_GATHER,
-        'skill_usage': EntityInput.SKILL_USAGE,
     }
+
+    action_handlers = {}
 
     def __init__(self):
         """Constructor."""
@@ -671,7 +804,7 @@ class PlayerInputSystem(System):
 
     def start(self):
         """Start the system."""
-        [self.input.add_action_listener(x, self.on_event) for x in self.action_inputs.keys()]
+        [self.input.add_action_listener(x, self.on_event) for x in self.action_inputs]
 
     def stop(self):
         """Stop the system."""
@@ -682,15 +815,22 @@ class PlayerInputSystem(System):
         if not entity.components['state'].state.value & EntityState.CAN_CHANGE_INPUT.value:
             return
 
-        input = self.action_inputs[event.action]
-        entity.components['input'].input[input] = event.state
+        if event.source != 'keyboard':
+            return
 
-        if event.source == 'mouse':
-            entity.components['input'].input[EntityInput.TARGET_POINT] = \
-                screen_point_to_layer(entity.components['layer'].layer.map_layer, event.original_event['pos'])
+        # If there's an entity-specific input store the state and dispatch event
+        try:
+            input = self.action_inputs[event.action]
+            entity.components['input'].input[input] = event.state
+            self.events.dispatch(EntityInputChangeEvent(entity.id, input, event.state))
+        except KeyError:
+            pass
 
-        # Trigger an input change event
-        self.events.dispatch(EntityInputChangeEvent(entity.id, input, event.state))
+        # Call the action-specific callback if necessary
+        try:
+            getattr(self, self.action_handlers[event.action])(entity, event)
+        except KeyError:
+            pass
 
 
 class VelocitySystem(System):
@@ -739,34 +879,27 @@ class MovementSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        entity.components['sprite'].state = 'moving' if \
-            list(filter(None, entity.components['velocity'].direction)) else 'stationary'
+        entity.components['sprite']._state = state = 'moving' \
+            if list(filter(None, entity.components['velocity'].direction)) else 'stationary'
 
-        # Do nothing if there is no velocity
-        if not entity.components['velocity'].direction[0] and not entity.components['velocity'].direction[1]:
-            return
+        if state == 'moving':
+            entity.components['position'].old = list(entity.components['position'].primary_position)
 
-        entity.components['position'].old = list(entity.components['position'].primary_position)
+            entity.components['position'].primary_position[0] += entity.components['velocity'].direction[0] * \
+                entity.components['velocity'].speed * event.delta_time
+            entity.components['position'].primary_position[1] += entity.components['velocity'].direction[1] * \
+                entity.components['velocity'].speed * event.delta_time
 
-        entity.components['position'].primary_position[0] += entity.components['velocity'].direction[0] * \
-            entity.components['velocity'].speed * event.delta_time
-        entity.components['position'].primary_position[1] += entity.components['velocity'].direction[1] * \
-            entity.components['velocity'].speed * event.delta_time
+            # Calculate and set direction
+            direction = EntityDirection.NORTH.value if entity.components['velocity'].direction[1] < 0 \
+                else EntityDirection.SOUTH.value if entity.components['velocity'].direction[1] else 0
+            direction |= EntityDirection.EAST.value if entity.components['velocity'].direction[0] > 0 \
+                else EntityDirection.WEST.value if entity.components['velocity'].direction[0] else 0
 
-        # Calculate and set direction
-        direction = EntityDirection.NORTH.value if entity.components['velocity'].direction[1] < 0 \
-            else EntityDirection.SOUTH.value if entity.components['velocity'].direction[1] else 0
-        direction |= EntityDirection.EAST.value if entity.components['velocity'].direction[0] > 0 \
-            else EntityDirection.WEST.value if entity.components['velocity'].direction[0] else 0
+            entity.components['sprite']._direction = EntityDirection(direction).name.lower()
 
-        entity.components['sprite'].direction = EntityDirection(direction)
-
-        for state in entity.components['sprite'].animations:
-            for animation in entity.components['sprite'].animations[state]:
-                animation.direction = entity.components['sprite'].direction.name
-
-        # Trigger a move event
-        self.events.dispatch(EntityMoveEvent(entity.id))
+            # Trigger a move event
+            self.events.dispatch(EntityMoveEvent(entity.id))
 
 
 class PositioningSystem(System):
@@ -812,13 +945,21 @@ class RenderingSystem(System):
 
     def update(self, entity, event=None):
         """Have an entity updated by the system."""
-        try:
-            entity.components['sprite'].image.fill([0, 0, 0, 0])
+        sprite_component = entity.components['sprite']
 
-            for x in entity.components['sprite'].animations[entity.components['sprite'].state]:
-                entity.components['sprite'].image.blit(x.get_frame(), x.render_offset)
+        try:
+            sprite_component.image.fill([0, 0, 0, 0])
+
+            state_string = '%s_%s' % (sprite_component._state, sprite_component._direction)
+            animation = sprite_component.animations[state_string]
+
+            # Start animations that haven't been started yet
+            if not animation[0]._playingStartTime:
+                animation[0].play()
+
+            sprite_component.image.blit(animation[0].getCurrentFrame(), animation[1])
         except KeyError:
-            entity.components['sprite'].image.blit(entity.components['sprite'].default_image, [0, 0])
+            sprite_component.image.blit(sprite_component.default_image, [0, 0])
 
 
 class SpriteRenderOrderingSystem(System):
@@ -1109,7 +1250,7 @@ class DeathSystem(System):
     def update(self, entity, event=None):
         """Have an entity handled by the system."""
         if entity.components['state'].state is EntityState.DEAD:
-            entity.components['sprite'].state = 'death'
+            entity.components['sprite']._state = 'dead'
             self.events.dispatch(EntityDeathEvent(entity.id))
 
             # If this entity has an input component, set all inputs to false

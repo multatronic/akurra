@@ -35,26 +35,7 @@ def build_container(binder):
     binder.bind(ShutdownFlag, to=Event())
     binder.bind(DisplayClock, to=pygame.time.Clock())
 
-    # Configuration
-    CFG_FILES = [
-        os.path.expanduser('~/.config/akurra/config.yml'),
-    ]
-
-    # If the directories or files don't exist, create them
-    for f in CFG_FILES:
-        if not os.path.isfile(f):
-            try:
-                os.makedirs(os.path.dirname(f))
-            except FileExistsError:
-                pass
-
-            with open(f, 'a+'):
-                pass
-
-    cfg = ConfigurationManager.load([get_data_path('*.yml')] + CFG_FILES)
-    binder.bind(Configuration, to=cfg)
-
-    # Core components (@TODO some of these may or may not require modules)
+    # Core components
     binder.bind(EventManager, scope=singleton)
     binder.bind(EntityManager, scope=singleton)
     binder.bind(AssetManager, scope=singleton)
@@ -76,8 +57,17 @@ class Akurra:
         self.log_level = log_level
         self.debug = debug
 
-        self.container.binder.bind(Akurra, to=self)
+        # Load configuration
+        cfg_files = [
+            os.path.expanduser('~/.config/akurra/*.yml'),
+            os.path.expanduser('~/.config/akurra/games/%s/*.yml' % self.game)
+        ]
+
+        cfg = ConfigurationManager.load([get_data_path('*.yml')] + cfg_files)
+        self.container.binder.bind(Configuration, to=cfg)
+
         self.container.binder.bind(DebugFlag, to=Value('b', self.debug))
+        self.container.binder.bind(Akurra, to=self)
 
         # Start pygame (+ audio frequency, size, channels, buffersize)
         pygame.mixer.pre_init(44100, 16, 2, 4096)
@@ -104,7 +94,7 @@ class Akurra:
         self.entities = self.container.get(EntityManager)
         self.states = self.container.get(StateManager)
         self.assets = self.container.get(AssetManager)
-        self.states = self.container.get(StateManager)
+        self.session = self.container.get(SessionManager)
 
         self.loop_wait_millis = self.configuration.get('akurra.core.loop_wait_millis', 5)
         self.max_fps = self.configuration.get('akurra.display.max_fps', 60)

@@ -7,3 +7,4 @@ akurra:
         mouse:
             action_bindings:
                 skill_usage: 1
+                interact: 3

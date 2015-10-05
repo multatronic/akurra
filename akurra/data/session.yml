@@ -1,3 +1,4 @@
 akurra:
     session:
-        file_path: ~/.config/akurra/session/main.sav
+        file_directory: ~/.config/akurra/games/%(game)s/sessions
+        file_extension: save

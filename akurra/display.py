@@ -11,7 +11,7 @@ from .input import InputModule
 from .events import Event, TickEvent, EventManager
 from .entities import LayerComponent, EntityManager, MapLayerComponent
 from .modules import Module
-from .utils import ContainerAware, hr_event_type, distance_between
+from .utils import ContainerAware
 
 
 logger = logging.getLogger(__name__)
@@ -123,48 +123,6 @@ class EntityDisplayLayer(DisplayLayer):
                               self.entities[entity_id].components['position'].primary_position)
 
         super().draw(surface)
-
-    def find_entities_at(self, position, ignore_ids=[], position_type='primary', radius=None, limit=None):
-        """
-        Find and return a list of entities in a given radius around the given position.
-
-        :param position: Coordinate where entity lookup should start.
-        :param radius: Radius of the search.
-        :param ignore_ids: List of entity IDs to ignore when searching.
-        :param limit: Maximum amount of results to return.
-        :param position_type: Position type to perform comparisons with.
-
-        """
-        for entity_id in self.entities:
-            if entity_id in ignore_ids:
-                continue
-
-            entity = self.entities[entity_id]
-            target = getattr(entity.components['position'], position_type + '_position')
-
-            target_rect = entity.components['sprite'].rect.copy()
-            # target_rect = entity.components['physics'].collision_core.copy()
-            target_rect.center = target
-
-            if ((not radius) and (target_rect.collidepoint(position))) or \
-                    ((radius) and distance_between(position, target) <= radius):
-                yield entity
-
-                if limit:
-                    limit -= 1
-
-                    if not limit:
-                        break
-
-    def on_entity_mouse(self, entity, event):
-        """
-        Handle a mouse event as the cursor is focused on a certain entity.
-
-        :param entity: Entity that is currently focused by the cursor.
-        :param event: Mouse event to handle.
-
-        """
-        logger.warning('Detected event "%s" on "%s".', hr_event_type(event.type), entity.components['character'].name)
 
 
 class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):

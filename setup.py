@@ -67,7 +67,9 @@ setup(
         ],
 
         'akurra.entities.systems': [
-            'player_input = akurra.entities:PlayerInputSystem',
+            'player_keyboard_input = akurra.entities:PlayerKeyboardInputSystem',
+            'player_mouse_input = akurra.entities:PlayerMouseInputSystem',
+
             'velocity = akurra.entities:VelocitySystem',
             'movement = akurra.entities:MovementSystem',
             'collision = akurra.entities:CollisionSystem',
@@ -100,6 +102,7 @@ setup(
         'injector',
         'pytmx',
         'pyscroll',
+        'pyganim',
         'BallerCFG'
     ],
     dependency_links=[

@@ -2,11 +2,12 @@
 import pygame
 import logging
 import math
+import copy
 
 from .locals import *  # noqa
 from .display import DisplayModule, DisplayLayer
 from .events import TickEvent, EventManager
-from .entities import EntityManager, EntityHealthChangeEvent
+from .entities import EntityManager, EntityHealthChangeEvent, EntityInput
 from .assets import AssetManager
 from .modules import Module
 from .session import SessionManager
@@ -36,27 +37,63 @@ class UIModule(Module):
         self.configuration = self.container.get(Configuration)
 
         self.font = pygame.font.SysFont('monospace', 9)
+        self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=140)
 
-        self.layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=110)
-
-        self.surfaces = {}
-        self.surfaces['portrait_main'] = self.assets.get_image('graphics/ui/portrait/main.png', alpha=True)
-        self.surfaces['portrait_health_bar'] = self.assets.get_image('graphics/ui/portrait/health_bar.png', alpha=True)
-        self.surfaces['health_bar_small'] = self.assets.get_image('tmp/health_bar_small.png', alpha=True)
-
-        for type, color in {'earth': 'green', 'water': 'blue', 'air': 'grey', 'fire': 'red'}.items():
-            surface = self.assets.get_image('graphics/ui/portrait/magic_buttons/%s.png' % color, alpha=True)
-            self.surfaces['portrait_mana_orb_%s' % type] = pygame.transform.smoothscale(surface, [30, 30])
-
-        self.offsets = {}
-        self.offsets['portrait'] = [20, 20]
-        self.offsets['portrait_health_bar'] = [103, 33]
-        self.offsets['portrait_health_text'] = [115, 32]
-        self.offsets['portrait_mana_orb'] = [105, 70]
-        self.offsets['portrait_mana_orb_text'] = [119, 80]
+        self.elements = {}
+        self.autodraw_elements = []
+        self.health_bar_entities = {}
 
         self.health_bar_display_time = self.configuration.get('akurra.ui.health_bar.display_time', 5)
-        self.health_bar_entities = {}
+        self.element_configs = self.configuration.get('akurra.ui.elements', {})
+
+        def load_ui_element(elements, element_configs, element_name):
+            """Load and return a ui element."""
+            if elements.get(element_name, None):
+                return elements[element_name]
+
+            element = copy.deepcopy(element_configs[element_name])
+
+            if not element.get('z_index', None):
+                element['z_index'] = 1
+
+            if element.get('parent', None):
+                parent = copy.deepcopy(load_ui_element(elements, element_configs, element['parent']))
+                element.pop('parent', None)
+                parent.update(element)
+                element = parent
+
+            if element.get('image', None):
+                element['image'] = self.assets.get_image(element['image'], alpha=True)
+
+                if element.get('resize', None):
+                    element['image'] = pygame.transform.smoothscale(element['image'], element['resize'])
+                    element.pop('resize', None)
+
+            if element.get('position', None):
+                if element.get('relative_position', None):
+                    relative = load_ui_element(elements, element_configs, element['relative_position'])
+                    element['z_index'] = relative['z_index'] + 1
+                    element.pop('relative_position', None)
+
+                    if relative.get('position', None):
+                        element['position'][0] += relative['position'][0]
+                        element['position'][1] += relative['position'][1]
+
+            if not element.get('abstract', False):
+                elements[element_name] = element
+            else:
+                element.pop('abstract', None)
+
+            return element
+
+        for name in self.element_configs:
+            load_ui_element(self.elements, self.element_configs, name)
+
+        for name, element in self.elements.items():
+            if element.get('auto_draw', False):
+                self.autodraw_elements.append(element)
+
+        self.autodraw_elements = sorted(self.autodraw_elements, key=lambda x: x.get('z_index'))
 
     def start(self):
         """Start the module."""
@@ -72,36 +109,72 @@ class UIModule(Module):
 
     def render_player_ui(self, player):
         """Render player ui elements."""
-        health_component = player.components['health']
+        player_health = player.components['health']
+        player_mana = player.components['mana']
+        player_character = player.components['character']
+        player_input = player.components['input']
+
+        self.ui_scope_variables = {
+            'player_mana_earth': math.floor(player_mana.mana.get('earth', 0)),
+            'player_mana_water': math.floor(player_mana.mana.get('water', 0)),
+            'player_mana_fire': math.floor(player_mana.mana.get('fire', 0)),
+            'player_mana_air': math.floor(player_mana.mana.get('air', 0)),
+            'player_current_health': math.floor(player_health.health),
+            'player_max_health': player_health.max,
+            'player_current_health_percentage': (player_health.health * 100) / player_health.max,
+            'player_character_name': player_character.name,
+
+            'target_character_name': None,
+            'target_current_health': None,
+            'target_max_health': None,
+            'target_current_health_percentage': None,
+        }
+
+        if player_input.input[EntityInput.TARGET_ENTITY]:
+            target_entity = self.entities.find_entity_by_id(player_input.input[EntityInput.TARGET_ENTITY])
+            target_health = target_entity.components['health']
+            target_character = target_entity.components['character']
+
+            self.ui_scope_variables['target_character_name'] = target_character.name
+            self.ui_scope_variables['target_current_health'] = math.floor(target_health.health)
+            self.ui_scope_variables['target_max_health'] = target_health.max
+            self.ui_scope_variables['target_current_health_percentage'] = \
+                (target_health.health * 100) / target_health.max
 
         # self.layer.surface.fill([0, 0, 0, 0])
-        self.layer.surface.blit(self.surfaces['portrait_main'], self.offsets['portrait'])
+        for element in self.autodraw_elements:
+            if element.get('visibility_link', None):
+                if not self.ui_scope_variables[element['visibility_link']]:
+                    continue
 
-        # The width of the health bar should reflect the player's health percentage
-        health_percentage = health_component.health / health_component.max
-        self.layer.surface.blit(self.surfaces['portrait_health_bar'], self.offsets['portrait_health_bar'],
-                                [0, 0, int(health_percentage * self.surfaces['portrait_health_bar'].get_width()), 900])
+            if element.get('image', None):
+                image_size = [0, 0, element['image'].get_width(), element['image'].get_height()]
 
-        health_text = self.font.render('%s/%s' % (math.floor(health_component.health), health_component.max), 1,
-                                       [225, 225, 225])
-        self.layer.surface.blit(health_text, self.offsets['portrait_health_text'])
+                if element.get('width_link', None):
+                    image_size[2] *= self.ui_scope_variables[element['width_link']] / 100
 
-        portrait_mana_orb_offset = list(self.offsets['portrait_mana_orb'])
-        portrait_mana_orb_text_offset = list(self.offsets['portrait_mana_orb_text'])
+                self.layer.surface.blit(element['image'], element['position'], image_size)
 
-        for mana_type, mana_amount in player.components['mana'].mana.items():
-            if mana_amount > 0:
-                self.layer.surface.blit(self.surfaces['portrait_mana_orb_%s' % mana_type], portrait_mana_orb_offset)
-                portrait_mana_orb_offset[0] += 35
+            if element.get('text', None):
+                text = self.font.render(
+                    element['text'].format(**self.ui_scope_variables),
+                    1,
+                    element.get('text_color', [255, 255, 255])
+                )
 
-                mana_text = self.font.render('%s' % math.floor(mana_amount), 1, [102, 0, 102])
-                self.layer.surface.blit(mana_text, [portrait_mana_orb_text_offset[0] - (mana_text.get_width() / 2),
-                                                    portrait_mana_orb_text_offset[1]])
-                portrait_mana_orb_text_offset[0] += 35
+                text_position = list(element['position'])
+                text_align = element.get('text_align', 'left')
+
+                if text_align == 'center':
+                    text_position[0] -= text.get_width() / 2
+                elif text_align == 'right':
+                    text_position[0] -= text.get_width()
+
+                self.layer.surface.blit(text, text_position)
 
     def render_entity_contexts(self, event):
         """Render data related to entity context such as health bars, character names and the like."""
-        health_bar = self.surfaces['health_bar_small']
+        health_bar = self.elements['health_bar_small']['image']
         health_bar_width = health_bar.get_width()
 
         for entity_id in self.health_bar_entities.copy():
