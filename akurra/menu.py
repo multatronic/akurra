@@ -22,17 +22,15 @@ class MenuPrompt(ContainerAware):
         self.input = self.container.get(InputModule)
         self.prompt_text = self.font.render(self.prompt, False, self.text_color)
         self.selection_marker = self.font.render('>> ', False, self.text_color)
+
+        # register keyboard inputs
         self.input.add_action_listener('move_up', self.select_next_option)
         self.input.add_action_listener('move_down', self.select_next_option)
+        self.input.add_action_listener('splash_screen_skip', self.trigger_selected_option)
 
     def add_option(self, option, callback):
         """"Add an option to the menu prompt."""
         self.options.append((option, callback))
-
-    # def select_prev_option(self):
-    #     """Select the previous option (modulus)."""
-    #     if len(self.options) > 0:
-    #         self.selected_option_index = --self.selected_option_index % len(self.options)
 
     def select_next_option(self, event):
         """Select the next option (modulus)."""
@@ -51,9 +49,10 @@ class MenuPrompt(ContainerAware):
         self.events.unregister(self.on_tick)
         self.display.remove_layer(self.layer)
 
-    def trigger_selected_option(self):
+    def trigger_selected_option(self, event):
         """trigger the selected option callback."""
-        self.options[self.selected_option_index][1]()
+        if event.original_event['type'] == pygame.KEYUP:
+            self.options[self.selected_option_index][1]()
 
     def render(self, surface, screen_size=[0, 0]):
         """Render the prompt onto a surface."""

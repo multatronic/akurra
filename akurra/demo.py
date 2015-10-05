@@ -4,7 +4,7 @@ import logging
 
 from .assets import AssetManager
 from .display import ScrollingMapEntityDisplayLayer, DisplayModule, DisplayLayer
-from .events import EventManager, QuitGameEvent
+from .events import EventManager
 from .entities import EntityManager, EntityInput
 from .session import SessionManager
 from .modules import Game
@@ -24,6 +24,8 @@ class DemoMainMenu(MenuScreen):
     def __init__(self):
         super().__init__(title='Main Menu')
 
+        self.shutdown = self.container.get(ShutdownFlag)
+
         # set up a quit prompt
         quit_prompt = MenuPrompt("Really quit?")
         quit_prompt.add_option("Yes", self.dispatch_quit_message)
@@ -37,8 +39,8 @@ class DemoMainMenu(MenuScreen):
             self.toggle_prompt("quit")
 
     def dispatch_quit_message(self):
-        """ Dispatch a quit message to be handled in the parent state."""
-        self.events.dispatch(QuitGameEvent)
+        """ Raise the shutdown flag."""
+        self.shutdown.set()
 
 
 class DemoGame(Game):
@@ -54,9 +56,13 @@ class DemoGame(Game):
         self.states.add(self.splash_screen)
         self.states.add(self.game_realm)
         self.main_menu = None
-        self.init_menus()
+        self.init_menu()
 
-    def init_menus(self):
+    def handle_game_quit(self, event):
+        """Handle game quit event."""
+        self.game_realm.on_quit()
+
+    def init_menu(self):
         """Perform initialization of menu screens."""
         # set up the main menu screen
         self.main_menu = DemoMainMenu()
@@ -76,7 +82,6 @@ class DemoGameState(GameState):
         """Constructor."""
         super().__init__()
 
-        self.events = self.container.get(EventManager)
         self.display = self.container.get(DisplayModule)
         self.audio = self.container.get(AudioModule)
         self.assets = self.container.get(AssetManager)
@@ -85,13 +90,12 @@ class DemoGameState(GameState):
         self.input = self.container.get(InputModule)
         self.shutdown = self.container.get(ShutdownFlag)
 
-    def on_quit(self, event):
+    def on_quit(self):
         """Handle quitting."""
         self.shutdown.set()
 
     def enable(self):
         """Initialize the gamestate."""
-        self.events.register(QuitGameEvent, self.on_quit)
         # self.input.add_action_listener('game_quit', self.on_quit)
 
         # self.tmx_data = self.assets.get_tmx_data('pyscroll_demo/grasslands.tmx')
