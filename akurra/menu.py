@@ -11,23 +11,33 @@ logger = logging.getLogger(__name__)
 class MenuPrompt(ContainerAware):
     """A prompt, acting as an atomic menu within a menu screen. (eg: Really quit? Y/N)"""
 
-    def __init__(self, prompt, options={}, text_color=(255,0,0)):
+    def __init__(self, prompt, options=[], text_color=(255,0,0)):
         """Init function."""
         from .input import InputModule
         self.font = pygame.font.SysFont('monospace', 30)
         self.text_color = text_color
         self.prompt = prompt
         self.options = options
-        self.selected_option = None
+        self.selected_option_index = 0
         self.input = self.container.get(InputModule)
         self.prompt_text = self.font.render(self.prompt, False, self.text_color)
         self.selection_marker = self.font.render('>> ', False, self.text_color)
+        self.input.add_action_listener('move_up', self.select_next_option)
+        self.input.add_action_listener('move_down', self.select_next_option)
 
     def add_option(self, option, callback):
         """"Add an option to the menu prompt."""
-        if self.selected_option is None:
-            self.selected_option = option
-        self.options[option] = callback
+        self.options.append((option, callback))
+
+    # def select_prev_option(self):
+    #     """Select the previous option (modulus)."""
+    #     if len(self.options) > 0:
+    #         self.selected_option_index = --self.selected_option_index % len(self.options)
+
+    def select_next_option(self, event):
+        """Select the next option (modulus)."""
+        if len(self.options) > 0 and event.original_event['type'] == pygame.KEYUP:
+            self.selected_option_index = (self.selected_option_index + 1) % len(self.options)
 
     def enable(self):
         """Enable the menu screen."""
@@ -42,9 +52,8 @@ class MenuPrompt(ContainerAware):
         self.display.remove_layer(self.layer)
 
     def trigger_selected_option(self):
-        """trigger the selected option."""
-        if self.selected_option:
-            self.options[self.selected_option]()
+        """trigger the selected option callback."""
+        self.options[self.selected_option_index][1]()
 
     def render(self, surface, screen_size=[0, 0]):
         """Render the prompt onto a surface."""
@@ -55,16 +64,16 @@ class MenuPrompt(ContainerAware):
         blit_position[0] = x_left
         surface.blit(self.prompt_text, blit_position)
 
-        for option in self.options:
+        for index, option in enumerate(self.options):
             # center the option text under the text prompt
-            option_text = self.font.render(option, False, self.text_color)
+            option_text = self.font.render(option[0], False, self.text_color)
             left_margin = int((self.prompt_text.get_width() - option_text.get_width()) / 2)
             blit_position[0] = x_left + left_margin
             blit_position[1] += self.prompt_text.get_height()
             surface.blit(option_text, blit_position)
 
             # mark selected option
-            if option == self.selected_option:
+            if index == self.selected_option_index:
                 marker_position = [blit_position[0] - self.selection_marker.get_width(), blit_position[1]]
                 surface.blit(self.selection_marker, marker_position)
 
