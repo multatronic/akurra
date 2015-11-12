@@ -71,15 +71,20 @@ class DemoGameState(GameState):
 
         player = self.session.get('player')
 
+        # If we don't have a player, spawn one on the map
         if not player:
-            player = self.entities.find_entities_by_components(['player'])[0]
+            player = self.entities.create_entity_from_template('player')
+            player.components['position'].layer_position = [20, 20]
             self.session.set('player', player)
+        else:
+            self.entities.add_entity(player)
 
-            # Set selected skill to fireball
-            # @TODO Remove this
-            player.components['input'].input[EntityInput.SELECTED_SKILL] = 'skill_fireball'
-
+        self.layer.add_entity(player)
         self.layer.center = player
+
+        # Set selected skill to fireball
+        # @TODO Remove this
+        player.components['input'].input[EntityInput.SELECTED_SKILL] = 'skill_fireball'
 
         # Load audio files
         # music

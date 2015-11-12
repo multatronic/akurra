@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.0" orientation="orthogonal" renderorder="right-down" width="128" height="128" tilewidth="32" tileheight="32" nextobjectid="13">
- <tileset firstgid="1" name="magecity" tilewidth="32" tileheight="32">
+ <tileset firstgid="1" name="magecity" tilewidth="32" tileheight="32" tilecount="360">
   <image source="../../tiles/mage_city_arcanos/magecity.png" width="256" height="1450"/>
   <tile id="0">
    <properties>
@@ -332,7 +332,7 @@
   </object>
   <object id="12" name="player_spawn" x="513.333" y="694.667" width="54" height="49">
    <properties>
-    <property name="spawn" value="true"/>
+    <property name="spawn" value="false"/>
     <property name="spawn_templates" value="player"/>
    </properties>
   </object>

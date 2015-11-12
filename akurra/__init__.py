@@ -67,6 +67,7 @@ class Akurra:
         self.container.binder.bind(Configuration, to=cfg)
 
         self.container.binder.bind(DebugFlag, to=Value('b', self.debug))
+        self.container.binder.bind(GameName, to=self.game)
         self.container.binder.bind(Akurra, to=self)
 
         # Start pygame (+ audio frequency, size, channels, buffersize)
@@ -107,12 +108,13 @@ class Akurra:
         """Start."""
         logger.debug('Starting..')
 
-        # Reset shutdown flag
+        # Clear shutdown flag
         self.shutdown.clear()
 
         self.modules.load()
         self.entities.start()
         self.modules.start()
+        self.session.start()
 
         try:
             # Attempt to fetch and launch game
@@ -140,8 +142,11 @@ class Akurra:
     def stop(self):
         """Stop."""
         logger.info('Stopping..')
+
+        # Set shutdown flag
         self.shutdown.set()
 
+        self.session.stop()
         self.modules.stop()
         self.entities.stop()
         self.modules.unload()

@@ -3,7 +3,7 @@ import logging
 import pygame
 import queue
 from multiprocessing import Queue
-from akurra.utils import hr_event_type, fqcn
+from .utils import hr_event_type, fqcn
 
 
 logger = logging.getLogger(__name__)

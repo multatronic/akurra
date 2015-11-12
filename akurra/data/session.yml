@@ -1,4 +1,4 @@
 akurra:
     session:
         file_directory: ~/.config/akurra/games/%(game)s/sessions
-        file_extension: save
+        references_data_key: akurra.session.references

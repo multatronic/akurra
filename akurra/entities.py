@@ -12,6 +12,7 @@ from .modules import ModuleLoader
 from .utils import ContainerAware, map_point_to_screen, screen_point_to_layer, snake_case, memoize, \
     distance_vector_between
 from .assets import AssetManager
+from .session import persistable
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +152,7 @@ class EntityStateChangeEvent(EntityEvent):
         self.entity_state = entity_state
 
 
+@persistable
 class Entity(pygame.sprite.Sprite):
 
     """
@@ -189,6 +191,10 @@ class Entity(pygame.sprite.Sprite):
 
         # Unregister entity component in entitymanager
         self.entities.remove_entity_component(self, component)
+
+    def __getnewargs__(self):
+        """Get constructor arguments for this object."""
+        return (self.id, self.components)
 
 
 class EntityManager(ContainerAware):
@@ -314,6 +320,7 @@ class EntityManager(ContainerAware):
         return entity
 
 
+@persistable
 class Component(ContainerAware):
 
     """Base component."""
@@ -344,6 +351,10 @@ class HealthComponent(Component):
         self.max = max
         self.health = health
 
+    def __getnewargs__(self):
+        """Get constructor arguments for this object."""
+        return (self.min, self.max, self.health)
+
 
 class ManaComponent(Component):
 
@@ -364,6 +375,10 @@ class ManaComponent(Component):
 
         self.mana = mana
         self.max = max
+
+    def __getnewargs__(self):
+        """Get constructor arguments for this object."""
+        return (self.mana, self.max)
 
 
 class PositionComponent(Component):
@@ -421,6 +436,10 @@ class PositionComponent(Component):
         self.primary = primary
         self.old = None
 
+    def __getnewargs__(self):
+        """Get constructor arguments for this object."""
+        return (self.screen_position, self.layer_position, self.map_position, self.primary)
+
 
 class VelocityComponent(Component):
 
@@ -433,6 +452,10 @@ class VelocityComponent(Component):
         self.direction = direction
         self.speed = speed
 
+    def __getnewargs__(self):
+        """Get constructor arguments for this object."""
+        return (self.direction, self.speed)
+
 
 class CharacterComponent(Component):
 
@@ -443,6 +466,10 @@ class CharacterComponent(Component):
         super().__init__(**kwargs)
 
         self.name = name
+
+    def __getnewargs__(self):
+        """Get constructor arguments for this object."""
+        return (self.name,)
 
 
 class SpriteComponent(Component):
@@ -469,7 +496,10 @@ class SpriteComponent(Component):
 
         self._direction = 'south'
         self._state = 'stationary'
+
         self.sprite_size = sprite_size
+        self.image_path = image
+        self.animation_definitions = animations
 
         if image:
             self.image = assets.get_image(image, alpha=True)
@@ -513,6 +543,10 @@ class SpriteComponent(Component):
                     self.animations[state] = [animator, render_offset]
 
         super().__init__(**kwargs)
+
+    def __getnewargs__(self):
+        """Get constructor arguments for this object."""
+        return (self.sprite_size, self.image_path, self.animation_definitions)
 
 
 class InputComponent(Component):
@@ -561,6 +595,10 @@ class PhysicsComponent(Component):
 
         super().__init__(**kwargs)
 
+    def __getnewargs__(self):
+        """Get constructor arguments for this object."""
+        return (self.collision_core.size, self.collision_core_offset)
+
 
 class PlayerComponent(Component):
 
@@ -593,7 +631,14 @@ class StateComponent(Component):
 
     def __init__(self, state=EntityState.NORMAL, **kwargs):
         """Constructor."""
+        if type(state) is not EntityState:
+            state = EntityState(state)
+
         self.state = state
+
+    def __getnewargs__(self):
+        """Get constructor arguments for this object."""
+        return (self.state.value,)
 
 
 class System(ContainerAware):
