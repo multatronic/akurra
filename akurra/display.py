@@ -11,6 +11,8 @@ from .input import InputModule
 from .events import Event, TickEvent, EventManager
 from .entities import LayerComponent, EntityManager, MapLayerComponent
 from .modules import Module
+from .assets import AssetManager
+from .session import persistable
 from .utils import ContainerAware
 
 
@@ -22,6 +24,7 @@ class FrameRenderCompletedEvent(Event):
     """Frame render completion event."""
 
 
+@persistable
 class DisplayLayer(ContainerAware):
 
     """Display layer."""
@@ -89,6 +92,10 @@ class DisplayLayer(ContainerAware):
         self.size = size
         self.surface = pygame.transform.scale(self.surface, self.size)
 
+    def __getnewargs__(self):
+        """Get constructor arguments for this object."""
+        return (self.size, self.flags, self.position, self.z_index)
+
 
 class EntityDisplayLayer(DisplayLayer):
 
@@ -99,10 +106,12 @@ class EntityDisplayLayer(DisplayLayer):
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, entities={}, *args, **kwargs):
         """Constructor."""
-        super().__init__(**kwargs)
-        self.entities = {}
+        super().__init__(*args, **kwargs)
+        # self.entities = {}
+        # [self.add_entity(v) for k, v in entities.items()]
+        self.entities = entities
 
     def add_entity(self, entity):
         """Add an entity to the layer."""
@@ -124,32 +133,44 @@ class EntityDisplayLayer(DisplayLayer):
 
         super().draw(surface)
 
+    def __getnewargs__(self):
+        """Get constructor arguments for this object."""
+        return (self.entities,) + super().__getnewargs__()
 
-class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
+
+class ScrollingTmxMapEntityDisplayLayer(EntityDisplayLayer):
 
     """
-    Scrollable map display layer.
+    Scrollable TMX map display layer.
 
     A display layer for rendering entities on a scrollable map.
 
     """
 
-    def __init__(self, tmx_data, default_layer=0, **kwargs):
+    def __init__(self, tmx_file, default_layer=0, *args, **kwargs):
         """Constructor."""
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
 
+        self.tmx_file = tmx_file
+        self.default_layer = default_layer
+
+        self.assets = self.container.get(AssetManager)
         self.em = self.container.get(EntityManager)
         self.events = self.container.get(EventManager)
 
         # Create data source
-        self.map_data = pyscroll.data.TiledMapData(tmx_data)
+        self.tmx_data = self.assets.get_tmx_data(self.tmx_file)
+        self.map_data = pyscroll.data.TiledMapData(self.tmx_data)
         self.map_layer = pyscroll.BufferedRenderer(self.map_data, self.size, clamp_camera=True)
 
         self.surface = self.map_layer.buffer
-        self.group = PyscrollGroup(map_layer=self.map_layer, default_layer=default_layer)
 
         self.build_collision_map()
         self.build_mana_map()
+
+        self.group = PyscrollGroup(map_layer=self.map_layer, default_layer=self.default_layer)
+        [self.add_entity(v) for k, v in self.entities.items()]
+
         self.spawn_entities()
 
         self.center = None
@@ -264,6 +285,10 @@ class ScrollingMapEntityDisplayLayer(EntityDisplayLayer):
         self.surface = self.map_layer.buffer
 
         super().resize(size)
+
+    def __getnewargs__(self):
+        """Get constructor arguments for this object."""
+        return (self.tmx_file, self.default_layer) + super().__getnewargs__()
 
 
 class DisplayModule(Module):

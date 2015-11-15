@@ -1,9 +1,8 @@
 """Demo module."""
-import pygame
 import logging
 
 from .assets import AssetManager
-from .display import ScrollingMapEntityDisplayLayer, DisplayModule, DisplayLayer
+from .display import ScrollingTmxMapEntityDisplayLayer, DisplayModule
 from .events import EventManager
 from .entities import EntityManager, EntityInput
 from .session import SessionManager
@@ -60,14 +59,13 @@ class DemoGameState(GameState):
         """Initialize the gamestate."""
         self.input.add_action_listener('game_quit', self.on_quit)
 
-        # self.tmx_data = self.assets.get_tmx_data('pyscroll_demo/grasslands.tmx')
-        self.tmx_data = self.assets.get_tmx_data('maps/urdarbrunn/map.tmx')
-        self.layer = ScrollingMapEntityDisplayLayer(self.tmx_data, default_layer=2)
+        main_map = self.session.get('map.main')
 
-        self.ui_layer = DisplayLayer(flags=pygame.SRCALPHA, z_index=101)
+        if not main_map:
+            main_map = ScrollingTmxMapEntityDisplayLayer('maps/urdarbrunn/map.tmx', default_layer=2)
+            self.session.set('map.main', main_map)
 
-        self.display.add_layer(self.ui_layer)
-        self.display.add_layer(self.layer)
+        self.display.add_layer(main_map)
 
         player = self.session.get('player')
 
@@ -79,8 +77,8 @@ class DemoGameState(GameState):
         else:
             self.entities.add_entity(player)
 
-        self.layer.add_entity(player)
-        self.layer.center = player
+        main_map.add_entity(player)
+        main_map.center = player
 
         # Set selected skill to fireball
         # @TODO Remove this

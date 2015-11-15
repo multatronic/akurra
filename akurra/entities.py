@@ -167,7 +167,7 @@ class Entity(pygame.sprite.Sprite):
         """Constructor."""
         super().__init__()
 
-        self.id = id if id else uuid4()
+        self.id = id if id else str(uuid4())
         self.components = {}
 
         from . import container
@@ -614,6 +614,10 @@ class LayerComponent(Component):
         super().__init__(**kwargs)
 
         self.layer = layer
+
+    # def __getnewargs__(self):
+    #     """Get constructor arguments for this object."""
+    #     return (self.layer,)
 
 
 class MapLayerComponent(Component):

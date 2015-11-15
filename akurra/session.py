@@ -15,23 +15,37 @@ class SessionData:
 
     """Session data container."""
 
-    def __init__(self, id, mod, cls, new_args={}, state={}):
+    def __init__(self, id, mod, cls, new_args=(), new_kwargs={}, state={}):
         """Constructor."""
         self.id = id
         self.mod = mod
         self.cls = cls
         self.new_args = new_args
+        self.new_kwargs = new_kwargs
         self.state = state
 
     @classmethod
     def generate(cls, obj):
         """Generate and return session data for an object."""
+        new_args = None
+        new_kwargs = None
+        state = None
+
+        if hasattr(obj, '__getnewargs_ex__'):
+            new_args, new_kwargs = obj.__getnewargs_ex__()
+        elif hasattr(obj, '__getnewargs__'):
+            new_args = obj.__getnewargs__()
+
+        if hasattr(obj, '__getstate__'):
+            state = obj.__getstate__()
+
         return cls(
             getattr(obj, '__get_session_id')(),
             obj.__module__,
             obj.__class__.__name__,
-            obj.__getnewargs__() if hasattr(obj, '__getnewargs__') else None,
-            obj.__getstate__() if hasattr(obj, '__getstate__') else None
+            new_args,
+            new_kwargs,
+            state
         )
 
 
@@ -78,9 +92,11 @@ class SessionUnpickler(pickle.Unpickler):
             obj_module = __import__(obj.mod, {}, {}, obj.cls)
             obj_class = getattr(obj_module, obj.cls)
 
-            obj_new_args = obj.new_args if obj.new_args else {}
-            obj_instance = obj_class.__new__(obj_class, *obj_new_args)
-            obj_instance.__init__(*obj_new_args)
+            obj_new_args = obj.new_args if obj.new_args else ()
+            obj_new_kwargs = obj.new_kwargs if obj.new_kwargs else {}
+
+            obj_instance = obj_class.__new__(obj_class, *obj_new_args, **obj_new_kwargs)
+            obj_instance.__init__(*obj_new_args, **obj_new_kwargs)
 
             if obj.state:
                 obj_instance.__dict__.update(state)
